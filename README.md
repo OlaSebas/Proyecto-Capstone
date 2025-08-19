@@ -1,4 +1,3 @@
 # Proyecto-Capstone
 
-Porjezto pra finhal del semstre
-ñau amargaita
+Proyecto conjunto nombre en codigo VDP (Venta de Pollas)

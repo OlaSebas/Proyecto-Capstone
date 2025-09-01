@@ -1,6 +1,6 @@
 # Proyecto-Capstone
 
-Este proyecto es una solución para la empresa danny pollos
+Este proyecto es una solución para la empresa danny pollos basada en un servicio POS + centralización de datos
 
 Desarrollado por:
 - Esteban Badilla
@@ -9,5 +9,5 @@ Desarrollado por:
 - Leandro Palma
 
 
-Lenguajes utilizados: Python, SQL, JS, HTML y CSS
+Django, React y Sql Server
 Trabajo hibrido con función en web service + trabajo en la nube (Azure)

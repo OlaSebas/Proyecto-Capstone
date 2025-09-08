@@ -1,22 +1,55 @@
 import { useState } from "react";
-import logo from "./img/logo.png";
+import logo from "../../img/logo.png";
+import { Navigate } from "react-router-dom";
+
 
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const apiUrl = "http://127.0.0.1:8000/api/";
 
-  const handleSubmit = (e) => {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert(`Email: ${email}\nPassword: ${password}`);
+    setError("");
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${apiUrl}login/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Error al iniciar sesión");
+      }
+
+      // Guardamos el token en localStorage
+      localStorage.setItem("token", data.token);
+
+      console.log("Usuario logeado:", data.User);
+      alert(`Bienvenido ${data.User.username}`);
+      window.location.href = "/Venta";
+
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-r from-amber-400 via-orange-500 to-red-500">
       <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl p-10 mx-4">
-        
+
         {/* Logo o espacio de imagen */}
         <div className="flex justify-center mb-6">
-          <img 
+          <img
             src={logo}
 
             alt="Logo Pollos Asados"
@@ -30,13 +63,13 @@ export default function Login() {
         <p className="text-center text-gray-600 mb-8">
           Bienvenido al sistema POS
         </p>
-        
+
         <form className="space-y-6" onSubmit={handleSubmit}>
           <input
-            type="email"
-            placeholder="Correo electrónico"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            type="text"
+            placeholder="Nombre de usuario"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             className="w-full px-4 py-3 border border-orange-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 transition text-black placeholder-gray-500"
             required
           />
@@ -55,7 +88,7 @@ export default function Login() {
             Entrar
           </button>
         </form>
-        
+
         <p className="text-center text-gray-500 mt-4">
           ¿Olvidaste tu contraseña?{" "}
           <span className="text-orange-500 font-semibold cursor-pointer hover:underline">

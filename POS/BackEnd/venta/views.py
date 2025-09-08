@@ -33,7 +33,7 @@ def register(request):
         return Response({'token': token.key, "User": serializer.data,}, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST) 
 
-@api_view(['POST'])
+@api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def profile(request):

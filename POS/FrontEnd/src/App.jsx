@@ -20,6 +20,7 @@ function App() {
         <Route path="/InventarioStock" element={<InventarioStock />} />
       </Routes>
     </Router>
+  <Login />
   );
 }
 

@@ -10,9 +10,6 @@ import InventarioStock from './pages/InventarioStock'
 import {Navegador} from './components/Navegador'
 
 function App() {
-<<<<<<< Updated upstream
-  return <Login />;
-=======
   return (
     <Router>
       <Navegador />
@@ -24,7 +21,6 @@ function App() {
       </Routes>
     </Router>
   );
->>>>>>> Stashed changes
 }
 
 export default App;

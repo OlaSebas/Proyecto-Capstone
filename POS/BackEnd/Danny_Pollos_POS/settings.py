@@ -38,9 +38,14 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework.authtoken',
     'corsheaders',
     'venta',
+    'Inventario',
+    'coreapi',
 ]
+
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -54,6 +59,10 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'Danny_Pollos_POS.urls'
+
+REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS':  'rest_framework.schemas.coreapi.AutoSchema',
+    }
 
 TEMPLATES = [
     {
@@ -87,7 +96,7 @@ DATABASES = {
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
-#AUTH_MODEL_MODEL = 'venta.User'
+AUTH_USER_MODEL = 'venta.customUser'
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',

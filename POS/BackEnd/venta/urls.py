@@ -1,6 +1,11 @@
-from django.urls import path, include   
-from . import views
+from django.urls import path, include, re_path   
+from .views import login, register, profile, logout
+from rest_framework.documentation import include_docs_urls
+
 urlpatterns = [
-    path('',views.index, name='index'),
-    
-    ]
+    re_path('login/', login, name='login'),
+    re_path('register/', register, name='register'),
+    re_path('profile/', profile, name='profile'),
+    re_path('logout/', logout, name='logout'),
+    path('docs/', include_docs_urls(title='API Documentation')),
+]

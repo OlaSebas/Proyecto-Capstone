@@ -9,5 +9,5 @@ urlpatterns = [
     re_path('profile/', profile, name='profile'),
     re_path('logout/', logout, name='logout'),
     path('docs/', include_docs_urls(title='API Documentation')),
-    path('ventas/', VentasView.as_view(), name="ventas"),
+    re_path('ventas/', VentasView.as_view(), name="ventas"),
 ]

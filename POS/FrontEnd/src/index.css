@@ -5,7 +5,7 @@ html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0;
-  background: linear-gradient(to right, #fbbf24, #f97316, #ef4444);
+  background: linear-gradient(to right, #ffffff, #c0bfbe, #a8a7a7);
   background-repeat: no-repeat;
   background-attachment: fixed;
   background-size: cover;

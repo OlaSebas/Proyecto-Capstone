@@ -9,6 +9,8 @@ from django.shortcuts import get_object_or_404
 from rest_framework.decorators import permission_classes, authentication_classes, api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
+from django.views import View
+from django.http import JsonResponse
 
 @api_view(['POST'])
 def login(request):
@@ -48,3 +50,14 @@ def logout(request):
     # Elimina el token actual → invalida sesión
     request.user.auth_token.delete()
     return Response({"message": "Sesión cerrada correctamente"}, status=status.HTTP_200_OK)
+
+class VentasView(View):
+    def get(self, request):
+        data = {
+            "acciones": [
+                {"id": 1, "nombre": "Pedido nuevo", "icono": "plus"},
+                {"id": 2, "nombre": "Pedido delivery", "icono": "list"},
+                {"id": 3, "nombre": "Cerrar caja", "icono": "clock"}
+            ]
+        }
+        return JsonResponse(data)

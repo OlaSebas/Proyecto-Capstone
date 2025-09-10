@@ -22,5 +22,7 @@ class InventarioSerializer(serializers.ModelSerializer):
         if (producto and insumo) or (not producto and not insumo):
             raise serializers.ValidationError(
                 "Debe seleccionar exactamente un producto o un insumo, no ambos ni ninguno."
-            )
+            ) 
         return data
+    
+    

@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils.timezone import now
 
+
 # Create your models here.
 class UserManager(BaseUserManager):
     def create_user(self, username, email, password=None, **extra_fields):

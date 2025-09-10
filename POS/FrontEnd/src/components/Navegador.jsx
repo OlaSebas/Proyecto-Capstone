@@ -9,16 +9,18 @@ export function Navegador() {
         localStorage.removeItem("token");
         window.location.href = "/Login";
     };
+    const apiUrl = import.meta.env.VITE_API_URL;
     const [nombre, setNombre] = useState("");
     useEffect(() => {
         const fetchNombre = async () => {
-            const response = await fetch("http://127.0.0.1:8000/api/profile/", {
+            const response = await fetch(`${apiUrl}profile/`, {
                 headers: {
                     Authorization: `Token ${localStorage.getItem("token")}`,
                 },
             });
             const data = await response.json();
             setNombre(data.first_name);
+            localStorage.setItem("is_staff", data.is_staff);
         };
         fetchNombre();
     }, []);
@@ -41,8 +43,13 @@ export function Navegador() {
                     </Link>
                 </li>
                 <li>
+                    <Link to="/RegistroUsuario">
+                        Registro Usuario
+                    </Link>
+                </li>                <li>
                     <span>{nombre}</span>
                 </li>
+                
                 <li>
                     <button onClick={handleLogout}>Logout</button>
                 </li>

@@ -5,6 +5,8 @@ import Producto from "./pages/Producto";
 import InventarioStock from "./pages/InventarioStock";
 import { Navegador } from "./components/Navegador";
 import ProtectedRoute from "./components/protectedRoute";
+import ViewAdminPR from "./components/ViewAdminPR";
+import RegistroUsuario from "./pages/admin/RegistroUsuario";
 import './app.css';
 
 
@@ -48,7 +50,16 @@ function App() {
             </ProtectedRoute>
           }
         />
-
+        <Route
+          path="/RegistroUsuario"
+          element={
+            <ViewAdminPR>
+              <ProtectedRoute>
+                <RegistroUsuario />
+              </ProtectedRoute>
+            </ViewAdminPR>
+          }
+        />
         {/* Redirección por defecto */}
         <Route path="*" element={<Navigate to="/Login" replace />} />
       </Routes>

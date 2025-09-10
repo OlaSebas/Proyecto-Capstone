@@ -4,8 +4,7 @@ import { Navigate } from "react-router-dom";
 
 
 export default function Login() {
-  const apiUrl = "http://127.0.0.1:8000/api/";
-
+  const apiUrl = import.meta.env.VITE_API_URL;
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");

@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 
 export default function Ventas() {
     const [acciones, setAcciones] = useState([]);
-
+    const apiUrl = import.meta.env.VITE_API_URL;
     useEffect(() => {
-        fetch("http://localhost:8000/api/ventas/")
+        fetch(`${apiUrl}ventas/`)
             .then((res) => res.json())
             .then((data) => setAcciones(data.acciones))
             .catch((err) => console.error(err));

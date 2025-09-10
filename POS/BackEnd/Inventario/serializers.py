@@ -4,7 +4,7 @@ from .models import Region, Ciudad, Comuna, Sucursal, Insumo, Producto, Inventar
 class InventarioSerializer(serializers.ModelSerializer):
     producto_descripcion = serializers.CharField(source='producto.descripcion', read_only=True)
     insumo_descripcion = serializers.CharField(source='insumo.descripcion', read_only=True)
-    sucursal_nombre = serializers.CharField(source='sucursal.nombre', read_only=True)
+    sucursal_nombre = serializers.CharField(source='sucursal.descripcion', read_only=True)
     
     class Meta:
         model = Inventario
@@ -24,5 +24,3 @@ class InventarioSerializer(serializers.ModelSerializer):
                 "Debe seleccionar exactamente un producto o un insumo, no ambos ni ninguno."
             ) 
         return data
-    
-    

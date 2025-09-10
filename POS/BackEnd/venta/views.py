@@ -49,6 +49,7 @@ def profile(request):
 def logout(request):
     # Elimina el token actual → invalida sesión
     request.user.auth_token.delete()
+    Token.objects.filter(user=request.user).delete()
     return Response({"message": "Sesión cerrada correctamente"}, status=status.HTTP_200_OK)
 
 class VentasView(View):

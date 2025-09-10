@@ -2,9 +2,11 @@ from rest_framework.decorators import api_view, permission_classes, authenticati
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.response import Response
-from rest_framework import status
-from .models import Inventario
-from .serializers import InventarioSerializer
+from rest_framework import status, viewsets
+from .models import Inventario, Producto
+from .serializers import InventarioSerializer, ProductoSerializer
+
+
 
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
@@ -61,3 +63,20 @@ def inventario_delete(request, inventario_id):
 
     inventario.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+#PRODUCTOS VIEWS
+class ProductoViewSet(viewsets.ModelViewSet):
+    queryset = Producto.objects.all()
+    serializer_class = ProductoSerializer
+    def get_serializer_context(self):
+        return {"request": self.request}
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def producto_list(request):
+    productos = Producto.objects.all()
+    serializer = ProductoSerializer(productos, many=True, context={"request": request})
+    return Response(serializer.data, status=status.HTTP_200_OK)

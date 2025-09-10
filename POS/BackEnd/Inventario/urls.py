@@ -1,6 +1,6 @@
 from django.urls import path, include, re_path   
 from rest_framework.routers import DefaultRouter
-from .views import inventario_list, inventario_sucursal, inventario_create, inventario_update,inventario_delete
+from .views import inventario_list, inventario_sucursal, inventario_create, inventario_update,inventario_delete, producto_list
 
 urlpatterns = [
     path("", inventario_list, name="inventario_list"),
@@ -8,4 +8,5 @@ urlpatterns = [
     path("create/", inventario_create, name="inventario_create"),
     path("update/<int:inventario_id>/", inventario_update, name="inventario_update"),
     path("delete/<int:inventario_id>/", inventario_delete, name="inventario_delete"),
+    path("productos/", producto_list, name="producto_list"),
 ]

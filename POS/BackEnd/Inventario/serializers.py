@@ -1,10 +1,11 @@
 from rest_framework import serializers
 from .models import Region, Ciudad, Comuna, Sucursal, Insumo, Producto, Inventario
+from django.conf import settings
 
 class InventarioSerializer(serializers.ModelSerializer):
     producto_descripcion = serializers.CharField(source='producto.descripcion', read_only=True)
     insumo_descripcion = serializers.CharField(source='insumo.descripcion', read_only=True)
-    sucursal_nombre = serializers.CharField(source='sucursal.nombre', read_only=True)
+    sucursal_nombre = serializers.CharField(source='sucursal.descripcion', read_only=True)
     
     class Meta:
         model = Inventario
@@ -24,5 +25,16 @@ class InventarioSerializer(serializers.ModelSerializer):
                 "Debe seleccionar exactamente un producto o un insumo, no ambos ni ninguno."
             ) 
         return data
-    
-    
+
+class ProductoSerializer(serializers.ModelSerializer):
+    imagen = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Producto
+        fields = "__all__"
+
+    def get_imagen(self, obj):
+        if obj.imagen:
+            # Usamos el dominio definido en settings
+            return f"{settings.SITE_DOMAIN}{obj.imagen.url}"
+        return None

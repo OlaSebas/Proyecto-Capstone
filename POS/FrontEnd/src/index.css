@@ -1,19 +1,5 @@
 @import "tailwindcss";
 
-
-html, body, #root {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  background: linear-gradient(to right, #ffffff, #c0bfbe, #a8a7a7);
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-  background-size: cover;
-}
-
-
-
-
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;

@@ -1,7 +1,5 @@
 import { useState } from "react";
 import logo from "../../img/logo.png";
-import { Navigate } from "react-router-dom";
-
 
 export default function Login() {
   const apiUrl = import.meta.env.VITE_API_URL;
@@ -28,13 +26,11 @@ export default function Login() {
         throw new Error(data.error || "Error al iniciar sesión");
       }
 
-      // Guardamos el token en localStorage
       localStorage.setItem("token", data.token);
 
       console.log("Usuario logeado:", data.User);
       alert(`Bienvenido ${data.User.username}`);
       window.location.href = "/Venta";
-
     } catch (err) {
       setError(err.message);
     } finally {
@@ -43,27 +39,29 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-r from-amber-400 via-orange-500 to-red-500">
-      <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl p-10 mx-4">
+    <div className="h-screen w-screen flex items-center justify-center bg-gradient-to-r from-amber-400 via-orange-500 to-red-500">
+      {/* Contenedor principal, ahora ocupa todo el alto y ancho */}
+      <div className="w-full sm:w-11/12 md:w-2/3 lg:w-1/2 xl:w-1/3 bg-white rounded-2xl shadow-2xl p-8 sm:p-12 mx-4 flex flex-col justify-center">
 
-        {/* Logo o espacio de imagen */}
+        {/* Logo */}
         <div className="flex justify-center mb-6">
           <img
             src={logo}
-
             alt="Logo Pollos Asados"
-            className="w-24 h-24 object-contain"
+            className="w-20 h-20 sm:w-24 sm:h-24 object-contain"
           />
         </div>
 
-        <h2 className="text-3xl font-bold text-center text-orange-600 mb-2">
+        {/* Título */}
+        <h2 className="text-2xl sm:text-3xl font-bold text-center text-orange-600 mb-2">
           Danny Pollos
         </h2>
-        <p className="text-center text-gray-600 mb-8">
+        <p className="text-center text-gray-600 mb-8 text-sm sm:text-base">
           Bienvenido al sistema POS
         </p>
 
-        <form className="space-y-6" onSubmit={handleSubmit}>
+        {/* Formulario */}
+        <form className="space-y-5 sm:space-y-6" onSubmit={handleSubmit}>
           <input
             type="text"
             placeholder="Nombre de usuario"
@@ -80,15 +78,22 @@ export default function Login() {
             className="w-full px-4 py-3 border border-orange-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 transition text-black placeholder-gray-500"
             required
           />
+
+          {error && (
+            <p className="text-red-500 text-center text-sm">{error}</p>
+          )}
+
           <button
             type="submit"
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl font-semibold transition-all transform hover:scale-105"
+            disabled={loading}
+            className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white py-3 rounded-xl font-semibold transition-all transform hover:scale-105"
           >
-            Entrar
+            {loading ? "Cargando..." : "Entrar"}
           </button>
         </form>
 
-        <p className="text-center text-gray-500 mt-4">
+        {/* Footer */}
+        <p className="text-center text-gray-500 mt-4 text-sm">
           ¿Olvidaste tu contraseña?{" "}
           <span className="text-orange-500 font-semibold cursor-pointer hover:underline">
             Recordar

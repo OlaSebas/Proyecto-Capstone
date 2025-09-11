@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils.timezone import now
+from Inventario.models import Producto, Sucursal
 
 # Create your models here.
 class UserManager(BaseUserManager):
@@ -55,4 +56,67 @@ class customUser(AbstractBaseUser, PermissionsMixin):
             ("change_user", "Can change user"),
             ("delete_user", "Can delete user"),
         ]
+
+class Cliente(models.Model):
+    nombre = models.CharField(max_length=100)
+    comision = models.IntegerField(default=0)
+
+    def __str__(self):
+        return self.nombre
+
+
+class MetodoPago(models.Model):
+    nombre = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.nombre
+
+class Caja(models.Model):
+    nombre = models.CharField(max_length=100)
+    sucursal = models.ForeignKey(Sucursal, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.nombre
+
+class SesionCaja(models.Model):
+    fecha_apertura = models.DateTimeField(auto_now_add=True)
+    fecha_cierre = models.DateTimeField(null=True, blank=True)
+    caja = models.ForeignKey(Caja, on_delete=models.CASCADE)
+    monto_inicial = models.IntegerField(default=0)
+    monto_final = models.IntegerField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    
+    def __str__(self):
+        return f'SesionCaja {self.id} - {self.caja.nombre}'
+
+class TipoEstado(models.Model):
+    nombre = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.nombre
+
+class Venta(models.Model):
+    fecha = models.DateTimeField(auto_now_add=True)
+    subtotal = models.IntegerField()
+    iva = models.IntegerField()
+    total = models.IntegerField()
+    sesion_caja = models.ForeignKey(SesionCaja, on_delete=models.CASCADE)
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, null=True, blank=True)
+    metodo_pago = models.ForeignKey(MetodoPago, on_delete=models.CASCADE)
+    usuario = models.ForeignKey(customUser, on_delete=models.CASCADE)
+    estado = models.ForeignKey(TipoEstado, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f'Venta {self.id} - {self.fecha}'
+
+class DetalleVenta(models.Model):
+    venta = models.ForeignKey(Venta, on_delete=models.CASCADE)
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
+    cantidad = models.IntegerField()
+    precio_unitario = models.IntegerField()
+    total = models.IntegerField()
+
+    def __str__(self):
+        return f'DetalleVenta {self.id} - Venta {self.venta.id}'
 

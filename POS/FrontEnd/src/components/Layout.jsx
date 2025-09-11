@@ -11,7 +11,7 @@ export function Layout() {
   useEffect(() => {
     const fetchNombre = async () => {
       try {
-        const response = await fetch(`${apiUrl}profile/`, {
+        const response = await fetch(`${apiUrl}api/profile/`, {
           headers: {
             Authorization: `Token ${localStorage.getItem("token")}`,
           },
@@ -81,13 +81,13 @@ export function Layout() {
         <div className="mt-auto">
           {/* Saludo al usuario logueado */}
           <span className="block mb-3 text-sm opacity-90">
-            Hola, Colega<span className="font-semibold">{nombre || usuario}</span>
+            Hola, Colega <span className="font-semibold">{usuario}</span>
           </span>
           <button
             onClick={handleLogout}
             className="w-full flex items-center justify-center gap-2 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
           >
-            <LogOut size={18} /> Salir
+            <LogOut size={18} /> Cerrar sesión
           </button>
         </div>
       </aside>

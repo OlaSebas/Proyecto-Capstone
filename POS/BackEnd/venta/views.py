@@ -1,8 +1,8 @@
 from django.shortcuts import render
-from .serializers import customUserSerializer
+from .serializers import customUserSerializer, CajaSerializer, SesionCajaSerializer, VentaSerializer, ClienteSerializer
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import customUser
+from .models import customUser, SesionCaja, Caja, Venta, Cliente, DetalleVenta
 from rest_framework.authtoken.models import Token
 from rest_framework import status
 from django.shortcuts import get_object_or_404
@@ -51,3 +51,42 @@ def logout(request):
     request.user.auth_token.delete()
     Token.objects.filter(user=request.user).delete()
     return Response({"message": "Sesión cerrada correctamente"}, status=status.HTTP_200_OK)
+
+# Vistas para creacion, edicion de sesiones de caja y cajas
+@api_view(['GET', 'POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def sesiones_list(request):
+    if request.method == 'GET':
+        sesiones = SesionCaja.objects.all()
+        serializer = SesionCajaSerializer(sesiones, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    elif request.method == 'POST':
+        serializer = SesionCajaSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET', 'PUT', 'DELETE'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def sesiones_detail(request, pk):
+    sesion = get_object_or_404(SesionCaja, pk=pk)
+
+    if request.method == 'GET':
+        serializer = SesionCajaSerializer(sesion)
+        return Response(serializer.data)
+
+    elif request.method == 'PUT':
+        serializer = SesionCajaSerializer(sesion, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'DELETE':
+        sesion.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

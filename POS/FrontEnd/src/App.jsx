@@ -17,48 +17,26 @@ function App() {
 
   return (
     <Router>
-      {/* El navegador solo debería mostrarse si estás logueado */}
-      {/*{token && <Navegador />}*/}
-
       <Routes>
-        {/* LOGIN: si ya hay sesión, no lo dejo entrar */}
-        <Route
-          path="/Login" element={!token ? <Login /> : <Navigate to="/Venta" replace />}
-        />
+        {/* Ruta raíz: va al login si no hay token */}
+        <Route path="/" element={!token ? <Navigate to="/Login" replace /> : <Navigate to="/Home" replace />} />
 
-        {/* RUTAS PROTEGIDAS */}
-        <Route
-          path="/" element={
-            <ProtectedRoute> <Layout /> </ProtectedRoute>
-          }>
-          <Route
-            path="/Venta" element={
-              <ProtectedRoute> <Venta /> </ProtectedRoute>
-            }/>
-          <Route
-            path="/Producto" element={
-              <ProtectedRoute> <Producto /> </ProtectedRoute>
-            }/>
-          <Route
-            path="/InventarioStock" element={
-              <ProtectedRoute> <InventarioStock /> </ProtectedRoute>
-            }/>
-          <Route
-            path="/Home" element={
-              <ProtectedRoute> <Home /> </ProtectedRoute>
-            }/>
-          <Route
-            path="/RegistroUsuario" element={
-              <ViewAdminPR> <ProtectedRoute> <RegistroUsuario /> </ProtectedRoute> </ViewAdminPR>
-            }/>
+        {/* LOGIN: si ya hay sesión, redirige a Home */}
+        <Route path="/Login" element={!token ? <Login /> : <Navigate to="/Home" replace />} />
 
-              {/* Agregar mas paginas */}
-
-          {/* Redirección por defecto */}
-          <Route path="*" element={<Navigate to="/Login" replace />} />
+        {/* Rutas protegidas con Layout */}
+        <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+          <Route path="/Home" element={<Home />} />
+          <Route path="/Venta" element={<Venta />} />
+          <Route path="/Producto" element={<Producto />} />
+          <Route path="/InventarioStock" element={<InventarioStock />} />
+          <Route path="/RegistroUsuario" element={<ViewAdminPR><RegistroUsuario /></ViewAdminPR>} />
         </Route>
+
+        {/* Redirección por defecto */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </Router >
+    </Router>
   );
 }
 

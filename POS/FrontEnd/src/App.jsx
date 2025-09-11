@@ -9,7 +9,7 @@ import { Navegador } from "./components/Navegador";
 import ProtectedRoute from "./components/protectedRoute";
 import ViewAdminPR from "./components/ViewAdminPR";
 import RegistroUsuario from "./pages/admin/RegistroUsuario";
-import './app.css';
+import './App.css';
 
 
 function App() {

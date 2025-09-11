@@ -25,8 +25,13 @@ export function Navegador() {
         fetchNombre();
     }, []);
     return (
-        <nav className="bg-pink-500 p-6">
+        <nav className="bg-blue-500 p-6">
             <ul className="flex space-x-6">
+                <li>
+                    <Link to="/Home">
+                        Home
+                    </Link>
+                </li>
                 <li>
                     <Link to="/Venta">
                         Venta

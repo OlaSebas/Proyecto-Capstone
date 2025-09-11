@@ -51,14 +51,3 @@ def logout(request):
     request.user.auth_token.delete()
     Token.objects.filter(user=request.user).delete()
     return Response({"message": "Sesión cerrada correctamente"}, status=status.HTTP_200_OK)
-
-class VentasView(View):
-    def get(self, request):
-        data = {
-            "acciones": [
-                {"id": 1, "nombre": "Pedido nuevo", "icono": "plus"},
-                {"id": 2, "nombre": "Pedido delivery", "icono": "list"},
-                {"id": 3, "nombre": "Cerrar caja", "icono": "clock"}
-            ]
-        }
-        return JsonResponse(data)

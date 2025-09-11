@@ -16,28 +16,15 @@ export default function InventarioStock() {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden">
-      {/* Sidebar */}
-      <aside className="hidden md:flex md:w-64 bg-gradient-to-b from-red-600 to-red-400 text-white p-6 flex-col">
-        <h2 className="text-2xl font-bold mb-8">Danny Pollos</h2>
-        <nav className="flex flex-col gap-4 text-lg">
-          <button className="p-2 rounded hover:bg-red-700">Inicio</button>
-          <button className="p-2 rounded hover:bg-red-700">Venta</button>
-          <button className="p-2 rounded hover:bg-red-700">Inventario</button>
-          <button className="p-2 rounded hover:bg-red-700">Proveedores</button>
-        </nav>
-      </aside>
-
+    <div className="flex h-screen w-screen overflow-hidden bg-gray-100">
       {/* Contenido principal */}
-      <main className="flex-1 flex flex-col bg-gradient-to-br from-gray-200 via-gray-300 to-gray-400 overflow-auto">
-        {/* Sección central */}
-        <section className="flex-1 p-8">
-          {/* Título + botón recargar */}
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-3xl font-bold text-gray-900">Inventario de stock</h2>
+      <main className="flex-1 flex justify-start overflow-auto">
+        <section className="flex-1 max-w-5xl mx-6 my-8 flex flex-col">
+          <div className="flex justify-between items-center mb-6 flex-wrap">
+            <h2 className="text-3xl font-bold text-gray-800">Inventario de stock</h2>
             <button
               onClick={recargar}
-              className="p-2 rounded-md bg-black hover:bg-gray-800 text-white"
+              className="p-2 rounded-md bg-black hover:bg-gray-800 text-white mt-2 sm:mt-0"
               aria-label="Recargar"
             >
               🔄
@@ -45,7 +32,7 @@ export default function InventarioStock() {
           </div>
 
           {/* Tabla */}
-          <div className="bg-white/95 shadow-xl rounded-lg overflow-hidden w-full border border-gray-200 text-black">
+          <div className="bg-white shadow-xl rounded-lg overflow-hidden w-full border border-gray-200 text-black">
             <table className="w-full border-collapse text-left">
               <thead className="bg-gray-300">
                 <tr>
@@ -68,7 +55,7 @@ export default function InventarioStock() {
           </div>
 
           {/* Botón volver */}
-          <div className="mt-6 flex justify-center">
+          <div className="mt-6 flex justify-start">
             <button
               onClick={volver}
               className="px-6 py-2 bg-black text-white rounded hover:bg-gray-800"

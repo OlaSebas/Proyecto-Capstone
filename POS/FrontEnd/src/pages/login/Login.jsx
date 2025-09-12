@@ -1,6 +1,7 @@
 import { useState } from "react";
 import logo from "../../img/logo.png";
 
+
 export default function Login() {
   const apiUrl = import.meta.env.VITE_API_URL;
   const [username, setUsername] = useState("");
@@ -96,7 +97,7 @@ export default function Login() {
         <p className="text-center text-gray-500 mt-4 text-sm">
           ¿Olvidaste tu contraseña?{" "}
           <span className="text-orange-500 font-semibold cursor-pointer hover:underline">
-            Recordar
+            Recuperar
           </span>
         </p>
       </div>

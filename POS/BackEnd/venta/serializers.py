@@ -4,8 +4,14 @@ from .models import customUser, SesionCaja, Caja, Venta, Cliente
 class customUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = customUser
-        fields = ['username', 'email', 'first_name', 'last_name', 'date_joined','is_staff', 'is_active','is_superuser']
-    
+        fields = ['username', 'email', 'first_name', 'last_name', 'date_joined','is_staff', 'is_active','is_superuser','password']
+    def validate(self, data):
+        password = data.get('password', None)
+        if password is None or password == '':
+            raise serializers.ValidationError(
+                "La contraseña es un campo obligatorio."
+            )
+        return data
 class CajaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Caja

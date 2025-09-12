@@ -30,7 +30,6 @@ def register(request):
         user = customUser.objects.get(username=serializer.data['username'])
         user.set_password(serializer.data['password'])
         user.save()
-
         token = Token.objects.create(user=user)
         return Response({'token': token.key, "User": serializer.data,}, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST) 

@@ -3,14 +3,17 @@ import { useOutletContext } from "react-router-dom";
 
 export default function CreateUser() {
   const { sidebarOpen, setSidebarOpen } = useOutletContext();
+  const apiUrl = import.meta.env.VITE_API_URL;
+  const [vpassword, setVPassword] = useState("");
 
+  const [isModalOpen, setModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     first_name: "",
     last_name: "",
     password: "",
-    is_admin: false,
+    is_staff: false,
   });
 
   const [hora, setHora] = useState("");
@@ -42,15 +45,44 @@ export default function CreateUser() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await fetch("http://localhost:8000/api/users/create/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
-    });
+    if (formData.password !== vpassword) {
+      alert("Las contraseñas no coinciden");
+      return;
+    }
+    else {
+      try {
+        const res = await fetch(`${apiUrl}api/register/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Token ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify(formData),
+        });
 
-    const data = await res.json();
-    alert(data.message || data.error);
+        if (!res.ok) {
+          throw new Error(`Error ${res.status}: ${res.statusText}`);
+        }
+
+        const data = await res.json();
+        alert(data.message || data.error || "Registro exitoso");
+      } catch (err) {
+        console.error("Error en handleSubmit:", err);
+        alert("Ocurrió un error al registrar. Intenta nuevamente.");
+      } finally {
+        console.log("Petición finalizada");
+        formData.username = "";
+        formData.email = "";
+        formData.first_name = "";
+        formData.last_name = "";
+        formData.password = "";
+        formData.is_staff = false;
+        setVPassword("");
+        // acá podrías desactivar un loader/spinner
+      }
+    }
   };
+
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
@@ -121,11 +153,19 @@ export default function CreateUser() {
               value={formData.last_name}
               onChange={handleChange}
             />
-
+            <input
+              type="password"
+              name="password2"
+              placeholder="Contraseña"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 text-gray-700 md:col-span-2"
+              value={vpassword}
+              onChange={(e) => setVPassword(e.target.value)}
+              required
+            />
             <input
               type="password"
               name="password"
-              placeholder="Contraseña"
+              placeholder="Repetir Contraseña"
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 text-gray-700 md:col-span-2"
               value={formData.password}
               onChange={handleChange}
@@ -136,8 +176,8 @@ export default function CreateUser() {
           <label className="flex items-center gap-2 mt-6 mb-6 text-gray-700">
             <input
               type="checkbox"
-              name="is_admin"
-              checked={formData.is_admin}
+              name="is_staff"
+              checked={formData.is_staff}
               onChange={handleChange}
               className="h-4 w-4 accent-red-500"
             />

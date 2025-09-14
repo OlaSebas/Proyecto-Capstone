@@ -5,6 +5,7 @@ import Venta from "./pages/Venta";
 import Producto from "./pages/Producto";
 import InventarioStock from "./pages/InventarioStock";
 import Home from "./pages/Home";
+import Carrito from "./pages/Carrito";
 import { Navegador } from "./components/Navegador";
 import ProtectedRoute from "./components/protectedRoute";
 import ViewAdminPR from "./components/ViewAdminPR";
@@ -31,6 +32,7 @@ function App() {
           <Route path="/Producto" element={<Producto />} />
           <Route path="/InventarioStock" element={<InventarioStock />} />
           <Route path="/RegistroUsuario" element={<ViewAdminPR><RegistroUsuario /></ViewAdminPR>} />
+          <Route path="/carrito" element={<Carrito />} />
         </Route>
 
         {/* Redirección por defecto */}

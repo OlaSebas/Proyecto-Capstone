@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { ShoppingCart, Package, UserPlus } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 export default function Home() {
   const { sidebarOpen, setSidebarOpen } = useOutletContext();
@@ -57,22 +58,31 @@ export default function Home() {
       <main className="flex-1 p-6 overflow-y-auto flex flex-col items-center">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-4xl w-full">
           {/* Opción Ventas */}
-          <div className="bg-white border rounded-lg flex flex-col items-center justify-center p-8 shadow hover:shadow-lg transition cursor-pointer text-black">
+          <Link
+            to="/venta"
+            className="bg-white border rounded-lg flex flex-col items-center justify-center p-8 shadow hover:shadow-lg transition cursor-pointer text-black"
+          >
             <ShoppingCart className="w-16 h-16 mb-4 text-gray-700" />
             <p className="font-medium">Ventas</p>
-          </div>
+          </Link>
 
           {/* Opción Inventario */}
-          <div className="bg-white border rounded-lg flex flex-col items-center justify-center p-8 shadow hover:shadow-lg transition cursor-pointer text-black">
+          <Link
+            to="/inventariostock"
+            className="bg-white border rounded-lg flex flex-col items-center justify-center p-8 shadow hover:shadow-lg transition cursor-pointer text-black"
+          >
             <Package className="w-16 h-16 mb-4 text-gray-700" />
             <p className="font-medium">Inventario</p>
-          </div>
+          </Link>
 
           {/* Opción Proveedores */}
-          <div className="bg-white border rounded-lg flex flex-col items-center justify-center p-8 shadow hover:shadow-lg transition cursor-pointer text-black">
+          <Link
+            to="/proveedores"
+            className="bg-white border rounded-lg flex flex-col items-center justify-center p-8 shadow hover:shadow-lg transition cursor-pointer text-black"
+          >
             <UserPlus className="w-16 h-16 mb-4 text-gray-700" />
             <p className="font-medium">Proveedores</p>
-          </div>
+          </Link>
         </div>
       </main>
     </div>

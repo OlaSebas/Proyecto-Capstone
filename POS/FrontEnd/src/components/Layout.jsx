@@ -46,35 +46,35 @@ export function Layout() {
         </div>
 
         <nav className="flex flex-col gap-3 text-lg flex-1">
-          <Link
-            to="/Home"
+          <Link to="/Home"
             className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
           >
             <Home size={20} /> Inicio
           </Link>
-          <Link
-            to="/Venta"
+          <Link to="/Venta"
             className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
           >
             <ShoppingCart size={20} /> Venta
           </Link>
-          <Link
-            to="/Producto"
+          <Link to="/Producto"
             className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
           >
             <Package size={20} /> Producto
           </Link>
-          <Link
-            to="/InventarioStock"
+          <Link to="/InventarioStock"
             className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
           >
             <ClipboardList size={20} /> Inventario Stock
           </Link>
-          <Link
-            to="/RegistroUsuario"
+          <Link to="/RegistroUsuario"
             className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
           >
             <UserPlus size={20} /> Registro Usuario
+          </Link>
+          <Link to="/carrito"
+            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
+          >
+            <LogOut size={20} /> Carrito
           </Link>
         </nav>
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Plus, List, Clock } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 export default function Ventas() {
   const [acciones, setAcciones] = useState([]);
@@ -61,33 +62,42 @@ export default function Ventas() {
         <div className="flex justify-center w-full">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-5xl w-full">
             {/* Pedido nuevo */}
-            <div className="bg-white border rounded-lg flex flex-col items-center justify-center p-8 shadow hover:shadow-lg transition cursor-pointer text-black">
+            <Link
+              to="/producto"
+              className="bg-white border rounded-lg flex flex-col items-center justify-center p-8 shadow hover:shadow-lg transition cursor-pointer text-black"
+            >
               <Plus className="w-16 h-16 mb-4 text-gray-700" />
               <p className="font-medium">Pedido nuevo</p>
-            </div>
+            </Link>
 
             {/* Pedido delivery */}
-            <div className="bg-white border rounded-lg flex flex-col items-center justify-center p-8 shadow hover:shadow-lg transition cursor-pointer text-black">
+            <Link
+              to="/pedido-delivery"
+              className="bg-white border rounded-lg flex flex-col items-center justify-center p-8 shadow hover:shadow-lg transition cursor-pointer text-black"
+            >
               <List className="w-16 h-16 mb-4 text-gray-700" />
               <p className="font-medium">Pedido delivery</p>
-            </div>
+            </Link>
 
             {/* Cerrar caja */}
-            <div className="bg-white border rounded-lg flex flex-col items-center justify-center p-8 shadow hover:shadow-lg transition cursor-pointer text-black">
+            <Link
+              to="/cerrar-caja"
+              className="bg-white border rounded-lg flex flex-col items-center justify-center p-8 shadow hover:shadow-lg transition cursor-pointer text-black"
+            >
               <Clock className="w-16 h-16 mb-4 text-gray-700" />
               <p className="font-medium">Cerrar caja</p>
-            </div>
+            </Link>
           </div>
         </div>
 
         {/* Botón Volver */}
         <div className="mt-8 w-full flex justify-center">
-          <button
-            onClick={() => window.history.back()}
+          <Link
+            to="/home"
             className="px-6 py-2 bg-black text-white rounded hover:bg-gray-800"
           >
             Volver
-          </button>
+          </Link>
         </div>
       </main>
     </div>

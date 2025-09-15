@@ -11,6 +11,8 @@ import ProtectedRoute from "./components/protectedRoute";
 import ViewAdminPR from "./components/ViewAdminPR";
 import RegistroUsuario from "./pages/admin/RegistroUsuario";
 import './App.css';
+import Sucursal from "./pages/Sucursal";
+import InventarioSuc from "./pages/InventarioSuc";
 
 
 function App() {
@@ -33,6 +35,8 @@ function App() {
           <Route path="/InventarioStock" element={<InventarioStock />} />
           <Route path="/RegistroUsuario" element={<ViewAdminPR><RegistroUsuario /></ViewAdminPR>} />
           <Route path="/carrito" element={<Carrito />} />
+          <Route path= "/Sucursal" element={<Sucursal />} />
+          <Route path="/inventarioSuc/:sucursalId" element={<InventarioSuc />} />
         </Route>
 
         {/* Redirección por defecto */}

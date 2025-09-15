@@ -41,3 +41,4 @@ admin.site.register(Sucursal)
 admin.site.register(Insumo)
 admin.site.register(Producto)
 admin.site.register(Inventario, InventarioAdmin)
+

@@ -38,3 +38,10 @@ class ProductoSerializer(serializers.ModelSerializer):
             # Usamos el dominio definido en settings
             return f"{settings.SITE_DOMAIN}{obj.imagen.url}"
         return None
+    
+class SucursalSerializer(serializers.ModelSerializer):
+    Comuna = serializers.CharField(source='comuna.descripcion', read_only=True)
+
+    class Meta:
+        model = Sucursal
+        fields = "__all__"

@@ -1,6 +1,6 @@
 import { Link, Outlet } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Home, ShoppingCart, Package, ClipboardList, UserPlus, LogOut } from "lucide-react";
+import { Home, ShoppingCart, Package, ClipboardList, UserPlus, LogOut,House } from "lucide-react";
 
 export function Layout() {
   const apiUrl = import.meta.env.VITE_API_URL;
@@ -61,20 +61,15 @@ export function Layout() {
           >
             <Package size={20} /> Producto
           </Link>
-          <Link to="/InventarioStock"
+          <Link to="/Sucursal"
             className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
           >
-            <ClipboardList size={20} /> Inventario Stock
+            <House size={20} /> Sucursal
           </Link>
           <Link to="/RegistroUsuario"
             className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
           >
             <UserPlus size={20} /> Registro Usuario
-          </Link>
-          <Link to="/carrito"
-            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
-          >
-            <LogOut size={20} /> Carrito
           </Link>
         </nav>
 

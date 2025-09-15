@@ -3,8 +3,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.response import Response
 from rest_framework import status, viewsets
-from .models import Inventario, Producto
-from .serializers import InventarioSerializer, ProductoSerializer
+from .models import Inventario, Producto, Sucursal
+from .serializers import InventarioSerializer, ProductoSerializer, SucursalSerializer
 
 
 
@@ -80,3 +80,48 @@ def producto_list(request):
     productos = Producto.objects.all()
     serializer = ProductoSerializer(productos, many=True, context={"request": request})
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def sucursal_list(request):
+    sucursal = Sucursal.objects.all()
+    serializer = SucursalSerializer(sucursal, many=True, context={"request": request})
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def sucursal_create(request):
+    serializer = SucursalSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['PUT'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def sucursal_update(request, sucursal_id):
+    try:
+        sucursal = Sucursal.objects.get(id=sucursal_id)
+    except Sucursal.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    serializer = SucursalSerializer(sucursal, data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['DELETE'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def sucursal_delete(request, sucursal_id):
+    try:
+        sucursal = Sucursal.objects.get(id=sucursal_id)
+    except Sucursal.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    sucursal.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)

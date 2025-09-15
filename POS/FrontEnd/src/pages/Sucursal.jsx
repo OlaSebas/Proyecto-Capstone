@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useOutletContext, useNavigate } from "react-router-dom";
-import { Pencil } from "lucide-react";
+import { Pencil, Trash2Icon } from "lucide-react";
 
 export default function Sucursales() {
   const [sucursales, setSucursales] = useState([]);
@@ -82,15 +82,50 @@ export default function Sucursales() {
                 </div>
 
                 {/* Botón editar abajo */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation(); // evita que dispare el click de inventario
-                    navigate(`/sucursalEdit/${sucursal.id}`);
-                  }}
-                  className="mt-3 px-4 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-400 transition mx-auto"
-                >
-                  <Pencil className="inline mr-1" /> Editar
-                </button>
+                <div className="mt-3 flex justify-center gap-2">
+                  {/* Botón Editar */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation(); // evita que dispare el click de la tarjeta
+                      navigate(`/sucursalEdit/${sucursal.id}`);
+                    }}
+                    className="px-4 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-400 transition flex items-center"
+                  >
+                    <Pencil className="inline mr-1" /> Editar
+                  </button>
+
+                  {/* Botón Eliminar */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation(); // evita que dispare el click de la tarjeta
+                      if (
+                        confirm(
+                          `¿Seguro que quieres eliminar la sucursal ${sucursal.descripcion}?`
+                        )
+                      ) {
+                        fetch(`${apiUrl}sucursales/delete/${sucursal.id}/`, {
+                          method: "DELETE",
+                          headers: {
+                            Authorization: `Token ${localStorage.getItem(
+                              "token"
+                            )}`,
+                          },
+                        })
+                          .then((res) => {
+                            if (!res.ok)
+                              throw new Error("Error al eliminar sucursal");
+                            setSucursales((prev) =>
+                              prev.filter((s) => s.id !== sucursal.id)
+                            );
+                          })
+                          .catch((err) => alert(err.message));
+                      }
+                    }}
+                    className="px-4 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-400 transition flex items-center"
+                  >
+                    <Trash2Icon className="inline mr-1" /> Eliminar
+                  </button>
+                </div>
               </div>
             ))}
           </div>

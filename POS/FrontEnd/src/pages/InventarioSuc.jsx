@@ -8,14 +8,14 @@ export default function InventarioSuc() {
   const { sucursalId } = useParams();
   const [inventario, setInventario] = useState([]);
   const [hora, setHora] = useState("");
-  const apiUrl = import.meta.env.VITE_API_URL;
+  const apiUrl = import.meta.env.VITE_API_URL_INVENTARIO;
   const { sidebarOpen, setSidebarOpen } = useOutletContext();
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchInventario = async () => {
       try {
-        const res = await fetch(`${apiUrl}inventario/${sucursalId}/`, {
+        const res = await fetch(`${apiUrl}${sucursalId}/`, {
           headers: {
             Authorization: `Token ${localStorage.getItem("token")}`,
           },

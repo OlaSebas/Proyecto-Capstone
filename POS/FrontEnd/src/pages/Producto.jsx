@@ -16,16 +16,27 @@ export default function Productos() {
   const { sidebarOpen, setSidebarOpen } = useOutletContext();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetch(`${apiUrl}inventario/productos/`, {
-      headers: {
-        Authorization: `Token ${localStorage.getItem("token")}`,
-      },
-    })
-      .then((res) => res.json())
-      .then((data) => setProductos(Array.isArray(data) ? data : []))
-      .catch(() => setProductos([]));
-  }, [apiUrl]);
+useEffect(() => {
+  const fetchProductos = async () => {
+    try {
+      const res = await fetch(`${apiUrl}inventario/productos/`, {
+        headers: {
+          Authorization: `Token ${localStorage.getItem("token")}`,
+        },
+      });
+
+      if (!res.ok) throw new Error("Error al obtener productos");
+
+      const data = await res.json();
+      setProductos(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Error cargando productos:", error);
+      setProductos([]);
+    }
+  };
+
+  fetchProductos();
+}, [apiUrl]);
 
   useEffect(() => {
     const actualizarHora = () => {

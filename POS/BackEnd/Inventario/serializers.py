@@ -45,3 +45,8 @@ class SucursalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Sucursal
         fields = "__all__"
+
+class ComunaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comuna
+        fields = "__all__"

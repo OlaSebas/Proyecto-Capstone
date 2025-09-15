@@ -3,8 +3,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.response import Response
 from rest_framework import status, viewsets
-from .models import Inventario, Producto, Sucursal
-from .serializers import InventarioSerializer, ProductoSerializer, SucursalSerializer
+from .models import Inventario, Producto, Sucursal, Comuna
+from .serializers import InventarioSerializer, ProductoSerializer, SucursalSerializer, ComunaSerializer
 
 
 
@@ -89,6 +89,18 @@ def sucursal_list(request):
     serializer = SucursalSerializer(sucursal, many=True, context={"request": request})
     return Response(serializer.data, status=status.HTTP_200_OK)
 
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def sucursal_info(request, sucursal_id):
+    try:
+        sucursal = Sucursal.objects.get(id=sucursal_id)
+    except Sucursal.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    serializer = SucursalSerializer(sucursal, context={"request": request})
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
@@ -125,3 +137,11 @@ def sucursal_delete(request, sucursal_id):
 
     sucursal.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def comuna_list(request):
+    comunas = Comuna.objects.all()
+    serializer = ComunaSerializer(comunas, many=True, context={"request": request})
+    return Response(serializer.data, status=status.HTTP_200_OK)

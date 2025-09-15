@@ -13,6 +13,8 @@ import RegistroUsuario from "./pages/admin/RegistroUsuario";
 import './App.css';
 import Sucursal from "./pages/Sucursal";
 import InventarioSuc from "./pages/InventarioSuc";
+import SucursalForm from "./pages/formularios/SucursalForm";
+import SucursalEdit from "./pages/editor/SucursalEdit";
 
 
 function App() {
@@ -37,6 +39,8 @@ function App() {
           <Route path="/carrito" element={<Carrito />} />
           <Route path= "/Sucursal" element={<Sucursal />} />
           <Route path="/inventarioSuc/:sucursalId" element={<InventarioSuc />} />
+          <Route path="/sucursalForm" element={<SucursalForm />} />
+          <Route path="/sucursalEdit/:id" element={<SucursalEdit />} />
         </Route>
 
         {/* Redirección por defecto */}

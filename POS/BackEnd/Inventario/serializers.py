@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Region, Ciudad, Comuna, Sucursal, Insumo, Producto, Inventario
+from .models import Region, Ciudad, Comuna, Sucursal, Insumo, Producto, Inventario,Promocion, PromocionProducto
 from django.conf import settings
 
 class InventarioSerializer(serializers.ModelSerializer):
@@ -50,3 +50,20 @@ class ComunaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comuna
         fields = "__all__"
+
+class PromocionProductoSerializer(serializers.ModelSerializer):
+    # Mostrar la descripción del producto en lugar de solo su ID
+    producto_descripcion = serializers.CharField(source="producto.descripcion", read_only=True)
+
+    class Meta:
+        model = PromocionProducto
+        fields = ["id", "producto", "producto_descripcion", "cantidad"]
+
+
+class PromocionSerializer(serializers.ModelSerializer):
+    # Usamos el related_name="productos" para incluir los productos de la promoción
+    productos = PromocionProductoSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Promocion
+        fields = ["id", "descripcion", "precio", "imagen", "fecha_inicio", "fecha_fin", "productos"]

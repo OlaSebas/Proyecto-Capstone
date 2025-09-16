@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Producto, Insumo, Sucursal, Region, Ciudad, Comuna, Inventario
+from .models import Producto, Insumo, Sucursal, Region, Ciudad, Comuna, Inventario, Promocion, PromocionProducto
 from django import forms
 
 class InventarioForm(forms.ModelForm):
@@ -41,4 +41,7 @@ admin.site.register(Sucursal)
 admin.site.register(Insumo)
 admin.site.register(Producto)
 admin.site.register(Inventario, InventarioAdmin)
+admin.site.register(Promocion)
+admin.site.register(PromocionProducto)
+
 

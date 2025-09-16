@@ -3,8 +3,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.response import Response
 from rest_framework import status, viewsets
-from .models import Inventario, Producto, Sucursal, Comuna
-from .serializers import InventarioSerializer, ProductoSerializer, SucursalSerializer, ComunaSerializer
+from .models import Inventario, Producto, Sucursal, Comuna, Promocion, PromocionProducto
+from .serializers import InventarioSerializer, ProductoSerializer, SucursalSerializer, ComunaSerializer, PromocionSerializer, PromocionProductoSerializer
 
 
 
@@ -81,6 +81,43 @@ def producto_list(request):
     serializer = ProductoSerializer(productos, many=True, context={"request": request})
     return Response(serializer.data, status=status.HTTP_200_OK)
 
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def producto_create(request):
+    serializer = ProductoSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['PUT'])
+@authentication_classes([TokenAuthentication]) 
+@permission_classes([IsAuthenticated])
+def producto_update(request, producto_id):
+    try:
+        producto = Producto.objects.get(id=producto_id)
+    except Producto.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    serializer = ProductoSerializer(producto, data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['DELETE'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def producto_delete(request, producto_id):
+    try:
+        producto = Producto.objects.get(id=producto_id)
+    except Producto.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    producto.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
@@ -145,3 +182,103 @@ def comuna_list(request):
     comunas = Comuna.objects.all()
     serializer = ComunaSerializer(comunas, many=True, context={"request": request})
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def promocion_list(request):
+    promociones = Promocion.objects.all()
+    serializer = PromocionSerializer(promociones, many=True, context={"request": request})
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def promocion_create(request):
+    productos_data = request.data.pop("productos", [])
+    serializer = PromocionSerializer(data=request.data)
+    if serializer.is_valid():
+        promocion = serializer.save()
+
+        # Crear los PromocionProducto asociados
+        for prod in productos_data:
+            PromocionProducto.objects.create(
+                promocion=promocion,
+                producto_id=prod["producto"],
+                cantidad=prod["cantidad"]
+            )
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['PUT'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def promocion_update(request, promocion_id):
+    try:
+        promocion = Promocion.objects.get(id=promocion_id)
+    except Promocion.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    serializer = PromocionSerializer(promocion, data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['DELETE'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def promocion_delete(request, promocion_id):
+    try:
+        promocion = Promocion.objects.get(id=promocion_id)
+    except Promocion.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    promocion.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def promocion_producto_list(request):
+    promocion_productos = PromocionProducto.objects.all()
+    serializer = PromocionProductoSerializer(promocion_productos, many=True, context={"request": request})
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def promocion_producto_create(request):
+    serializer = PromocionProductoSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['PUT'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def promocion_producto_update(request, promocion_producto_id):
+    try:
+        promocion_producto = PromocionProducto.objects.get(id=promocion_producto_id)
+    except PromocionProducto.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    serializer = PromocionProductoSerializer(promocion_producto, data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['DELETE'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def promocion_producto_delete(request, promocion_producto_id):
+    try:
+        promocion_producto = PromocionProducto.objects.get(id=promocion_producto_id)
+    except PromocionProducto.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    promocion_producto.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)

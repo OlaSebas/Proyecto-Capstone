@@ -56,3 +56,21 @@ class Inventario(models.Model):
         elif self.insumo:
             return f"Insumo {self.insumo.descripcion} - Stock: {self.stock_actual}"
         return f"Sin referencia - Stock: {self.stock_actual}"
+    
+class Promocion(models.Model):
+    descripcion = models.CharField(max_length=100, null=False)
+    precio = models.IntegerField(null=False)
+    imagen = models.ImageField(upload_to="products/", null=True, blank=True)
+    fecha_inicio = models.DateField(null=False)
+    fecha_fin = models.DateField(null=True, blank=True)
+
+    def __str__(self):
+        return self.descripcion
+
+class PromocionProducto(models.Model):
+    promocion = models.ForeignKey(Promocion, on_delete=models.CASCADE, related_name="productos")
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
+    cantidad = models.IntegerField(null=False)
+
+    def __str__(self):
+        return f"{self.promocion.descripcion} - {self.producto.descripcion} (x{self.cantidad})"

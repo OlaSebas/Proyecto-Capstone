@@ -6,6 +6,7 @@ import Producto from "./pages/Producto";
 import InventarioStock from "./pages/InventarioStock";
 import Home from "./pages/Home";
 import Carrito from "./pages/Carrito";
+import MetodoPago from "./pages/MetodoPago";
 import { Navegador } from "./components/Navegador";
 import ProtectedRoute from "./components/protectedRoute";
 import ViewAdminPR from "./components/ViewAdminPR";
@@ -41,6 +42,7 @@ function App() {
           <Route path="/inventarioSuc/:sucursalId" element={<InventarioSuc />} />
           <Route path="/sucursalForm" element={<SucursalForm />} />
           <Route path="/sucursalEdit/:id" element={<SucursalEdit />} />
+          <Route path="/MetodoPago" element={<MetodoPago />} />
         </Route>
 
         {/* Redirección por defecto */}

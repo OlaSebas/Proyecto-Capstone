@@ -66,6 +66,11 @@ export function Layout() {
           >
             <House size={20} /> Sucursal
           </Link>
+          <Link to="/MetodoPago"
+            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
+          >
+            <ClipboardList size={20} /> Método de Pago
+          </Link>
           <Link to="/RegistroUsuario"
             className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
           >

@@ -71,6 +71,16 @@ export function Layout() {
           >
             <ClipboardList size={20} /> Método de Pago
           </Link>
+          <Link to="/AgregarProducto"
+            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
+          >
+            <UserPlus size={20} /> Agregar Producto
+          </Link>
+          <Link to="/AgregarPromocion"
+            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
+          >
+            <UserPlus size={20} /> Agregar Promoción
+          </Link>
           <Link to="/RegistroUsuario"
             className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
           >

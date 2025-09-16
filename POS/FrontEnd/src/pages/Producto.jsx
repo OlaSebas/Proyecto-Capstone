@@ -11,32 +11,33 @@ export default function Productos() {
   const [hora, setHora] = useState("");
   const [carrito, setCarrito] = useState([]);
   const [expandirCarrito, setExpandirCarrito] = useState(false);
+  const [busqueda, setBusqueda] = useState(""); // <-- Filtro de búsqueda
   const apiUrl = import.meta.env.VITE_API_URL;
 
   const { sidebarOpen, setSidebarOpen } = useOutletContext();
   const navigate = useNavigate();
 
-useEffect(() => {
-  const fetchProductos = async () => {
-    try {
-      const res = await fetch(`${apiUrl}inventario/productos/`, {
-        headers: {
-          Authorization: `Token ${localStorage.getItem("token")}`,
-        },
-      });
+  useEffect(() => {
+    const fetchProductos = async () => {
+      try {
+        const res = await fetch(`${apiUrl}inventario/productos/`, {
+          headers: {
+            Authorization: `Token ${localStorage.getItem("token")}`,
+          },
+        });
 
-      if (!res.ok) throw new Error("Error al obtener productos");
+        if (!res.ok) throw new Error("Error al obtener productos");
 
-      const data = await res.json();
-      setProductos(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("Error cargando productos:", error);
-      setProductos([]);
-    }
-  };
+        const data = await res.json();
+        setProductos(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Error cargando productos:", error);
+        setProductos([]);
+      }
+    };
 
-  fetchProductos();
-}, [apiUrl]);
+    fetchProductos();
+  }, [apiUrl]);
 
   useEffect(() => {
     const actualizarHora = () => {
@@ -88,6 +89,13 @@ useEffect(() => {
 
   const subtotal = carrito.reduce((sum, item) => sum + item.total, 0);
 
+  // Filtro de productos
+  const productosFiltrados = productos.filter((producto) =>
+    (producto.descripcion || producto.nombre || "")
+      .toLowerCase()
+      .includes(busqueda.toLowerCase())
+  );
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
       {/* Header */}
@@ -106,11 +114,25 @@ useEffect(() => {
 
       {/* Grid de productos */}
       <main className="flex-1 p-6 overflow-y-auto flex flex-col items-center">
+        {/* 🔍 Buscador */}
+        <div className="mb-6 w-full max-w-4xl mx-auto px-2">
+          <input
+            type="text"
+            placeholder="Buscar producto..."
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            className="w-full px-4 py-3 text-lg sm:text-xl border border-gray-300 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400  focus:border-blue-400 transition"
+          />
+        </div>
         {productos.length === 0 ? (
           <p className="text-gray-600 text-center">Cargando productos...</p>
+        ) : productosFiltrados.length === 0 ? (
+          <p className="text-gray-500 text-center">
+            No se encontraron productos.
+          </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-6xl w-full">
-            {productos.map((producto) => (
+            {productosFiltrados.map((producto) => (
               <div
                 key={producto.id}
                 onClick={() => setProductoSeleccionado(producto)}
@@ -216,12 +238,19 @@ useEffect(() => {
                         </p>
                         {item.refresco && (
                           <p className="text-gray-500 text-xs">
-                            Bebida: {item.refresco.nombre} (${item.refresco.precio.toLocaleString()})
+                            Bebida: {item.refresco.nombre} ($
+                            {item.refresco.precio.toLocaleString()})
                           </p>
                         )}
                         {item.adicionales?.length > 0 && (
                           <p className="text-gray-500 text-xs">
-                            + {item.adicionales.map((a) => `${a.nombre} ($${a.precio.toLocaleString()})`).join(", ")}
+                            +{" "}
+                            {item.adicionales
+                              .map(
+                                (a) =>
+                                  `${a.nombre} ($${a.precio.toLocaleString()})`
+                              )
+                              .join(", ")}
                           </p>
                         )}
                         {/* Total por producto (cantidad + extras) */}

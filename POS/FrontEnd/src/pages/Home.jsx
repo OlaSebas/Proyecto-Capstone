@@ -77,7 +77,7 @@ export default function Home() {
 
           {/* Opción Proveedores */}
           <Link
-            to="/proveedores"
+            to="/proveedor"
             className="bg-white border rounded-lg flex flex-col items-center justify-center p-8 shadow hover:shadow-lg transition cursor-pointer text-black"
           >
             <UserPlus className="w-16 h-16 mb-4 text-gray-700" />

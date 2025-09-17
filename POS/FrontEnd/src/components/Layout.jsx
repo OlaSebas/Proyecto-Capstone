@@ -1,6 +1,6 @@
 import { Link, Outlet } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Home, ShoppingCart, Package, ClipboardList, UserPlus, LogOut,House } from "lucide-react";
+import { Home, ShoppingCart, Package, ClipboardList, UserPlus, LogOut, HousePlus, PackagePlus, Package2, Hotel} from "lucide-react";
 
 export function Layout() {
   const apiUrl = import.meta.env.VITE_API_URL;
@@ -47,43 +47,35 @@ export function Layout() {
 
         <nav className="flex flex-col gap-3 text-lg flex-1">
           <Link to="/Home"
-            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
-          >
+            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold">
             <Home size={20} /> Inicio
           </Link>
           <Link to="/Venta"
-            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
-          >
+            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold">
             <ShoppingCart size={20} /> Venta
           </Link>
           <Link to="/Producto"
-            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
-          >
+            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold">
             <Package size={20} /> Producto
           </Link>
           <Link to="/Sucursal"
-            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
-          >
-            <House size={20} /> Sucursal
+            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold">
+            <HousePlus size={20} /> Sucursal
           </Link>
           <Link to="/MetodoPago"
-            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
-          >
+            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold">
             <ClipboardList size={20} /> Método de Pago
           </Link>
           <Link to="/AgregarProducto"
-            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
-          >
-            <UserPlus size={20} /> Agregar Producto
+            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold">
+            <PackagePlus size={20} /> Gestionar Producto
           </Link>
           <Link to="/AgregarPromocion"
-            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
-          >
-            <UserPlus size={20} /> Agregar Promoción
+            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold">
+            <Package2 size={20} /> Agregar Promoción
           </Link>
           <Link to="/RegistroUsuario"
-            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
-          >
+            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold">
             <UserPlus size={20} /> Registro Usuario
           </Link>
         </nav>

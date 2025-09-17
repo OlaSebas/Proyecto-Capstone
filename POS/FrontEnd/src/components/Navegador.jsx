@@ -1,6 +1,4 @@
 import { Link } from "react-router-dom";
-import Login from "../pages/login/Login";
-import Venta from "../pages/Venta";
 import { useState, useEffect } from "react";
 
 
@@ -40,7 +38,7 @@ export function Navegador() {
                     <Link to="/InventarioStock"> Inventario Stock </Link>
                 </li>
                 <li>
-                    <Link to="/AgregarProducto"> Agregar Producto </Link>
+                    <Link to="/AgregarProducto"> Gestionar Producto </Link>
                 </li>
                 <li>
                     <Link to="/AgregarPromocion"> Agregar Promoción </Link>

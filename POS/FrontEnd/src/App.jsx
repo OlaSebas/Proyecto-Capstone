@@ -13,6 +13,7 @@ import ViewAdminPR from "./components/ViewAdminPR";
 import RegistroUsuario from "./pages/admin/RegistroUsuario";
 import AgregarProducto from "./pages/AgregarProducto";
 import AgregarPromocion from "./pages/AgregarPromocion";
+import PedidosDelivery from "./pages/PedidosDelivery";
 import './App.css';
 import Sucursal from "./pages/Sucursal";
 import InventarioSuc from "./pages/InventarioSuc";
@@ -47,6 +48,7 @@ function App() {
           <Route path="/MetodoPago" element={<MetodoPago />} />
           <Route path="/AgregarProducto" element={<AgregarProducto />} />
           <Route path="/AgregarPromocion" element={<AgregarPromocion />} />
+          <Route path="/PedidosDelivery" element={<PedidosDelivery />} />
         </Route>
 
         {/* Redirección por defecto */}

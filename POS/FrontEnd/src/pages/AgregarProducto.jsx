@@ -11,7 +11,7 @@ export default function GestionProductos() {
     const [productos, setProductos] = useState([]);
     const [modalEliminar, setModalEliminar] = useState({ abierto: false, productoId: null });
     const [modalEditar, setModalEditar] = useState({ abierto: false, producto: null });
-    const apiUrl = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/";
+    const apiUrl = import.meta.env.VITE_API_URL_INVENTARIO;
 
     const { sidebarOpen, setSidebarOpen } = useOutletContext();
 
@@ -35,7 +35,7 @@ export default function GestionProductos() {
     // Cargar productos desde backend
     const fetchProductos = async () => {
         try {
-            const res = await fetch(`${apiUrl}inventario/productos/`, {
+            const res = await fetch(`${apiUrl}productos/`, {
                 headers: { Authorization: `Token ${localStorage.getItem("token")}` },
             });
             const data = await res.json();
@@ -74,7 +74,7 @@ export default function GestionProductos() {
         formData.append("imagen", imagen);
 
         try {
-            const res = await fetch(`${apiUrl}inventario/productos/`, {
+            const res = await fetch(`${apiUrl}productos/create/`, {
                 method: "POST",
                 headers: { Authorization: `Token ${localStorage.getItem("token")}` },
                 body: formData,

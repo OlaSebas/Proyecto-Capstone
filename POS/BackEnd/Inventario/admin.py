@@ -20,16 +20,18 @@ class InventarioForm(forms.ModelForm):
 
 class InventarioAdmin(admin.ModelAdmin):
     form = InventarioForm
-    list_display = ('stock_actual', 'stock_minimo', 'producto_nombre', 'insumo_nombre', 'sucursal_nombre')
+    list_display = ('nombre_item', 'sucursal_nombre')
 
-    def producto_nombre(self, obj):
-        return obj.producto.descripcion if obj.producto else '-'
-    producto_nombre.short_description = 'Producto'
+    @admin.display(description='Item')
+    def nombre_item(self, obj):
+        # Si es producto muestra su nombre, si es insumo muestra su nombre
+        if obj.producto:
+            return obj.producto.descripcion
+        elif obj.insumo:
+            return obj.insumo.descripcion
+        return '-'
 
-    def insumo_nombre(self, obj):
-        return obj.insumo.descripcion if obj.insumo else '-'
-    insumo_nombre.short_description = 'Insumo'
-
+    
     def sucursal_nombre(self, obj):
         return obj.sucursal.descripcion
     sucursal_nombre.short_description = 'Sucursal'

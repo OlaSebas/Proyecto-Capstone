@@ -12,6 +12,7 @@ export default function InventarioSuc() {
   const { sidebarOpen, setSidebarOpen } = useOutletContext();
   const navigate = useNavigate();
 
+  // Cargar el inventario
   useEffect(() => {
     const fetchInventario = async () => {
       try {
@@ -31,6 +32,7 @@ export default function InventarioSuc() {
     fetchInventario();
   }, [apiUrl, sucursalId]);
 
+  // Actualizar hora
   useEffect(() => {
     const actualizarHora = () => {
       const now = new Date();
@@ -47,10 +49,12 @@ export default function InventarioSuc() {
     return () => clearInterval(intervalo);
   }, []);
 
+  // Navegación atras
   const volver = () => navigate(-1);
 
+  // Recargar inventario
   const recargar = () => {
-    fetch(`${apiUrl}inventario/${sucursalId}/`, {
+    fetch(`${apiUrl}${sucursalId}/`, {
       headers: { Authorization: `Token ${localStorage.getItem("token")}` },
     })
       .then((res) => res.json())
@@ -59,6 +63,15 @@ export default function InventarioSuc() {
   };
 
   const agregar = () => navigate(-1);
+
+  const editar = (id) => {
+    navigate(`/inventario/editar/${id}`);
+  };
+
+  const eliminar = (id) => {
+    // Implementar la lógica de eliminar según tu API
+    console.log("Eliminar", id);
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
@@ -99,13 +112,15 @@ export default function InventarioSuc() {
                 <tr>
                   <th className="px-6 py-4 text-gray-800">Producto/Insumo</th>
                   <th className="px-6 py-4 text-gray-800">Stock actual</th>
+                  <th className="px-6 py-4 text-gray-800">Unidad de medida</th>
+                  <th className="px-6 py-4 text-gray-800">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {inventario.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={3}
+                      colSpan={4}
                       className="px-6 py-4 text-center text-gray-500"
                     >
                       No hay inventario para esta sucursal
@@ -119,10 +134,29 @@ export default function InventarioSuc() {
                     >
                       <td className="px-6 py-4">
                         {item.producto
-                          ? item.producto_descripcion
-                          : item.insumo_descripcion}
+                          ? item.producto.descripcion
+                          : item.insumo.descripcion}
                       </td>
                       <td className="px-6 py-4">{item.stock_actual}</td>
+                      <td className="px-6 py-4">
+                        {item.producto
+                          ? item.producto.unidad_medida
+                          : item.insumo.unidad_medida}
+                      </td>
+                      <td className="px-6 py-4">
+                        <button
+                          onClick={() => editar(item.id)}
+                          className="text-blue-500 hover:underline"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => eliminar(item.id)}
+                          className="text-red-500 hover:underline ml-4"
+                        >
+                          Eliminar
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -143,7 +177,7 @@ export default function InventarioSuc() {
             onClick={agregar}
             className="px-6 py-2 bg-black text-white rounded hover:bg-gray-800"
           >
-            Agregar
+            Ingresar
           </button>
         </div>
       </main>

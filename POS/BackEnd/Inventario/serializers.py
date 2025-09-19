@@ -2,29 +2,6 @@ from rest_framework import serializers
 from .models import Region, Ciudad, Comuna, Sucursal, Insumo, Producto, Inventario,Promocion, PromocionProducto
 from django.conf import settings
 
-class InventarioSerializer(serializers.ModelSerializer):
-    producto_descripcion = serializers.CharField(source='producto.descripcion', read_only=True)
-    insumo_descripcion = serializers.CharField(source='insumo.descripcion', read_only=True)
-    sucursal_nombre = serializers.CharField(source='sucursal.descripcion', read_only=True)
-    
-    class Meta:
-        model = Inventario
-        fields = [
-            'id', 'stock_actual', 'stock_minimo',
-            'producto', 'producto_descripcion',
-            'insumo', 'insumo_descripcion',
-            'sucursal', 'sucursal_nombre'
-        ]
-
-    def validate(self, data):
-        producto = data.get('producto')
-        insumo = data.get('insumo')
-
-        if (producto and insumo) or (not producto and not insumo):
-            raise serializers.ValidationError(
-                "Debe seleccionar exactamente un producto o un insumo, no ambos ni ninguno."
-            ) 
-        return data
 
 class ProductoSerializer(serializers.ModelSerializer):
     imagen = serializers.SerializerMethodField()
@@ -39,7 +16,40 @@ class ProductoSerializer(serializers.ModelSerializer):
             return f"{settings.SITE_DOMAIN}{obj.imagen.url}"
         return None
     
+class InsumoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Insumo
+        fields = "__all__"
+
+class InventarioSerializer(serializers.ModelSerializer):
+    producto = ProductoSerializer(read_only=True)
+    insumo = InsumoSerializer(read_only=True)
+    producto_descripcion = serializers.CharField(source='producto.descripcion', read_only=True)
+    insumo_descripcion = serializers.CharField(source='insumo.descripcion', read_only=True)
+    sucursal_nombre = serializers.CharField(source='sucursal.descripcion', read_only=True)
+    
+    class Meta:
+        model = Inventario
+        fields = [
+            'id', 'stock_actual',
+            'producto', 'producto_descripcion',
+            'insumo', 'insumo_descripcion',
+            'sucursal', 'sucursal_nombre'
+        ]
+
+    def validate(self, data):
+        producto = data.get('producto')
+        insumo = data.get('insumo')
+
+        if (producto and insumo) or (not producto and not insumo):
+            raise serializers.ValidationError(
+                "Debe seleccionar exactamente un producto o un insumo, no ambos ni ninguno."
+            ) 
+        return data
+    
 class SucursalSerializer(serializers.ModelSerializer):
+
+
     Comuna = serializers.CharField(source='comuna.descripcion', read_only=True)
 
     class Meta:
@@ -57,7 +67,7 @@ class PromocionProductoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PromocionProducto
-        fields = ["id", "producto", "producto_descripcion", "cantidad"]
+        fields = ["id",'promocion', "producto", "producto_descripcion", "cantidad"]
 
 
 class PromocionSerializer(serializers.ModelSerializer):

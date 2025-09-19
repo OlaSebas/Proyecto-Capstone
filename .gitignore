@@ -3,3 +3,11 @@ __pycache__/
 *.pyo
 *.pyd
 POS/BackEnd/Danny_Pollos_POS/__pycache__/__init__.cpython-311.pyc
+*.pyc
+/POS/BackEnd/Danny_Pollos_POS/__pycache__
+/POS/BackEnd/Danny_Pollos_POS/__pycache__
+POS/BackEnd/Danny_Pollos_POS/__pycache__/__init__.cpython-311.pyc
+*.pyc
+*.pyc
+*.pyc
+/POS/venv

@@ -20,6 +20,7 @@ import Sucursal from "./pages/Sucursal";
 import InventarioSuc from "./pages/InventarioSuc";
 import SucursalForm from "./pages/formularios/SucursalForm";
 import SucursalEdit from "./pages/editor/SucursalEdit";
+import { View } from "lucide-react";
 
 
 function App() {
@@ -42,13 +43,13 @@ function App() {
           <Route path="/InventarioStock" element={<InventarioStock />} />
           <Route path="/RegistroUsuario" element={<ViewAdminPR><RegistroUsuario /></ViewAdminPR>} />
           <Route path="/carrito" element={<Carrito />} />
-          <Route path= "/Sucursal" element={<Sucursal />} />
+          <Route path= "/Sucursal" element={<ViewAdminPR><Sucursal /></ViewAdminPR>} />
           <Route path="/inventarioSuc/:sucursalId" element={<InventarioSuc />} />
-          <Route path="/sucursalForm" element={<SucursalForm />} />
-          <Route path="/sucursalEdit/:id" element={<SucursalEdit />} />
+          <Route path="/sucursalForm" element={<ViewAdminPR><SucursalForm /></ViewAdminPR>} />
+          <Route path="/sucursalEdit/:id" element={<ViewAdminPR><SucursalEdit /></ViewAdminPR>} />
           <Route path="/MetodoPago" element={<MetodoPago />} />
-          <Route path="/AgregarProducto" element={<AgregarProducto />} />
-          <Route path="/AgregarPromocion" element={<AgregarPromocion />} />
+          <Route path="/AgregarProducto" element={<ViewAdminPR><AgregarProducto /></ViewAdminPR>} />
+          <Route path="/AgregarPromocion" element={<ViewAdminPR><AgregarPromocion /></ViewAdminPR>} />
           <Route path="/PedidosDelivery" element={<PedidosDelivery />} />
           <Route path="/proveedor" element={<Proveedores />} />
         </Route>

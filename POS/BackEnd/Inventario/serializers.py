@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Region, Ciudad, Comuna, Sucursal, Insumo, Producto, Inventario,Promocion, PromocionProducto
+from .models import Region, Ciudad, Comuna, Sucursal, Insumo,Categoria, Producto, Inventario,Promocion, PromocionProducto
 from django.conf import settings
 
 
@@ -77,3 +77,8 @@ class PromocionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Promocion
         fields = ["id", "descripcion", "precio", "imagen", "fecha_inicio", "fecha_fin", "productos"]
+
+class CategoriaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Categoria
+        fields = "__all__"

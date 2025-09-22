@@ -138,13 +138,13 @@ export default function AgregarPromocion() {
 
                 if (!resProd.ok) {
                     console.error(
-                        `⚠️ Error creando producto en promoción:`,
+                        `😡 Error creando producto en promoción:`,
                         await resProd.text()
                     );
                 }
             }
 
-            alert("🎉 Promoción y productos agregados con éxito");
+            alert("😭 Promoción y productos agregados con éxito");
 
             // Resetear formulario
             setDescripcion("");

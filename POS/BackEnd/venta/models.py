@@ -41,7 +41,7 @@ class customUser(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ['email', 'first_name', 'last_name','password']
 
     def __str__(self):
-        return self.email
+        return self.username
 
     def has_perm(self, perm, obj=None):
         return self.is_superuser
@@ -74,6 +74,7 @@ class MetodoPago(models.Model):
 class Caja(models.Model):
     nombre = models.CharField(max_length=100)
     sucursal = models.ForeignKey(Sucursal, on_delete=models.CASCADE)
+    vendedor = models.ForeignKey(customUser,blank=True, null=True, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.nombre

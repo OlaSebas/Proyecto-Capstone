@@ -29,16 +29,24 @@ class Sucursal(models.Model):
     def __str__(self):
         return self.descripcion
 
+class Categoria(models.Model):
+    descripcion = models.CharField(max_length=50, null=False)
+
+    def __str__(self):
+        return self.descripcion
+
 class Producto(models.Model):
     descripcion = models.CharField(max_length=100, null=False)
     precio = models.IntegerField(null=False)
     imagen = models.ImageField(upload_to="products/", null=True, blank=True)
+    categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE, null=True, blank=True)
     stock_minimo = models.IntegerField(null=False, default=0)
     unidad_medida = models.CharField(max_length=20, null=True, blank=True)
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.descripcion
+    
 
 class Insumo(models.Model):
     descripcion = models.CharField(max_length=100, null=False)

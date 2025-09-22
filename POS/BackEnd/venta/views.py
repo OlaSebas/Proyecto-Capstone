@@ -2,7 +2,7 @@ from django.shortcuts import render
 from .serializers import customUserSerializer, CajaSerializer, SesionCajaSerializer, VentaSerializer, ClienteSerializer
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import customUser, SesionCaja, Caja, Venta, Cliente, DetalleVenta
+from .models import customUser, SesionCaja, Caja, Venta, Cliente, DetalleVenta, SesionCaja
 from rest_framework.authtoken.models import Token
 from rest_framework import status
 from django.shortcuts import get_object_or_404
@@ -89,3 +89,14 @@ def sesiones_detail(request, pk):
     elif request.method == 'DELETE':
         sesion.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def cargarSesionActiva(request):
+    try:
+        active_sesion = SesionCaja.objects.filter(is_active=True).exists()
+        return Response({"sesion_activa": active_sesion}, status=status.HTTP_200_OK)
+    except SesionCaja.DoesNotExist:
+        return Response({"error": "No se encontró."}, status=status.HTTP_404_NOT_FOUND)
+

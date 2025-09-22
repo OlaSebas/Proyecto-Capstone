@@ -6,28 +6,29 @@ import { Pencil, Trash2 } from "lucide-react";
 
 export default function Productos() {
   const [productos, setProductos] = useState([]);
+  const [promociones, setPromociones] = useState([]);
+  const [categorias, setCategorias] = useState([]);
   const [productoSeleccionado, setProductoSeleccionado] = useState(null);
   const [productoEditar, setProductoEditar] = useState(null);
   const [hora, setHora] = useState("");
   const [carrito, setCarrito] = useState([]);
   const [expandirCarrito, setExpandirCarrito] = useState(false);
-  const [busqueda, setBusqueda] = useState(""); // <-- Filtro de búsqueda
-  const apiUrl = import.meta.env.VITE_API_URL;
+  const [busqueda, setBusqueda] = useState("");
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
+  const [mostrarPromociones, setMostrarPromociones] = useState(false);
 
   const { sidebarOpen, setSidebarOpen } = useOutletContext();
   const navigate = useNavigate();
+  const apiUrl = import.meta.env.VITE_API_URL;
 
+  // Fetch productos
   useEffect(() => {
     const fetchProductos = async () => {
       try {
         const res = await fetch(`${apiUrl}inventario/productos/`, {
-          headers: {
-            Authorization: `Token ${localStorage.getItem("token")}`,
-          },
+          headers: { Authorization: `Token ${localStorage.getItem("token")}` },
         });
-
         if (!res.ok) throw new Error("Error al obtener productos");
-
         const data = await res.json();
         setProductos(Array.isArray(data) ? data : []);
       } catch (error) {
@@ -35,10 +36,46 @@ export default function Productos() {
         setProductos([]);
       }
     };
-
     fetchProductos();
   }, [apiUrl]);
 
+  // Fetch promociones
+  useEffect(() => {
+    const fetchPromociones = async () => {
+      try {
+        const res = await fetch(`${apiUrl}inventario/promociones/`, {
+          headers: { Authorization: `Token ${localStorage.getItem("token")}` },
+        });
+        if (!res.ok) throw new Error("Error al obtener promociones");
+        const data = await res.json();
+        setPromociones(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Error cargando promociones:", error);
+        setPromociones([]);
+      }
+    };
+    fetchPromociones();
+  }, [apiUrl]);
+
+  // Fetch categorías
+  useEffect(() => {
+    const fetchCategorias = async () => {
+      try {
+        const res = await fetch(`${apiUrl}inventario/categorias/`, {
+          headers: { Authorization: `Token ${localStorage.getItem("token")}` },
+        });
+        if (!res.ok) throw new Error("Error al obtener categorías");
+        const data = await res.json();
+        setCategorias(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Error cargando categorías:", error);
+        setCategorias([]);
+      }
+    };
+    fetchCategorias();
+  }, [apiUrl]);
+
+  // Reloj en vivo
   useEffect(() => {
     const actualizarHora = () => {
       const now = new Date();
@@ -55,6 +92,7 @@ export default function Productos() {
     return () => clearInterval(intervalo);
   }, []);
 
+  // Cargar carrito de localStorage
   useEffect(() => {
     const carritoGuardado = localStorage.getItem("carrito");
     if (carritoGuardado) setCarrito(JSON.parse(carritoGuardado));
@@ -87,11 +125,21 @@ export default function Productos() {
     setProductoEditar(null);
   };
 
-  const subtotal = carrito.reduce((sum, item) => sum + item.total, 0);
+  const subtotal = carrito.reduce((sum, item) => sum + (item.total || 0), 0);
 
-  // Filtro de productos
-  const productosFiltrados = productos.filter((producto) =>
-    (producto.descripcion || producto.nombre || "")
+  // Filtrar productos según búsqueda y categoría
+  const productosFiltrados = productos.filter((producto) => {
+    if (mostrarPromociones) return false;
+    if (categoriaSeleccionada && producto.categoria !== categoriaSeleccionada)
+      return false;
+    return (producto.descripcion || producto.nombre || "")
+      .toLowerCase()
+      .includes(busqueda.toLowerCase());
+  });
+
+  // Filtrar promociones según búsqueda
+  const promocionesFiltradas = promociones.filter((promo) =>
+    (promo.descripcion || promo.nombre || "")
       .toLowerCase()
       .includes(busqueda.toLowerCase())
   );
@@ -112,9 +160,41 @@ export default function Productos() {
         <span className="text-gray-600 font-medium">{hora}</span>
       </header>
 
-      {/* Grid de productos */}
       <main className="flex-1 p-6 overflow-y-auto flex flex-col items-center">
-        {/* 🔍 Buscador */}
+        {/* Botones de categorías y promociones */}
+        <div className="flex gap-2 mb-4">
+          {categorias.slice(0, 3).map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => {
+                setCategoriaSeleccionada(cat.id);
+                setMostrarPromociones(false);
+              }}
+              className={`px-4 py-2 rounded-full border ${
+                categoriaSeleccionada === cat.id
+                  ? "bg-red-600 text-white"
+                  : "bg-white hover:bg-gray-100"
+              }`}
+            >
+              {cat.descripcion}
+            </button>
+          ))}
+          <button
+            onClick={() => {
+              setCategoriaSeleccionada(null);
+              setMostrarPromociones(true);
+            }}
+            className={`px-4 py-2 rounded-full border ${
+              mostrarPromociones
+                ? "bg-red-600 text-white"
+                : "bg-white hover:bg-gray-100"
+            }`}
+          >
+            Promociones
+          </button>
+        </div>
+
+        {/* Buscador */}
         <div className="mb-6 w-full max-w-4xl mx-auto px-2">
           <input
             type="text"
@@ -124,34 +204,63 @@ export default function Productos() {
             className="w-full px-4 py-3 text-lg sm:text-xl border border-gray-300 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400  focus:border-blue-400 transition"
           />
         </div>
-        {productos.length === 0 ? (
-          <p className="text-gray-600 text-center">Cargando productos...</p>
-        ) : productosFiltrados.length === 0 ? (
-          <p className="text-gray-500 text-center">
-            No se encontraron productos.
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-6xl w-full">
-            {productosFiltrados.map((producto) => (
-              <div
-                key={producto.id}
-                onClick={() => setProductoSeleccionado(producto)}
-                className="bg-white border rounded-lg flex flex-col items-center justify-between p-4 shadow hover:shadow-lg transition cursor-pointer h-64"
-              >
-                <img
-                  src={producto.imagen}
-                  alt={producto.nombre}
-                  className="w-full h-32 object-contain mb-2"
-                />
-                <p className="font-medium text-gray-700 text-center">
-                  {producto.descripcion || producto.nombre}
-                </p>
-                <p className="text-red-600 font-bold">
-                  ${producto.precio || "0"}
-                </p>
+
+        {/* Productos */}
+        {!mostrarPromociones && (
+          <>
+            {productosFiltrados.length === 0 ? (
+              <p className="text-gray-500 text-center">No se encontraron productos.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-6xl w-full">
+                {productosFiltrados.map((producto) => (
+                  <div
+                    key={producto.id}
+                    onClick={() => setProductoSeleccionado(producto)}
+                    className="bg-white border rounded-lg flex flex-col items-center justify-between p-4 shadow hover:shadow-lg transition cursor-pointer h-64"
+                  >
+                    <img
+                      src={producto.imagen}
+                      alt={producto.nombre}
+                      className="w-full h-32 object-contain mb-2"
+                    />
+                    <p className="font-medium text-gray-700 text-center">
+                      {producto.descripcion || producto.nombre}
+                    </p>
+                    <p className="text-red-600 font-bold">${producto.precio || "0"}</p>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            )}
+          </>
+        )}
+
+        {/* Promociones */}
+        {mostrarPromociones && (
+          <>
+            {promocionesFiltradas.length === 0 ? (
+              <p className="text-gray-500 text-center">No se encontraron promociones.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-6xl w-full">
+                {promocionesFiltradas.map((promo) => (
+                  <div
+                    key={promo.id}
+                    onClick={() => setProductoSeleccionado(promo)}
+                    className="bg-white border rounded-lg flex flex-col items-center justify-between p-4 shadow hover:shadow-lg transition cursor-pointer h-64"
+                  >
+                    <img
+                      src={promo.imagen}
+                      alt={promo.nombre}
+                      className="w-full h-32 object-contain mb-2"
+                    />
+                    <p className="font-medium text-gray-700 text-center">
+                      {promo.descripcion || promo.nombre}
+                    </p>
+                    <p className="text-red-600 font-bold">${promo.precio || "0"}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
 
         <div className="mt-8 w-full flex justify-center">
@@ -164,7 +273,7 @@ export default function Productos() {
         </div>
       </main>
 
-      {/* Modal PreCarrito agregar */}
+      {/* Modal PreCarrito */}
       {productoSeleccionado && (
         <PreCarrito
           producto={productoSeleccionado}
@@ -173,7 +282,6 @@ export default function Productos() {
         />
       )}
 
-      {/* Modal PreCarrito editar */}
       {productoEditar && (
         <PreCarrito
           producto={productoEditar.producto}
@@ -226,16 +334,13 @@ export default function Productos() {
                         className="w-14 h-14 object-cover rounded"
                       />
                       <div className="flex-1 text-sm">
-                        {/* Precio base en rojo */}
                         <p className="font-medium flex justify-between">
                           {item.producto.nombre || item.producto.descripcion}
                           <span className="text-red-600 font-bold">
                             ${item.producto.precio.toLocaleString()}
                           </span>
                         </p>
-                        <p className="text-gray-500">
-                          Cantidad: {item.cantidad}
-                        </p>
+                        <p className="text-gray-500">Cantidad: {item.cantidad}</p>
                         {item.refresco && (
                           <p className="text-gray-500 text-xs">
                             Bebida: {item.refresco.nombre} ($
@@ -253,7 +358,6 @@ export default function Productos() {
                               .join(", ")}
                           </p>
                         )}
-                        {/* Total por producto (cantidad + extras) */}
                         <p className="text-gray-800 font-semibold text-sm mt-1">
                           Total: ${item.total.toLocaleString()}
                         </p>

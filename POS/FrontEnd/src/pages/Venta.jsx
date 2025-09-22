@@ -1,21 +1,40 @@
 import { useEffect, useState } from "react";
 import { Plus, List, Clock } from "lucide-react";
-import { useOutletContext } from "react-router-dom";
-import { Link } from "react-router-dom";
+import { useOutletContext, Link } from "react-router-dom";
 
 export default function Ventas() {
   const [acciones, setAcciones] = useState([]);
   const [hora, setHora] = useState("");
+  const [cajaAbierta, setCajaAbierta] = useState(false);
   const apiUrl = import.meta.env.VITE_API_URL;
 
   // Recibir estado del sidebar desde Layout
   const { sidebarOpen, setSidebarOpen } = useOutletContext();
 
+  // Consultar acciones
   useEffect(() => {
     fetch(`${apiUrl}api/ventas/`)
       .then((res) => res.json())
       .then((data) => setAcciones(data.acciones || []))
       .catch((err) => console.error(err));
+  }, [apiUrl]);
+
+  // Consultar si hay sesión de caja activa
+  useEffect(() => {
+    fetch(`${apiUrl}api/sesion_activa/`, {
+      headers: {
+        "Authorization": `Token ${localStorage.getItem("token")}`,
+      }
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        // Si devuelve sesiones, significa que hay al menos una activa
+        setCajaAbierta(data.sesion_activa === true || (data.length && data.length > 0));
+      })
+      .catch((err) => {
+        console.error("Error cargando sesión activa:", err);
+        setCajaAbierta(false);
+      });
   }, [apiUrl]);
 
   // Actualizar hora
@@ -40,7 +59,6 @@ export default function Ventas() {
     <div className="flex flex-col min-h-screen bg-gray-100">
       {/* Header */}
       <header className="flex justify-between items-center bg-white shadow px-6 py-4">
-        {/* Botón ☰ */}
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
           className="px-3 py-2 bg-gray-200 rounded hover:bg-gray-300"
@@ -48,12 +66,10 @@ export default function Ventas() {
           ☰
         </button>
 
-        {/* Título centrado */}
         <h2 className="text-3xl font-bold text-gray-800 flex-1 text-center">
           Ventas
         </h2>
 
-        {/* Hora */}
         <span className="text-gray-600 font-medium">{hora}</span>
       </header>
 
@@ -79,13 +95,15 @@ export default function Ventas() {
               <p className="font-medium">Pedido delivery</p>
             </Link>
 
-            {/* Cerrar caja */}
+            {/* Abrir/Cerrar caja */}
             <Link
-              to="/cerrar-caja"
+              to={cajaAbierta ? "/cerrar-caja" : "/abrir-caja"}
               className="bg-white border rounded-lg flex flex-col items-center justify-center p-8 shadow hover:shadow-lg transition cursor-pointer text-black"
             >
               <Clock className="w-16 h-16 mb-4 text-gray-700" />
-              <p className="font-medium">Cerrar caja</p>
+              <p className="font-medium">
+                {cajaAbierta ? "Cerrar caja" : "Abrir caja"}
+              </p>
             </Link>
           </div>
         </div>
@@ -103,3 +121,4 @@ export default function Ventas() {
     </div>
   );
 }
+

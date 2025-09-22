@@ -99,7 +99,7 @@ export default function GestionProductos() {
     const confirmarEliminar = async () => {
         const id = modalEliminar.productoId;
         try {
-            const res = await fetch(`${apiUrl}inventario/productos/${id}/`, {
+            const res = await fetch(`${apiUrl}productos/${id}/`, {
                 method: "DELETE",
                 headers: { Authorization: `Token ${localStorage.getItem("token")}` },
             });
@@ -136,7 +136,7 @@ export default function GestionProductos() {
         if (imagen) formData.append("imagen", imagen);
 
         try {
-            const res = await fetch(`${apiUrl}inventario/productos/${producto.id}/`, {
+            const res = await fetch(`${apiUrl}productos/${producto.id}/`, {
                 method: "PATCH",
                 headers: { Authorization: `Token ${localStorage.getItem("token")}` },
                 body: formData,

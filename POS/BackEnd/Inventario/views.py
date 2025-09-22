@@ -3,8 +3,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.response import Response
 from rest_framework import status, viewsets
-from .models import Inventario, Producto, Sucursal, Comuna, Promocion, PromocionProducto,Insumo
-from .serializers import InventarioSerializer, ProductoSerializer, SucursalSerializer, ComunaSerializer, PromocionSerializer, PromocionProductoSerializer,InsumoSerializer
+from .models import Inventario, Producto, Sucursal, Comuna, Promocion, PromocionProducto,Insumo,Categoria
+from .serializers import CategoriaSerializer,InventarioSerializer, ProductoSerializer, SucursalSerializer, ComunaSerializer, PromocionSerializer, PromocionProductoSerializer,InsumoSerializer
 
 
 
@@ -327,3 +327,11 @@ def insumo_delete(request, insumo_id):
 
     insumo.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def categoria_list(request):
+    categorias = Categoria.objects.all()
+    serializer = CategoriaSerializer(categorias, many=True, context={"request": request})
+    return Response(serializer.data, status=status.HTTP_200_OK)

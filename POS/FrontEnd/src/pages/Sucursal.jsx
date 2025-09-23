@@ -133,15 +133,6 @@ export default function Sucursales() {
 
         {/* Botones alineados */}
         <div className="mt-8 w-full max-w-6xl flex justify-between">
-          {/* Volver a la izquierda */}
-          <button
-            onClick={() => window.history.back()}
-            className="px-6 py-2 bg-black text-white rounded hover:bg-gray-800"
-          >
-            Volver
-          </button>
-
-          {/* Agregar a la derecha */}
           <button
             onClick={() => navigate("/SucursalForm")}
             className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-500"

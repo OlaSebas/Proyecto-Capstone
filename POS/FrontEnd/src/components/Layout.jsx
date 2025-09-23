@@ -50,29 +50,17 @@ export function Layout() {
             className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold">
             <Home size={20} /> Inicio
           </Link>
-          <Link to="/Venta"
-            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold">
-            <ShoppingCart size={20} /> Venta
-          </Link>
-          <Link to="/Producto"
-            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold">
-            <Package size={20} /> Producto
-          </Link>
           <Link to="/Sucursal"
             className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold">
             <HousePlus size={20} /> Sucursal
           </Link>
-          <Link to="/MetodoPago"
-            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold">
-            <ClipboardList size={20} /> Método de Pago
-          </Link>
           <Link to="/AgregarProducto"
             className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold">
-            <PackagePlus size={20} /> Gestionar Producto
+            <PackagePlus size={20} /> Gestion Producto
           </Link>
           <Link to="/AgregarPromocion"
             className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold">
-            <Package2 size={20} /> Agregar Promoción
+            <Package2 size={20} /> Gestion Promoción
           </Link>
           <Link to="/RegistroUsuario"
             className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold">

@@ -31,7 +31,7 @@ export default function Login() {
 
       console.log("Usuario logeado:", data.User);
       alert(`Bienvenido ${data.User.username}`);
-      window.location.href = "/Venta";
+      window.location.href = "/home";
     } catch (err) {
       setError(err.message);
     } finally {
@@ -55,10 +55,10 @@ export default function Login() {
 
         {/* Título */}
         <h2 className="text-2xl sm:text-3xl font-bold text-center text-orange-600 mb-2">
-          Danny Pollos
+          Bienvenido al sistema POS
         </h2>
         <p className="text-center text-gray-600 mb-8 text-sm sm:text-base">
-          Bienvenido al sistema POS
+          Ingresa tus credenciales
         </p>
 
         {/* Formulario */}

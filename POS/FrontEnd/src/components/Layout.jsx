@@ -7,6 +7,7 @@ export function Layout() {
   const [nombre, setNombre] = useState("");
   const [usuario, setUsuario] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const is_staff = localStorage.getItem("is_staff");
 
   useEffect(() => {
     const fetchNombre = async () => {
@@ -50,6 +51,9 @@ export function Layout() {
             className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold">
             <Home size={20} /> Inicio
           </Link>
+
+          {is_staff && (
+          <>
           <Link to="/Sucursal"
             className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold">
             <HousePlus size={20} /> Sucursal
@@ -66,6 +70,8 @@ export function Layout() {
             className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold">
             <UserPlus size={20} /> Registro Usuario
           </Link>
+          </>
+          )}
         </nav>
 
         <div className="mt-auto">

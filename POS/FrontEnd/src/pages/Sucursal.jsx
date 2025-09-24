@@ -1,18 +1,13 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import { Pencil, Trash2 } from "lucide-react";
 import { useOutletContext, useNavigate } from "react-router-dom";
-import { Pencil, Trash2Icon } from "lucide-react";
 
 export default function Sucursales() {
+  const { sidebarOpen, setSidebarOpen } = useOutletContext();
   const [sucursales, setSucursales] = useState([]);
   const [hora, setHora] = useState("");
   const apiUrl = import.meta.env.VITE_API_URL_INVENTARIO;
   const navigate = useNavigate();
-
-  const handleClickSucursal = (sucursalId) => {
-    navigate(`/inventarioSuc/${sucursalId}`);
-  };
-
-  const { sidebarOpen, setSidebarOpen } = useOutletContext();
 
   useEffect(() => {
     fetch(`${apiUrl}sucursales/`, {
@@ -28,13 +23,12 @@ export default function Sucursales() {
   useEffect(() => {
     const actualizarHora = () => {
       const now = new Date();
-      setHora(
-        now.toLocaleTimeString("es-CL", {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-        })
-      );
+      const time = now.toLocaleTimeString("es-CL", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
+      setHora(time);
     };
     actualizarHora();
     const intervalo = setInterval(actualizarHora, 1000);
@@ -43,61 +37,80 @@ export default function Sucursales() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
-      {/* Header */}
+      {/* Header con título centrado y hora */}
       <header className="flex justify-between items-center bg-white shadow px-6 py-4">
+        {/* Botón ☰ */}
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
           className="px-3 py-2 bg-gray-200 rounded hover:bg-gray-300"
         >
           ☰
         </button>
+
+        {/* Título */}
         <h2 className="text-3xl font-bold text-gray-800 flex-1 text-center">
           Sucursales
         </h2>
+
+        {/* Hora */}
         <span className="text-gray-600 font-medium">{hora}</span>
       </header>
 
-      {/* Lista de sucursales */}
+      {/* Subtítulo */}
+      <div className="flex justify-center mt-6 px-4">
+        <p className="text-gray-700 text-lg text-center max-w-2xl">
+          Administre las sucursales disponibles en el sistema
+        </p>
+      </div>
+
+      {/* Cards de sucursales */}
       <main className="flex-1 p-6 overflow-y-auto flex flex-col items-center">
         {sucursales.length === 0 ? (
           <p className="text-gray-600 text-center">Cargando sucursales...</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-6xl w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-4xl w-full">
             {sucursales.map((sucursal) => (
               <div
                 key={sucursal.id}
-                className="bg-white border rounded-lg flex flex-col justify-between p-4 shadow hover:shadow-lg transition h-40"
+                onClick={() => navigate(`/inventarioSuc/${sucursal.id}`)}
+                className={`bg-white border rounded-lg flex flex-col items-center justify-between shadow hover:shadow-lg transition cursor-pointer text-center ${
+                  sidebarOpen ? "p-6" : "p-8"
+                }`}
               >
-                {/* Sección de info: al hacer click abre inventario */}
-                <div
-                  onClick={() => handleClickSucursal(sucursal.id)}
-                  className="flex flex-col items-center justify-center flex-1 cursor-pointer"
+                <p
+                  className={`font-semibold text-gray-800 mb-2 transition-all ${
+                    sidebarOpen ? "text-base" : "text-lg"
+                  }`}
                 >
-                  <p className="font-medium text-gray-700 text-center">
-                    {sucursal.descripcion}
-                  </p>
-                  <p className="text-gray-500 text-sm">
-                    Comuna: {sucursal.Comuna}
-                  </p>
-                </div>
+                  {sucursal.descripcion}
+                </p>
+                <p
+                  className={`text-gray-500 mb-4 transition-all ${
+                    sidebarOpen ? "text-xs" : "text-sm"
+                  }`}
+                >
+                  Comuna: {sucursal.Comuna}
+                </p>
 
-                {/* Botón editar abajo */}
-                <div className="mt-3 flex justify-center gap-2">
-                  {/* Botón Editar */}
+                {/* Botones */}
+                <div className="flex gap-2 w-full justify-center mt-auto">
                   <button
                     onClick={(e) => {
-                      e.stopPropagation(); // evita que dispare el click de la tarjeta
+                      e.stopPropagation();
                       navigate(`/sucursalEdit/${sucursal.id}`);
                     }}
-                    className="px-4 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-400 transition flex items-center"
+                    className={`flex-1 max-w-[100px] text-white rounded-lg hover:bg-blue-600 transition flex items-center justify-center ${
+                      sidebarOpen
+                        ? "px-2 py-1 text-xs bg-gray-800 text-white rounded hover:bg-gray-900"
+                        : "px-3 py-2 text-sm bg-gray-800 text-white rounded hover:bg-gray-900"
+                    }`}
                   >
-                    <Pencil className="inline mr-1" /> Editar
+                    <Pencil size={sidebarOpen ? 14 : 16} /> Editar
                   </button>
 
-                  {/* Botón Eliminar */}
                   <button
                     onClick={(e) => {
-                      e.stopPropagation(); // evita que dispare el click de la tarjeta
+                      e.stopPropagation();
                       if (
                         confirm(
                           `¿Seguro que quieres eliminar la sucursal ${sucursal.descripcion}?`
@@ -121,9 +134,13 @@ export default function Sucursales() {
                           .catch((err) => alert(err.message));
                       }
                     }}
-                    className="px-4 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-400 transition flex items-center"
+                    className={`flex-1 max-w-[100px] text-white rounded-lg hover:bg-red-600 transition flex items-center justify-center ${
+                      sidebarOpen
+                        ? "px-2 py-1 text-xs bg-red-500"
+                        : "px-3 py-2 text-sm bg-red-500"
+                    }`}
                   >
-                    <Trash2Icon className="inline mr-1" /> Eliminar
+                    <Trash2 size={sidebarOpen ? 14 : 16} /> Eliminar
                   </button>
                 </div>
               </div>
@@ -131,11 +148,15 @@ export default function Sucursales() {
           </div>
         )}
 
-        {/* Botones alineados */}
-        <div className="mt-8 w-full max-w-6xl flex justify-between">
+        {/* Botón agregar */}
+        <div className="mt-8 w-full max-w-4xl flex justify-end">
           <button
             onClick={() => navigate("/SucursalForm")}
-            className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-500"
+            className={`text-white rounded-lg hover:bg-gray-800 transition ${
+              sidebarOpen
+                ? "px-4 py-2 text-sm bg-gray-900"
+                : "px-6 py-2 bg-gray-900"
+            }`}
           >
             Agregar
           </button>

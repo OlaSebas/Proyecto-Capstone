@@ -112,11 +112,11 @@ def producto_update(request, producto_id):
 def producto_delete(request, producto_id):
     try:
         producto = Producto.objects.get(id=producto_id)
+        producto.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     except Producto.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
-
-    producto.delete()
-    return Response(status=status.HTTP_204_NO_CONTENT)
 
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])

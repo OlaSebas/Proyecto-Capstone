@@ -99,7 +99,7 @@ export default function GestionProductos() {
     const confirmarEliminar = async () => {
         const id = modalEliminar.productoId;
         try {
-            const res = await fetch(`${apiUrl}productos/${id}/`, {
+            const res = await fetch(`${apiUrl}productos/delete/${id}/`, {
                 method: "DELETE",
                 headers: { Authorization: `Token ${localStorage.getItem("token")}` },
             });

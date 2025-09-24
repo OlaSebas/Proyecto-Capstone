@@ -77,7 +77,7 @@ export default function InventarioStock() {
             <button
               onClick={() => setTab("productos")}
               className={`px-4 py-2 rounded-lg font-semibold transition-all ${tab === "productos"
-                ? "bg-green-500 text-white"
+                ? "bg-red-700 text-white"
                 : "bg-white text-gray-800 border border-gray-300 hover:bg-gray-100"
                 }`}
             >
@@ -86,7 +86,7 @@ export default function InventarioStock() {
             <button
               onClick={() => setTab("insumos")}
               className={`px-4 py-2 rounded-lg font-semibold transition-all ${tab === "insumos"
-                ? "bg-blue-500 text-white"
+                ? "bg-red-700 text-white"
                 : "bg-white text-gray-800 border border-gray-300 hover:bg-gray-100"
                 }`}
             >
@@ -115,7 +115,7 @@ export default function InventarioStock() {
                 transition={{ duration: 0.3 }}
                 className="w-full max-w-full md:max-w-6xl bg-white shadow-xl rounded-lg overflow-auto border border-gray-200"
               >
-                <h3 className="text-xl font-bold bg-green-200 text-gray-900 px-4 md:px-6 py-3">
+                <h3 className="text-xl font-bold bg-gray-400 text-gray-900 px-4 md:px-6 py-3">
                   Productos
                 </h3>
                 <div className="overflow-x-auto">
@@ -134,7 +134,7 @@ export default function InventarioStock() {
                             key={item.id}
                             className={i % 2 === 0 ? "bg-white/90" : "bg-gray-100/90"}
                           >
-                            <td className="px-4 py-2">{item.producto_descripcion}</td>
+                            <td className="px-4 py-2">{item.item_descripcion}{item.insumo_descripcion}</td>
                             <td className="px-4 py-2">{item.stock_actual}</td>
                             <td className="px-4 py-2">{item.sucursal_nombre}</td>
                           </tr>
@@ -161,7 +161,7 @@ export default function InventarioStock() {
                 transition={{ duration: 0.3 }}
                 className="w-full max-w-full md:max-w-6xl bg-white shadow-xl rounded-lg overflow-auto border border-gray-200"
               >
-                <h3 className="text-xl font-bold bg-blue-200 text-gray-900 px-4 md:px-6 py-3">
+                <h3 className="text-xl font-bold bg-gray-400 text-gray-900 px-4 md:px-6 py-3">
                   Insumos
                 </h3>
                 <div className="overflow-x-auto">

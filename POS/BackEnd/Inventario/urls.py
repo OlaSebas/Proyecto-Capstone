@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import inventario_list, inventario_sucursal, inventario_create, inventario_update,inventario_delete, producto_list, sucursal_list, sucursal_create, sucursal_delete, sucursal_update, comuna_list,sucursal_info
 from. views import producto_create, producto_update, producto_delete, promocion_list, promocion_create, promocion_update, promocion_delete
 from .views import promocion_producto_list, promocion_producto_create,promocion_producto_update, promocion_producto_delete
-from .views import insumo_list,insumo_create,insumo_update,insumo_delete,categoria_list
+from .views import insumo_list,insumo_create,insumo_update,insumo_delete,categoria_list, item_create, item_list, item_update, item_delete
 
 urlpatterns = [
     path("", inventario_list, name="inventario_list"),
@@ -34,4 +34,8 @@ urlpatterns = [
     path("insumos/update/<int:insumo_id>/", insumo_update, name="insumo_update"),
     path("insumos/delete/<int:insumo_id>/", insumo_delete, name="insumo_delete"),
     path("categorias/", categoria_list, name="categoria_list"),
+    path("items/", item_list, name="item_list"),
+    path("items/create/", item_create, name="item_create"),
+    path("items/update/<int:item_id>/", item_update, name="item_update"),
+    path("items/delete/<int:item_id>/", item_delete, name="item_delete"),
 ]

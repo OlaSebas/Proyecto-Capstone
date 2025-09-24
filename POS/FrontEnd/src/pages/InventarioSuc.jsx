@@ -133,14 +133,14 @@ export default function InventarioSuc() {
                       className={i % 2 === 0 ? "bg-white/90" : "bg-gray-100/90"}
                     >
                       <td className="px-6 py-4">
-                        {item.producto
-                          ? item.producto.descripcion
+                        {item.item
+                          ? item.item.descripcion
                           : item.insumo.descripcion}
                       </td>
                       <td className="px-6 py-4">{item.stock_actual}</td>
                       <td className="px-6 py-4">
-                        {item.producto
-                          ? item.producto.unidad_medida
+                        {item.item
+                          ? item.item.unidad_medida
                           : item.insumo.unidad_medida}
                       </td>
                       <td className="px-6 py-4">

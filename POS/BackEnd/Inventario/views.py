@@ -3,8 +3,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.response import Response
 from rest_framework import status, viewsets
-from .models import Inventario, Producto, Sucursal, Comuna, Promocion, PromocionProducto,Insumo,Categoria
-from .serializers import CategoriaSerializer,InventarioSerializer, ProductoSerializer, SucursalSerializer, ComunaSerializer, PromocionSerializer, PromocionProductoSerializer,InsumoSerializer
+from .models import Inventario, Producto, Sucursal, Comuna, Promocion, PromocionProducto,Insumo,Categoria, Item
+from .serializers import CategoriaSerializer,InventarioSerializer, ProductoSerializer, SucursalSerializer, ComunaSerializer, PromocionSerializer, PromocionProductoSerializer,InsumoSerializer, ItemSerializer
 
 
 
@@ -335,3 +335,48 @@ def categoria_list(request):
     categorias = Categoria.objects.all()
     serializer = CategoriaSerializer(categorias, many=True, context={"request": request})
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def item_list(request):
+    items = Item.objects.all()
+    serializer = ItemSerializer(items, many=True, context={"request": request})
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def item_create(request):
+    serializer = ItemSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['PUT'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def item_update(request, item_id):
+    try:
+        item = Item.objects.get(id=item_id)
+    except Item.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    serializer = ItemSerializer(item, data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['DELETE'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def item_delete(request, item_id):
+    try:
+        item = Item.objects.get(id=item_id)
+    except Item.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    item.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)

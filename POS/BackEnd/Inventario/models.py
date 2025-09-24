@@ -34,6 +34,15 @@ class Categoria(models.Model):
 
     def __str__(self):
         return self.descripcion
+    
+class Item(models.Model):
+    descripcion = models.CharField(max_length=100, null=False)
+    stock_minimo = models.IntegerField(null=False)
+    cantidad = models.IntegerField(null=False)
+    unidad_medida = models.CharField(max_length=20, null=True, blank=True)
+
+    def __str__(self):
+        return self.descripcion
 
 class Producto(models.Model):
     descripcion = models.CharField(max_length=100, null=False)
@@ -42,6 +51,7 @@ class Producto(models.Model):
     categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE, null=True, blank=True)
     stock_minimo = models.IntegerField(null=False, default=0)
     unidad_medida = models.CharField(max_length=20, null=True, blank=True)
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, null=True, blank=True)
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
@@ -59,13 +69,13 @@ class Insumo(models.Model):
 
 class Inventario(models.Model):
     stock_actual = models.IntegerField(null=False)
-    producto = models.ForeignKey('Producto', null=True, blank=True, on_delete=models.CASCADE)
+    item = models.ForeignKey('Item', null=True, blank=True, on_delete=models.CASCADE)
     insumo = models.ForeignKey('Insumo', null=True, blank=True, on_delete=models.CASCADE)
     sucursal = models.ForeignKey('Sucursal', on_delete=models.CASCADE)
 
     def __str__(self):
-        if self.producto:
-            return f"Producto {self.producto.descripcion}"
+        if self.item:
+            return f"Item {self.item.descripcion}"
         elif self.insumo:
             return f"Insumo {self.insumo.descripcion}"
         return f"Sin referencia"

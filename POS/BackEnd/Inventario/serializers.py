@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Region, Ciudad, Comuna, Sucursal, Insumo,Categoria, Producto, Inventario,Promocion, PromocionProducto
+from .models import Region, Ciudad, Comuna, Sucursal, Insumo,Categoria, Producto, Inventario,Promocion, PromocionProducto, Item
 from django.conf import settings
 
 
@@ -21,10 +21,15 @@ class InsumoSerializer(serializers.ModelSerializer):
         model = Insumo
         fields = "__all__"
 
+class ItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Item
+        fields = "__all__"
+
 class InventarioSerializer(serializers.ModelSerializer):
-    producto = ProductoSerializer(read_only=True)
+    item = ItemSerializer(read_only=True)
     insumo = InsumoSerializer(read_only=True)
-    producto_descripcion = serializers.CharField(source='producto.descripcion', read_only=True)
+    item_descripcion = serializers.CharField(source='item.descripcion', read_only=True)
     insumo_descripcion = serializers.CharField(source='insumo.descripcion', read_only=True)
     sucursal_nombre = serializers.CharField(source='sucursal.descripcion', read_only=True)
     
@@ -32,18 +37,18 @@ class InventarioSerializer(serializers.ModelSerializer):
         model = Inventario
         fields = [
             'id', 'stock_actual',
-            'producto', 'producto_descripcion',
+            'item', 'item_descripcion',
             'insumo', 'insumo_descripcion',
             'sucursal', 'sucursal_nombre'
         ]
 
     def validate(self, data):
-        producto = data.get('producto')
+        item = data.get('item')
         insumo = data.get('insumo')
 
-        if (producto and insumo) or (not producto and not insumo):
+        if (item and insumo) or (not item and not insumo):
             raise serializers.ValidationError(
-                "Debe seleccionar exactamente un producto o un insumo, no ambos ni ninguno."
+                "Debe seleccionar exactamente un item o un insumo, no ambos ni ninguno."
             ) 
         return data
     
@@ -82,3 +87,4 @@ class CategoriaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Categoria
         fields = "__all__"
+

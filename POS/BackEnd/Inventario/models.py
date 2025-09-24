@@ -38,7 +38,6 @@ class Categoria(models.Model):
 class Item(models.Model):
     descripcion = models.CharField(max_length=100, null=False)
     stock_minimo = models.IntegerField(null=False)
-    cantidad = models.IntegerField(null=False)
     unidad_medida = models.CharField(max_length=20, null=True, blank=True)
 
     def __str__(self):
@@ -49,8 +48,6 @@ class Producto(models.Model):
     precio = models.IntegerField(null=False)
     imagen = models.ImageField(upload_to="products/", null=True, blank=True)
     categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE, null=True, blank=True)
-    stock_minimo = models.IntegerField(null=False, default=0)
-    unidad_medida = models.CharField(max_length=20, null=True, blank=True)
     item = models.ForeignKey(Item, on_delete=models.CASCADE, null=True, blank=True)
     is_active = models.BooleanField(default=True)
 
@@ -68,7 +65,7 @@ class Insumo(models.Model):
         return self.descripcion
 
 class Inventario(models.Model):
-    stock_actual = models.IntegerField(null=False)
+    stock_actual = models.DecimalField(max_digits=10, decimal_places=2, null=False)
     item = models.ForeignKey('Item', null=True, blank=True, on_delete=models.CASCADE)
     insumo = models.ForeignKey('Insumo', null=True, blank=True, on_delete=models.CASCADE)
     sucursal = models.ForeignKey('Sucursal', on_delete=models.CASCADE)

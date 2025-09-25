@@ -10,19 +10,25 @@ export default function GestionPromociones() {
     const [fechaInicio, setFechaInicio] = useState("");
     const [fechaFin, setFechaFin] = useState("");
     const [promociones, setPromociones] = useState([]);
+    const [productos, setProductos] = useState([]);
+    const [productosSeleccionados, setProductosSeleccionados] = useState([]);
+    const [busqueda, setBusqueda] = useState("");
     const [modalEliminar, setModalEliminar] = useState({ abierto: false, id: null });
     const [modalEditar, setModalEditar] = useState({ abierto: false, promo: null });
     const [hora, setHora] = useState("");
-    const [productos, setProductos] = useState([]);
-    const [busqueda, setBusqueda] = useState("");
-    const [productosSeleccionados, setProductosSeleccionados] = useState([]);
+
     const apiUrl = import.meta.env.VITE_API_URL_INVENTARIO;
     const { sidebarOpen, setSidebarOpen } = useOutletContext();
 
+    // Actualizar hora
     useEffect(() => {
         const actualizarHora = () => {
             setHora(
-                new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+                new Date().toLocaleTimeString("es-CL", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                })
             );
         };
         actualizarHora();
@@ -30,8 +36,11 @@ export default function GestionPromociones() {
         return () => clearInterval(intervalo);
     }, []);
 
+    // Cargar datos iniciales
     useEffect(() => {
         setFechaInicio(new Date().toISOString().split("T")[0]);
+        fetchPromociones();
+        fetchProductos();
     }, []);
 
     const fetchPromociones = async () => {
@@ -39,9 +48,11 @@ export default function GestionPromociones() {
             const res = await fetch(`${apiUrl}promociones/`, {
                 headers: { Authorization: `Token ${localStorage.getItem("token")}` },
             });
+            if (!res.ok) throw new Error("Error cargando promociones");
             const data = await res.json();
             setPromociones(Array.isArray(data) ? data : []);
-        } catch {
+        } catch (error) {
+            console.error("⚠️ Error cargando promociones:", error);
             setPromociones([]);
         }
     };
@@ -51,17 +62,14 @@ export default function GestionPromociones() {
             const res = await fetch(`${apiUrl}productos/`, {
                 headers: { Authorization: `Token ${localStorage.getItem("token")}` },
             });
+            if (!res.ok) throw new Error("Error cargando productos");
             const data = await res.json();
             setProductos(Array.isArray(data) ? data : []);
-        } catch {
+        } catch (error) {
+            console.error("⚠️ Error cargando productos:", error);
             setProductos([]);
         }
     };
-
-    useEffect(() => {
-        fetchPromociones();
-        fetchProductos();
-    }, []);
 
     const handleImagenChange = (e) => {
         const file = e.target.files?.[0];
@@ -81,20 +89,40 @@ export default function GestionPromociones() {
     const agregarProducto = (producto) => {
         setProductosSeleccionados((prev) => {
             const existe = prev.find((x) => x.id === producto.id);
-            if (existe) return prev.map((x) => x.id === producto.id ? { ...x, cantidad: (x.cantidad || 1) + 1 } : x);
+            if (existe)
+                return prev.map((x) =>
+                    x.id === producto.id ? { ...x, cantidad: (x.cantidad || 1) + 1 } : x
+                );
             return [...prev, { ...producto, cantidad: 1 }];
         });
     };
 
     const cambiarCantidad = (id, cantidad) => {
         setProductosSeleccionados((prev) =>
-            prev.map((p) => (p.id === id ? { ...p, cantidad: Math.max(1, cantidad || 1) } : p))
+            prev.map((p) =>
+                p.id === id ? { ...p, cantidad: Math.max(1, cantidad || 1) } : p
+            )
         );
+    };
+
+    const limpiarFormulario = () => {
+        setDescripcion("");
+        setPrecio("");
+        setImagen(null);
+        setPreview(null);
+        setFechaInicio(new Date().toISOString().split("T")[0]);
+        setFechaFin("");
+        setProductosSeleccionados([]);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!descripcion || !precio || !imagen) return alert("Completa los campos obligatorios");
+
+        if (!descripcion || !precio || !imagen) {
+            alert("Completa los campos obligatorios");
+            return;
+        }
+
         try {
             const formData = new FormData();
             formData.append("descripcion", descripcion);
@@ -102,7 +130,6 @@ export default function GestionPromociones() {
             formData.append("fecha_inicio", fechaInicio);
             if (fechaFin) formData.append("fecha_fin", fechaFin);
             formData.append("imagen", imagen);
-            if (productosSeleccionados.length) formData.append("productos", JSON.stringify(productosSeleccionados));
 
             const res = await fetch(`${apiUrl}promociones/create/`, {
                 method: "POST",
@@ -110,24 +137,66 @@ export default function GestionPromociones() {
                 body: formData,
             });
 
-            if (!res.ok) throw new Error("Error creando promoción");
-            const data = await res.json();
-            setPromociones((prev) => [...prev, data]);
-            setDescripcion(""); setPrecio(""); setImagen(null); setPreview(null);
-            setFechaInicio(new Date().toISOString().split("T")[0]); setFechaFin("");
-            setProductosSeleccionados([]); alert("Promoción agregada con éxito"); setTab("administrar");
-        } catch (err) { console.error(err); alert("Error al crear promoción"); }
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(`Error ${res.status}: ${text}`);
+            }
+
+            const nuevaPromocion = await res.json();
+            console.log("✅ Promoción creada:", nuevaPromocion);
+            console.log("🛒 productosSeleccionados:", productosSeleccionados);
+
+            // Crear relaciones PromocionProducto
+            for (const p of productosSeleccionados) {
+                const productoData = {
+                    promocion: nuevaPromocion.id,
+                    producto: p.id,
+                    cantidad: p.cantidad,
+                };
+
+                console.log("📦 Enviando producto a la promo:", productoData);
+
+                const resProd = await fetch(`${apiUrl}promociones_productos/create/`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Token ${localStorage.getItem("token")}`,
+                    },
+                    body: JSON.stringify(productoData),
+                });
+
+                if (!resProd.ok) {
+                    console.error(
+                        "❌ Error creando producto en promoción:",
+                        resProd.status,
+                        await resProd.text()
+                    );
+                }
+            }
+
+            alert("Promoción creada correctamente");
+            limpiarFormulario();
+            fetchPromociones();
+        } catch (err) {
+            console.error("🚨 Error creando promoción:", err);
+            alert("Error al crear promoción");
+        }
     };
 
     const abrirModalEliminar = (id) => setModalEliminar({ abierto: true, id });
     const cancelarEliminar = () => setModalEliminar({ abierto: false, id: null });
     const confirmarEliminar = async () => {
         try {
-            const res = await fetch(`${apiUrl}promociones/${modalEliminar.id}/`, { method: "DELETE", headers: { Authorization: `Token ${localStorage.getItem("token")}` } });
+            const res = await fetch(`${apiUrl}promociones/delete/${modalEliminar.id}/`, {
+                method: "DELETE",
+                headers: { Authorization: `Token ${localStorage.getItem("token")}` },
+            });
             if (!res.ok) throw new Error();
             setPromociones((prev) => prev.filter((p) => p.id !== modalEliminar.id));
             cancelarEliminar();
-        } catch { alert("Error al eliminar promoción"); }
+        } catch {
+            alert("Error al eliminar promoción");
+        }
     };
 
     const abrirModalEditar = (promo) => {
@@ -142,23 +211,35 @@ export default function GestionPromociones() {
 
     const cancelarEditar = () => {
         setModalEditar({ abierto: false, promo: null });
-        setDescripcion(""); setPrecio(""); setImagen(null); setPreview(null); setFechaInicio(""); setFechaFin("");
+        limpiarFormulario();
     };
 
     const confirmarEditar = async () => {
-        const promo = modalEditar.promo; if (!promo) return;
+        const promo = modalEditar.promo;
+        if (!promo) return;
+
         const formData = new FormData();
-        formData.append("descripcion", descripcion); formData.append("precio", precio);
+        formData.append("descripcion", descripcion);
+        formData.append("precio", precio);
         formData.append("fecha_inicio", fechaInicio);
         if (fechaFin) formData.append("fecha_fin", fechaFin);
         if (imagen) formData.append("imagen", imagen);
+
         try {
-            const res = await fetch(`${apiUrl}promociones/${promo.id}/`, { method: "PATCH", headers: { Authorization: `Token ${localStorage.getItem("token")}` }, body: formData });
+            const res = await fetch(`${apiUrl}promociones/update/${promo.id}/`, {
+                method: "PUT",
+                headers: { Authorization: `Token ${localStorage.getItem("token")}` },
+                body: formData,
+            });
+
             if (!res.ok) throw new Error();
             const data = await res.json();
             setPromociones((prev) => prev.map((p) => (p.id === promo.id ? data : p)));
-            cancelarEditar(); alert("Promoción actualizada correctamente");
-        } catch { alert("Error al editar promoción"); }
+            cancelarEditar();
+            alert("Promoción actualizada correctamente");
+        } catch {
+            alert("Error al editar promoción");
+        }
     };
 
     return (

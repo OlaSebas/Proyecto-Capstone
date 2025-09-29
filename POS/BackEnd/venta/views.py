@@ -100,15 +100,3 @@ def cargarSesionActiva(request):
     except SesionCaja.DoesNotExist:
         return Response({"error": "No se encontró."}, status=status.HTTP_404_NOT_FOUND)
 
-def open_sesion(request):
-    try:
-        active_sesion = SesionCaja.objects.get(is_active=True)
-        return JsonResponse({"error": "Ya hay una sesión activa."}, status=400)
-    except SesionCaja.DoesNotExist:
-        if request.method == 'POST':
-            caja_id = request.POST.get('caja_id')
-            monto_inicial = request.POST.get('monto_inicial')
-            caja = get_object_or_404(Caja, id=caja_id)
-            sesion = SesionCaja.objects.create(caja=caja, monto_inicial=monto_inicial, is_active=True)
-            return JsonResponse({"message": "Sesión de caja abierta exitosamente.", "sesion_id": sesion.id}, status=201)
-        return JsonResponse({"error": "Método no permitido."}, status=405)

@@ -34,13 +34,6 @@ def register(request):
         return Response({'token': token.key, "User": serializer.data,}, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST) 
 
-@api_view(['GET'])
-@authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated])
-def profile(request):
-    serializer = customUserSerializer(instance=request.user)
-    return Response(serializer.data, status=status.HTTP_200_OK)
-    #return Response("you are authenticated with {}".format(request.user.username), status=status.HTTP_200_OK)
 
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
@@ -100,3 +93,39 @@ def cargarSesionActiva(request):
     except SesionCaja.DoesNotExist:
         return Response({"error": "No se encontró."}, status=status.HTTP_404_NOT_FOUND)
 
+#CRUD USERS 
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def profile(request):
+    serializer = customUserSerializer(instance=request.user)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['GET', 'PUT', 'DELETE'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def users(request):
+    if request.method == 'GET':
+        try:
+            users = customUser.objects.filter(is_staff=False)
+            serializer = customUserSerializer(users, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except customUser.DoesNotExist:
+            return Response({"error": "No se encontró."}, status=status.HTTP_404_NOT_FOUND)
+    elif request.method == 'PUT':
+        try:
+            user = get_object_or_404(customUser, pk=request.data.get('id'))
+            serializer = customUserSerializer(user, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except customUser.DoesNotExist:
+            return Response({"error": "No se encontró."}, status=status.HTTP_404_NOT_FOUND)
+    elif request.method == 'DELETE':
+        try:
+            user = get_object_or_404(customUser, pk=request.data.get('id'))
+            user.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except customUser.DoesNotExist:
+            return Response({"error": "No se encontró."}, status=status.HTTP_404_NOT_FOUND)

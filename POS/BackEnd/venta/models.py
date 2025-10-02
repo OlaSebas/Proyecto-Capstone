@@ -24,6 +24,13 @@ class UserManager(BaseUserManager):
             raise ValueError('Superuser must have is_superuser=True.')
 
         return self.create_user(username, email, password, **extra_fields)
+    
+class Caja(models.Model):
+    nombre = models.CharField(max_length=100)
+    sucursal = models.ForeignKey(Sucursal, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.nombre
 
 class customUser(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=150, unique=True)
@@ -34,6 +41,7 @@ class customUser(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=now)
+    caja = models.ForeignKey(Caja, on_delete=models.SET_NULL, null=True, blank=True)
 
     objects = UserManager()
 
@@ -67,14 +75,6 @@ class Cliente(models.Model):
 
 class MetodoPago(models.Model):
     nombre = models.CharField(max_length=100)
-
-    def __str__(self):
-        return self.nombre
-
-class Caja(models.Model):
-    nombre = models.CharField(max_length=100)
-    sucursal = models.ForeignKey(Sucursal, on_delete=models.CASCADE)
-    vendedor = models.ForeignKey(customUser,blank=True, null=True, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.nombre

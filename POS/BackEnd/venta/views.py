@@ -28,7 +28,6 @@ def register(request):
     if serializer.is_valid():
         serializer.save()
         user = customUser.objects.get(username=serializer.data['username'])
-        user.set_password(serializer.data['password'])
         user.save()
         token = Token.objects.create(user=user)
         return Response({'token': token.key, "User": serializer.data,}, status=status.HTTP_201_CREATED)
@@ -117,6 +116,7 @@ def users(request):
             user = get_object_or_404(customUser, pk=request.data.get('id'))
             serializer = customUserSerializer(user, data=request.data, partial=True)
             if serializer.is_valid():
+                serializer.set_password
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import logo from "../../img/logo.png";
 
-
 export default function Login() {
   const apiUrl = import.meta.env.VITE_API_URL;
   const [username, setUsername] = useState("");
@@ -27,9 +26,42 @@ export default function Login() {
         throw new Error(data.error || "Error al iniciar sesión");
       }
 
+      // Guardar token
       localStorage.setItem("token", data.token);
 
-      console.log("Usuario logeado:", data.User);
+      // Guardar sesión de caja si existe
+      if (data.User.caja) {
+        const cajaId = data.User.caja.id;
+        localStorage.setItem("caja", cajaId);
+        alert(`🛠 Caja asignada: ${cajaId}`);
+
+        // Abrir sesión de caja
+        try {
+          const resSesion = await fetch(`${apiUrl}api/sesion_create/`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Token ${data.token}`,
+            },
+            body: JSON.stringify({ caja: cajaId, monto_inicial: 0 }),
+          });
+
+          if (!resSesion.ok) {
+            const errorData = await resSesion.json();
+            console.error("❌ Error al abrir sesión de caja:", errorData);
+          } else {
+            const sesion = await resSesion.json();
+            localStorage.setItem("sesionCaja", sesion.id);
+            console.log("✅ Sesión de caja abierta:", sesion);
+          }
+        } catch (err) {
+          console.error("⚠️ Error en la petición de sesión de caja:", err);
+        }
+      } else {
+        localStorage.removeItem("caja"); // Usuario sin caja → admin/global
+      }
+
+      console.log("✅ Usuario logeado:", data.User);
       alert(`Bienvenido ${data.User.username}`);
       window.location.href = "/home";
     } catch (err) {
@@ -41,9 +73,8 @@ export default function Login() {
 
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-gradient-to-r from-amber-400 via-orange-500 to-red-500">
-      {/* Contenedor principal, ahora ocupa todo el alto y ancho */}
+      {/* Contenedor principal */}
       <div className="w-full sm:w-11/12 md:w-2/3 lg:w-1/2 xl:w-1/3 bg-white rounded-2xl shadow-2xl p-8 sm:p-12 mx-4 flex flex-col justify-center">
-
         {/* Logo */}
         <div className="flex justify-center mb-6">
           <img
@@ -80,9 +111,7 @@ export default function Login() {
             required
           />
 
-          {error && (
-            <p className="text-red-500 text-center text-sm">{error}</p>
-          )}
+          {error && <p className="text-red-500 text-center text-sm">{error}</p>}
 
           <button
             type="submit"

@@ -11,6 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from django.views import View
 from django.http import JsonResponse
+from django.utils import timezone
 
 @api_view(['POST'])
 def login(request):
@@ -44,7 +45,7 @@ def logout(request):
     return Response({"message": "Sesión cerrada correctamente"}, status=status.HTTP_200_OK)
 
 # Vistas para creacion, edicion de sesiones de caja y cajas
-@api_view(['GET', 'POST'])
+@api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def sesiones_list(request):
@@ -53,12 +54,27 @@ def sesiones_list(request):
         serializer = SesionCajaSerializer(sesiones, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    elif request.method == 'POST':
-        serializer = SesionCajaSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def sesiones_create(request):
+    caja_id = request.data.get("caja")
+    monto_inicial = request.data.get("monto_inicial", 0)
+
+    try:
+        caja = Caja.objects.get(id=caja_id)
+    except Caja.DoesNotExist:
+        return Response({"error": "Caja no encontrada"}, status=status.HTTP_404_NOT_FOUND)
+
+    sesion = SesionCaja.objects.create(
+        caja=caja,
+        monto_inicial=monto_inicial,
+        is_active=True
+    )
+
+    serializer = SesionCajaSerializer(sesion)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 
 
 @api_view(['GET', 'PUT', 'DELETE'])

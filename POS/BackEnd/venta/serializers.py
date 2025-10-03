@@ -18,7 +18,7 @@ class customUserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         password = validated_data.pop("password")
         user = customUser(**validated_data)
-        user.set_password(password)  # 🔒 aquí se encripta
+        user.set_password(password) 
         user.save()
         return user
 

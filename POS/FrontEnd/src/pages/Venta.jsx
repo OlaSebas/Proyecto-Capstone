@@ -8,7 +8,6 @@ export default function Ventas() {
   const [cajaAbierta, setCajaAbierta] = useState(false);
   const apiUrl = import.meta.env.VITE_API_URL;
 
-  // Recibir estado del sidebar desde Layout
   const { sidebarOpen, setSidebarOpen } = useOutletContext();
 
   // Consultar acciones
@@ -24,11 +23,10 @@ export default function Ventas() {
     fetch(`${apiUrl}api/sesion_activa/`, {
       headers: {
         "Authorization": `Token ${localStorage.getItem("token")}`,
-      }
+      },
     })
       .then((res) => res.json())
       .then((data) => {
-        // Si devuelve sesiones, significa que hay al menos una activa
         setCajaAbierta(data.sesion_activa === true || (data.length && data.length > 0));
       })
       .catch((err) => {
@@ -54,6 +52,45 @@ export default function Ventas() {
 
     return () => clearInterval(intervalo);
   }, []);
+
+  // Función para cerrar caja
+  const cerrarCaja = async () => {
+    const montoCierre = prompt("Ingrese monto de cierre:");
+
+    if (!montoCierre) return alert("Debe ingresar un monto para cerrar la caja.");
+
+    try {
+      const res = await fetch(`${apiUrl}api/sesion_caja/${localStorage.getItem("sesionCaja")}/`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Token ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          fecha_cierre: new Date().toISOString(),
+          monto_final: montoCierre,
+          is_active: false,
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        console.error("Error cerrando caja:", errData);
+        alert("Error cerrando caja");
+      } else {
+        alert("Caja cerrada exitosamente");
+        setCajaAbierta(false);
+        handleLogout();
+      }
+    } catch (err) {
+      console.error("Error en la petición de cerrar caja:", err);
+      alert("Error cerrando caja");
+    }
+  };
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    window.location.href = "/Login";
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
@@ -96,15 +133,15 @@ export default function Ventas() {
             </Link>
 
             {/* Abrir/Cerrar caja */}
-            <Link
-              to={cajaAbierta ? "/cerrar-caja" : "/abrir-caja"}
+            <button
+              onClick={cajaAbierta ? cerrarCaja : handleLogout}
               className="bg-white border rounded-lg flex flex-col items-center justify-center p-8 shadow hover:shadow-lg transition cursor-pointer text-black"
             >
               <Clock className="w-16 h-16 mb-4 text-gray-700" />
               <p className="font-medium">
                 {cajaAbierta ? "Cerrar caja" : "Abrir caja"}
               </p>
-            </Link>
+            </button>
           </div>
         </div>
 
@@ -121,4 +158,3 @@ export default function Ventas() {
     </div>
   );
 }
-

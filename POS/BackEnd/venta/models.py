@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils.timezone import now
-from Inventario.models import Producto, Sucursal
+from Inventario.models import Producto, Sucursal, Promocion
 
 # Create your models here.
 class UserManager(BaseUserManager):
@@ -106,17 +106,22 @@ class Venta(models.Model):
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, null=True, blank=True)
     metodo_pago = models.ForeignKey(MetodoPago, on_delete=models.CASCADE)
     usuario = models.ForeignKey(customUser, on_delete=models.CASCADE)
-    estado = models.ForeignKey(TipoEstado, on_delete=models.CASCADE)
+    estado = models.ForeignKey(TipoEstado, on_delete=models.CASCADE,default=3)
 
     def __str__(self):
         return f'Venta {self.id} - {self.fecha}'
 
 class DetalleVenta(models.Model):
     venta = models.ForeignKey(Venta, on_delete=models.CASCADE)
-    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
+    producto = models.ForeignKey(Producto, null=True, blank=True, on_delete=models.CASCADE)
+    promocion = models.ForeignKey(Promocion, null=True, blank=True, on_delete=models.CASCADE)
     cantidad = models.IntegerField()
     precio_unitario = models.IntegerField()
     total = models.IntegerField()
+
+    def save(self, *args, **kwargs):
+        self.total = self.cantidad * self.precio_unitario
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'DetalleVenta {self.id} - Venta {self.venta.id}'

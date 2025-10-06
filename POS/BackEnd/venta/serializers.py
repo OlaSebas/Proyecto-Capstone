@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import customUser, SesionCaja, Caja, Venta, Cliente
+from .models import customUser, SesionCaja, Caja, Venta, Cliente, DetalleVenta
+from Inventario.models import Producto
 
 class CajaSerializer(serializers.ModelSerializer):
     class Meta:
@@ -42,9 +43,15 @@ class ClienteSerializer(serializers.ModelSerializer):
         model = Cliente
         fields = '__all__'
 
+class DetalleVentaSerializer(serializers.ModelSerializer):
+    total = serializers.IntegerField(read_only=True)
+    class Meta:
+        model = DetalleVenta
+        fields = '__all__'
+    
 class VentaSerializer(serializers.ModelSerializer):
-    cliente = ClienteSerializer(read_only=True)
     usuario = customUserSerializer(read_only=True)
+    detalles = DetalleVentaSerializer(source='detalleventa_set', many=True, read_only=True) 
     class Meta:
         model = Venta
         fields = '__all__'

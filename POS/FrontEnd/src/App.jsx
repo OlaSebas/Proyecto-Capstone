@@ -19,6 +19,7 @@ import Sucursal from "./pages/Sucursal";
 import InventarioSuc from "./pages/InventarioSuc";
 import SucursalForm from "./pages/formularios/SucursalForm";
 import SucursalEdit from "./pages/editor/SucursalEdit";
+import Efectivo from "./pages/Efectivo";
 import { View } from "lucide-react";
 
 
@@ -51,6 +52,8 @@ function App() {
           <Route path="/AgregarPromocion" element={<ViewAdminPR><AgregarPromocion /></ViewAdminPR>} />
           <Route path="/PedidosDelivery" element={<PedidosDelivery />} />
           <Route path="/proveedor" element={<Proveedores />} />
+          <Route path="/Efectivo" element={<Efectivo />} />
+          
         </Route>
 
         {/* Redirección por defecto */}

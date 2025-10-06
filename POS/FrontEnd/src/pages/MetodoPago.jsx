@@ -25,9 +25,11 @@ export default function MetodoPago() {
 
     const seleccionarMetodo = (metodo) => {
         localStorage.setItem("metodoPago", metodo);
-        alert(`Has seleccionado ${metodo}`);
-        // Aquí podrías redirigir a confirmación de compra
-        // navigate("/confirmacion");
+        if (metodo === "Efectivo") {
+            navigate("/Efectivo");
+        } else {
+            alert(`Has seleccionado ${metodo}`);
+        }
     };
 
     return (

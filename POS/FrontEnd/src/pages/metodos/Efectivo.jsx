@@ -11,7 +11,7 @@ export default function PagoEfectivo() {
     const [nroBoleta, setNroBoleta] = useState("");
     const [fecha, setFecha] = useState("");
     const [pagoExitoso, setPagoExitoso] = useState(false);
-    const [error, setError] = useState(""); // 👈 nuevo estado para mensajes de error
+    const [error, setError] = useState(""); // 
 
     useEffect(() => {
         const hoy = new Date();
@@ -32,7 +32,6 @@ export default function PagoEfectivo() {
     }, []);
 
     const calcularVuelto = () => {
-        // 🚫 Verificar si hay productos
         if (productos.length === 0) {
             setError("No hay productos para pagar.");
             return;
@@ -43,8 +42,6 @@ export default function PagoEfectivo() {
             setError("El monto pagado debe ser mayor o igual al total.");
             return;
         }
-
-        // ✅ Si todo está bien, limpiar errores previos
         setError("");
 
         const vueltoCalculado = pagado - total;

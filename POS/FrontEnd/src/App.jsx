@@ -19,7 +19,10 @@ import Sucursal from "./pages/Sucursal";
 import InventarioSuc from "./pages/InventarioSuc";
 import SucursalForm from "./pages/formularios/SucursalForm";
 import SucursalEdit from "./pages/editor/SucursalEdit";
-import Efectivo from "./pages/Efectivo";
+import Efectivo from "./pages/metodos/Efectivo";
+import Debito from "./pages/metodos/Debito";
+import Credito from "./pages/metodos/Credito";
+import Transferencia from "./pages/metodos/Transferencia";
 import { View } from "lucide-react";
 
 
@@ -53,7 +56,9 @@ function App() {
           <Route path="/PedidosDelivery" element={<PedidosDelivery />} />
           <Route path="/proveedor" element={<Proveedores />} />
           <Route path="/Efectivo" element={<Efectivo />} />
-          
+          <Route path="/Debito" element={<Debito />} />
+          <Route path="/Credito" element={<Credito />} />
+          <Route path="/Transferencia" element={<Transferencia />} />
         </Route>
 
         {/* Redirección por defecto */}

@@ -27,6 +27,12 @@ export default function MetodoPago() {
         localStorage.setItem("metodoPago", metodo);
         if (metodo === "Efectivo") {
             navigate("/Efectivo");
+        } else if (metodo === "Débito") {
+            navigate("/Debito");
+        } else if (metodo === "Crédito") {
+            navigate("/Credito");
+        } else if (metodo === "Transferencia") {
+            navigate("/Transferencia");
         } else {
             alert(`Has seleccionado ${metodo}`);
         }

@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Wallet, Calculator, ArrowLeft, CheckCircle2, AlertTriangle } from "lucide-react";
 
 export default function PagoEfectivo() {
+    const apiUrl = import.meta.env.VITE_API_URL;
+    const { id } = useParams(); // ✅ ID de la venta
     const navigate = useNavigate();
     const [productos, setProductos] = useState([]);
     const [total, setTotal] = useState(0);
@@ -11,7 +13,7 @@ export default function PagoEfectivo() {
     const [nroBoleta, setNroBoleta] = useState("");
     const [fecha, setFecha] = useState("");
     const [pagoExitoso, setPagoExitoso] = useState(false);
-    const [error, setError] = useState(""); // 
+    const [error, setError] = useState("");
 
     useEffect(() => {
         const hoy = new Date();
@@ -30,30 +32,60 @@ export default function PagoEfectivo() {
         const subtotal = carritoLocal.reduce((sum, item) => sum + (item.total || 0), 0);
         setTotal(subtotal);
     }, []);
+    // Función para actualizar el estado de la venta
+    const actualizarVenta = async (estado, metodo_pago = null) => {
+        try {
+            const venta = {
+            id: id,
+            estado: estado,
+            metodo_pago: metodo_pago,
+            } 
+            if (metodo_pago) venta.metodo_pago = metodo_pago;
+            const response = await fetch(`${apiUrl}api/ventas/`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Token ${localStorage.getItem("token")}`,
+                },
+                body: JSON.stringify(venta),
+            });
+            if (!response.ok) throw new Error(`Error al actualizar la venta: ${JSON.stringify(venta)}`);
 
-    const calcularVuelto = () => {
+            console.log("✅ Venta actualizada correctamente");
+        } catch (error) {
+            console.error("❌ Error en la actualización de la venta:", error);
+        }
+    };
+
+    const calcularVuelto = async () => {
         if (productos.length === 0) {
             setError("No hay productos para pagar.");
+            await actualizarVenta(3); // ANULADO
             return;
         }
 
         const pagado = parseFloat(montoPagado);
         if (isNaN(pagado) || pagado < total) {
             setError("El monto pagado debe ser mayor o igual al total.");
+            await actualizarVenta(3); // ANULADO
             return;
         }
-        setError("");
 
+        setError("");
         const vueltoCalculado = pagado - total;
         setVuelto(vueltoCalculado);
         setPagoExitoso(true);
 
-        // Vaciar carrito después del pago
+        // ✅ Actualizar venta a PAGADA (estado 2, método 2)
+        await actualizarVenta(2, 2);
+
+        // Vaciar carrito
         localStorage.removeItem("carrito");
 
-        // Reiniciar mensaje después de 4 segundos
+        // Reiniciar mensaje después de 4s
         setTimeout(() => {
             setPagoExitoso(false);
+            navigate("/"); // redirigir al inicio o donde quieras
         }, 4000);
     };
 
@@ -64,11 +96,9 @@ export default function PagoEfectivo() {
                 <div className="flex flex-col items-center text-center mb-6">
                     <Wallet size={40} className="text-red-500 mb-2" />
                     <h2 className="text-3xl font-extrabold text-gray-800 tracking-tight">
-                        Pago en Efectivo
+                        Pago en Efectivo — Venta #{id}
                     </h2>
-                    <p className="text-gray-600 text-sm mt-1">
-                        Danny Pollos
-                    </p>
+                    <p className="text-gray-600 text-sm mt-1">Danny Pollos</p>
                 </div>
 
                 {/* Info Boleta */}
@@ -87,7 +117,7 @@ export default function PagoEfectivo() {
                     </div>
                 </div>
 
-                {/* Detalle productos */}
+                {/* Tabla productos */}
                 <div className="border border-gray-200 rounded-lg overflow-hidden mb-4">
                     <table className="w-full text-sm">
                         <thead className="bg-gray-100 border-b border-gray-300">
@@ -105,9 +135,7 @@ export default function PagoEfectivo() {
                                             {item.producto?.nombre || item.producto?.descripcion || "-"}
                                         </td>
                                         <td className="text-center">{item.cantidad}</td>
-                                        <td className="text-right">
-                                            ${item.total?.toLocaleString() || "0"}
-                                        </td>
+                                        <td className="text-right">${item.total?.toLocaleString() || "0"}</td>
                                     </tr>
                                 ))
                             ) : (
@@ -129,9 +157,7 @@ export default function PagoEfectivo() {
 
                 {/* Monto pagado */}
                 <div className="mb-4">
-                    <label className="block mb-1 text-gray-700 font-medium">
-                        Monto recibido:
-                    </label>
+                    <label className="block mb-1 text-gray-700 font-medium">Monto recibido:</label>
                     <input
                         type="number"
                         value={montoPagado}
@@ -141,7 +167,7 @@ export default function PagoEfectivo() {
                     />
                 </div>
 
-                {/* ❌ Mensaje de error visual */}
+                {/* Error visual */}
                 {error && (
                     <div className="mb-4 flex items-center justify-center gap-2 bg-red-100 border border-red-400 text-red-800 rounded-lg py-3 px-4 shadow-sm animate-fade-in">
                         <AlertTriangle size={20} />
@@ -158,14 +184,14 @@ export default function PagoEfectivo() {
                     Calcular Vuelto
                 </button>
 
-                {/* Resultado */}
+                {/* Vuelto */}
                 {vuelto !== null && (
                     <div className="mt-6 bg-green-100 border border-green-400 text-green-800 rounded-lg p-4 text-center font-bold text-lg shadow-sm animate-fade-in">
                         Vuelto: ${vuelto.toLocaleString()}
                     </div>
                 )}
 
-                {/* Mensaje de pago exitoso */}
+                {/* Pago exitoso */}
                 {pagoExitoso && (
                     <div className="mt-4 flex items-center justify-center gap-2 bg-green-500 text-white font-semibold rounded-lg py-3 px-4 animate-bounce shadow-md">
                         <CheckCircle2 size={22} />
@@ -173,15 +199,9 @@ export default function PagoEfectivo() {
                     </div>
                 )}
 
-                {/* Pie */}
-                <div className="mt-6 text-center text-gray-600 text-xs">
-                    Gracias por su compra
-                    <p className="italic mt-1">¡Vuelva pronto!</p>
-                </div>
-
-                {/* Botón volver */}
+                {/* Volver */}
                 <button
-                    onClick={() => navigate("/Carrito")}
+                    onClick={() => navigate("/metodoPago/" + id)}
                     className="mt-8 w-full flex items-center justify-center gap-2 bg-gray-200 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-300 transition-all duration-200"
                 >
                     <ArrowLeft size={18} />

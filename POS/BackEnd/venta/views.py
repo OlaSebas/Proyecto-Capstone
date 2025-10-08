@@ -162,7 +162,7 @@ def ventas_list(request):
         return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
 
 
-@api_view(['POST'])
+@api_view(['POST','PUT'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def venta(request):
@@ -205,10 +205,18 @@ def venta(request):
                     detalle_serializer.save()
                 else:
                     return Response({"error_detalle_promocion": detalle_serializer.errors}, status=400)
-
-
             # 4️⃣ Retornar venta con todos los detalles
             return Response(VentaSerializer(venta).data, status=status.HTTP_201_CREATED)
-
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+    if request.method == 'PUT':
+        try:
+            venta = get_object_or_404(Venta, pk=request.data.get('id'))
+            serializer = VentaSerializer(venta, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

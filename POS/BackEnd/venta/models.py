@@ -104,7 +104,7 @@ class Venta(models.Model):
     total = models.IntegerField()
     sesion_caja = models.ForeignKey(SesionCaja, on_delete=models.CASCADE)
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, null=True, blank=True)
-    metodo_pago = models.ForeignKey(MetodoPago, on_delete=models.CASCADE)
+    metodo_pago = models.ForeignKey(MetodoPago, on_delete=models.CASCADE,null=True, blank=True)
     usuario = models.ForeignKey(customUser, on_delete=models.CASCADE)
     estado = models.ForeignKey(TipoEstado, on_delete=models.CASCADE,default=3)
 

@@ -50,15 +50,15 @@ function App() {
           <Route path="/inventarioSuc/:sucursalId" element={<InventarioSuc />} />
           <Route path="/sucursalForm" element={<ViewAdminPR><SucursalForm /></ViewAdminPR>} />
           <Route path="/sucursalEdit/:id" element={<ViewAdminPR><SucursalEdit /></ViewAdminPR>} />
-          <Route path="/MetodoPago" element={<MetodoPago />} />
           <Route path="/AgregarProducto" element={<ViewAdminPR><AgregarProducto /></ViewAdminPR>} />
           <Route path="/AgregarPromocion" element={<ViewAdminPR><AgregarPromocion /></ViewAdminPR>} />
           <Route path="/PedidosDelivery" element={<PedidosDelivery />} />
           <Route path="/proveedor" element={<Proveedores />} />
-          <Route path="/Efectivo" element={<Efectivo />} />
-          <Route path="/Debito" element={<Debito />} />
-          <Route path="/Credito" element={<Credito />} />
-          <Route path="/Transferencia" element={<Transferencia />} />
+          <Route path="/MetodoPago/:id" element={<MetodoPago />} />
+          <Route path="/Efectivo/:id" element={<Efectivo />} />
+          <Route path="/Debito/:id" element={<Debito />} />
+          <Route path="/Credito/:id" element={<Credito />} />
+          <Route path="/Transferencia/:id" element={<Transferencia />} />
         </Route>
 
         {/* Redirección por defecto */}

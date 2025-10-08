@@ -3,13 +3,19 @@ import { useNavigate, useOutletContext } from "react-router-dom";
 import PreCarrito from "../components/PreCarrito";
 
 export default function Carrito() {
+  const apiUrl = import.meta.env.VITE_API_URL;
   const [carrito, setCarrito] = useState([]);
   const [hora, setHora] = useState("");
-  const [productoEditar, setProductoEditar] = useState(null); 
+  const [productoEditar, setProductoEditar] = useState(null);
   const { sidebarOpen, setSidebarOpen } = useOutletContext();
   const navigate = useNavigate();
 
-  // Cargar carrito de localStorage
+  // Datos base fijos o de sesión (ajústalos según tu app)
+  const clienteId = 1; //cliente generico
+  const sesionCajaId = localStorage.getItem("sesionCaja");
+  const estadoPendiente = 1;
+
+  // Cargar carrito
   useEffect(() => {
     const carritoGuardado = localStorage.getItem("carrito");
     if (carritoGuardado) setCarrito(JSON.parse(carritoGuardado));
@@ -53,9 +59,61 @@ export default function Carrito() {
     setProductoEditar(null);
   };
 
-  const volver = () => window.history.back();
-
   const subtotal = carrito.reduce((sum, item) => sum + (item.total || 0), 0);
+
+  // 🔹 Construir JSON y crear venta en backend
+  const generarVenta = async () => {
+    const detalles = carrito.map((item) => ({
+      producto: item.producto.id || item.producto,
+      cantidad: item.cantidad,
+      precio_unitario: item.producto.precio || item.precio_unitario,
+    }));
+
+    // Si tu carrito guarda promociones aparte, ajusta aquí:
+    const promociones = carrito
+      .filter((item) => item.promocion)
+      .map((item) => ({
+        promocion: item.promocion.id,
+        cantidad: item.cantidad || 1,
+      }));
+
+    const ventaPayload = {
+      total: subtotal,
+      sesion_caja: sesionCajaId,
+      cliente: clienteId,
+      metodo_pago: null,
+      estado: estadoPendiente,
+      detalles,
+      promociones,
+    };
+
+    console.log("🧾 JSON generado:", ventaPayload);
+
+    try {
+      const response = await fetch(`${apiUrl}/api/ventas/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Token ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify(ventaPayload),
+      });
+
+      if (!response.ok) {
+        throw new Error("Error al crear la venta");
+      }
+
+      const data = await response.json();
+      console.log("✅ Venta creada:", data);
+      navigate(`/MetodoPago/${data.id}`);
+
+    } catch (error) {
+      console.error("❌ Error creando venta:", error);
+      alert("No se pudo crear la venta");
+    }
+  };
+
+  const volver = () => window.history.back();
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
@@ -93,8 +151,6 @@ export default function Carrito() {
                 <thead className="bg-gray-300">
                   <tr>
                     <th className="px-6 py-4 text-gray-800">Producto</th>
-                    <th className="px-6 py-4 text-gray-800">Bebida</th>
-                    <th className="px-6 py-4 text-gray-800">Adicionales</th>
                     <th className="px-6 py-4 text-gray-800">Cantidad</th>
                     <th className="px-6 py-4 text-gray-800">Total</th>
                     <th className="px-6 py-4 text-gray-800">Acciones</th>
@@ -104,20 +160,10 @@ export default function Carrito() {
                   {carrito.map((item, index) => (
                     <tr
                       key={index}
-                      className={
-                        index % 2 === 0 ? "bg-white/90" : "bg-gray-100/90"
-                      }
+                      className={index % 2 === 0 ? "bg-white/90" : "bg-gray-100/90"}
                     >
                       <td className="px-6 py-4">
-                        {item.producto?.nombre || item.producto?.descripcion || "-"}
-                      </td>
-                      <td className="px-6 py-4">
-                        {item.refresco?.nombre || "-"}
-                      </td>
-                      <td className="px-6 py-4">
-                        {item.adicionales && item.adicionales.length > 0
-                          ? item.adicionales.map((a) => a.nombre).join(", ")
-                          : "-"}
+                        {item.producto?.descripcion || "-"}
                       </td>
                       <td className="px-6 py-4">{item.cantidad || 0}</td>
                       <td className="px-6 py-4">
@@ -160,7 +206,7 @@ export default function Carrito() {
                 Seguir Comprando
               </button>
               <button
-                onClick={() => navigate("/MetodoPago")}
+                onClick={generarVenta}
                 className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
               >
                 Pagar
@@ -185,15 +231,12 @@ export default function Carrito() {
         <PreCarrito
           producto={productoEditar.producto}
           cantidadInicial={productoEditar.cantidad}
-          refrescoInicial={productoEditar.refresco}
-          adicionalesInicial={productoEditar.adicionales}
           onClose={() => setProductoEditar(null)}
           onAddToCart={(pedido) =>
             guardarEdicion({ ...pedido, index: productoEditar.index })
           }
         />
       )}
-
     </div>
   );
 }

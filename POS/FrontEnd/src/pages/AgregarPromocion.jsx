@@ -237,6 +237,7 @@ export default function GestionPromociones() {
             setPromociones((prev) => prev.map((p) => (p.id === promo.id ? data : p)));
             cancelarEditar();
             alert("Promoción actualizada correctamente");
+            window.location.reload();
         } catch {
             alert("Error al editar promoción");
         }

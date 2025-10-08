@@ -52,6 +52,8 @@ class DetalleVentaSerializer(serializers.ModelSerializer):
 class VentaSerializer(serializers.ModelSerializer):
     usuario = customUserSerializer(read_only=True)
     detalles = DetalleVentaSerializer(source='detalleventa_set', many=True, read_only=True) 
+    iva = serializers.IntegerField(read_only=True)
+    subtotal = serializers.IntegerField(read_only=True)
     class Meta:
         model = Venta
         fields = '__all__'

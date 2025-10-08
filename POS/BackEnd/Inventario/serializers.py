@@ -4,7 +4,6 @@ from django.conf import settings
 
 
 class ProductoSerializer(serializers.ModelSerializer):
-    imagen = serializers.SerializerMethodField()
 
     class Meta:
         model = Producto

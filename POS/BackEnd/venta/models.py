@@ -108,6 +108,11 @@ class Venta(models.Model):
     usuario = models.ForeignKey(customUser, on_delete=models.CASCADE)
     estado = models.ForeignKey(TipoEstado, on_delete=models.CASCADE,default=3)
 
+    def save(self, *args, **kwargs):
+        self.iva = round(self.total * 0.19)
+        self.subtotal = self.total - self.iva
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f'Venta {self.id} - {self.fecha}'
 

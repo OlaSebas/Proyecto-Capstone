@@ -136,8 +136,8 @@ export default function GestionProductos() {
         if (imagen) formData.append("imagen", imagen);
 
         try {
-            const res = await fetch(`${apiUrl}productos/${producto.id}/`, {
-                method: "PATCH",
+            const res = await fetch(`${apiUrl}productos/update/${producto.id}/`, {
+                method: "PUT",
                 headers: { Authorization: `Token ${localStorage.getItem("token")}` },
                 body: formData,
             });
@@ -146,6 +146,7 @@ export default function GestionProductos() {
             setProductos(productos.map((p) => (p.id === producto.id ? data : p)));
             cancelarEditar();
             alert("Producto actualizado correctamente");
+            window.location.reload();
         } catch (err) {
             console.error(err);
             alert("Error al editar producto");

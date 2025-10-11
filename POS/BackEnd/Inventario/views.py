@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.response import Response
 from rest_framework import status, viewsets
+from decimal import Decimal
 from .models import Inventario, Producto, Sucursal, Comuna, Promocion, PromocionProducto,Insumo,Categoria, Item
 from .serializers import CategoriaSerializer,InventarioSerializer, ProductoSerializer, SucursalSerializer, ComunaSerializer, PromocionSerializer, PromocionProductoSerializer,InsumoSerializer, ItemSerializer
 
@@ -37,20 +38,38 @@ def inventario_create(request):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['PUT'])
-@authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated])
+@api_view(["PUT"])
 def inventario_update(request, inventario_id):
     try:
         inventario = Inventario.objects.get(id=inventario_id)
     except Inventario.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+        return Response({"error": "Inventario no encontrado"}, status=status.HTTP_404_NOT_FOUND)
 
-    serializer = InventarioSerializer(inventario, data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    cantidad_vendida = request.data.get("cantidad_vendida")
+
+    if cantidad_vendida is None:
+        return Response({"error": "Debe indicar la cantidad vendida"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        cantidad_vendida = Decimal(cantidad_vendida)
+    except Exception:
+        return Response({"error": "Cantidad inválida"}, status=status.HTTP_400_BAD_REQUEST)
+
+    if cantidad_vendida <= 0:
+        return Response({"error": "Cantidad vendida debe ser positiva"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # 🔹 Resta el stock
+    inventario.stock_actual -= cantidad_vendida
+    if inventario.stock_actual < 0:
+        inventario.stock_actual = 0  # evita stock negativo
+
+    inventario.save()
+
+    return Response({
+        "message": "Stock actualizado correctamente",
+        "inventario_id": inventario.id,
+        "nuevo_stock": float(inventario.stock_actual)
+    }, status=status.HTTP_200_OK)
 
 @api_view(['DELETE'])
 @authentication_classes([TokenAuthentication])

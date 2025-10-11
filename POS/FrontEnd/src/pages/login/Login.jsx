@@ -63,6 +63,34 @@ export default function Login() {
 
       console.log("✅ Usuario logeado:", data.User);
       alert(`Bienvenido ${data.User.username}`);
+
+      // 🔹 Crear cache temporal de productos y promociones
+      try {
+        const [productosRes, promocionesRes] = await Promise.all([
+          fetch(`${apiUrl}inventario/productos/`, {
+            method: "GET",
+            headers: { Authorization: `Token ${data.token}` },
+          }),
+          fetch(`${apiUrl}inventario/promociones/`, {
+            method: "GET",
+            headers: { Authorization: `Token ${data.token}` },
+          }),
+        ]);
+
+        const productos = await productosRes.json();
+        const promociones = await promocionesRes.json();
+
+        sessionStorage.setItem("productosCache", JSON.stringify(productos));
+        sessionStorage.setItem("promocionesCache", JSON.stringify(promociones));
+
+        console.log("🧠 Cache creado:", {
+          productos: productos.length,
+          promociones: promociones.length,
+        });
+      } catch (cacheError) {
+        console.warn("⚠️ No se pudieron cargar productos/promociones al cache:", cacheError);
+      }
+
       window.location.href = "/home";
     } catch (err) {
       setError(err.message);

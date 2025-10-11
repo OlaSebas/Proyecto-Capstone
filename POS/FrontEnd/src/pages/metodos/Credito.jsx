@@ -1,13 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-    CreditCard,
-    ArrowLeft,
-    CheckCircle2,
-    AlertTriangle,
-} from "lucide-react";
+import { CreditCard, ArrowLeft, CheckCircle2, AlertTriangle } from "lucide-react";
 
 export default function PagoCredito() {
+    const apiUrl = import.meta.env.VITE_API_URL;
     const navigate = useNavigate();
     const [productos, setProductos] = useState([]);
     const [totalBase, setTotalBase] = useState(0);
@@ -38,27 +34,99 @@ export default function PagoCredito() {
 
         const carritoLocal = JSON.parse(localStorage.getItem("carrito")) || [];
         setProductos(carritoLocal);
-        const subtotal = carritoLocal.reduce(
-            (sum, item) => sum + (item.total || 0),
-            0
-        );
+        const subtotal = carritoLocal.reduce((sum, item) => sum + (item.total || 0), 0);
         setTotalBase(subtotal);
-        setTotalFinal(subtotal); // total inicial sin recargo
+        setTotalFinal(subtotal);
     }, []);
 
     // Cálculo dinámico según cuotas y recargo
     useEffect(() => {
         let recargo = 0;
-        if (cuotas === 3) recargo = 0.05; // 5%
-        if (cuotas === 6) recargo = 0.1; // 10%
-        if (cuotas === 12) recargo = 0.2; // 20%
+        if (cuotas === 3) recargo = 0.05;
+        if (cuotas === 6) recargo = 0.1;
+        if (cuotas === 12) recargo = 0.2;
 
         const nuevoTotal = totalBase + totalBase * recargo;
         setTotalFinal(nuevoTotal);
         setMontoCuota((nuevoTotal / cuotas).toFixed(2));
     }, [cuotas, totalBase]);
 
-    const procesarPago = () => {
+    // Función para restar inventario
+    const restarInventario = async (carrito) => {
+        try {
+            const token = localStorage.getItem("token");
+
+            // Obtener sucursal del usuario
+            const resProfile = await fetch(`${apiUrl}api/profile/`, {
+                headers: { Authorization: `Token ${token}` },
+            });
+            if (!resProfile.ok) throw new Error("No se pudo obtener el perfil del usuario");
+            const perfil = await resProfile.json();
+            const sucursalId = perfil.caja?.sucursal;
+            if (!sucursalId) throw new Error("El usuario no tiene sucursal asignada");
+
+            // Obtener inventario
+            const resInventario = await fetch(`${apiUrl}inventario/`, {
+                headers: { Authorization: `Token ${token}` },
+            });
+            if (!resInventario.ok) throw new Error("No se pudo obtener inventario");
+            const inventarios = await resInventario.json();
+
+            for (const item of carrito) {
+                const itemsAProcesar = [];
+
+                // Productos normales
+                if (item.producto?.item) {
+                    itemsAProcesar.push({
+                        itemId: item.producto.item,
+                        cantidad: item.cantidad,
+                    });
+                }
+
+                // Productos dentro de promociones
+                if (item.producto && Array.isArray(item.producto.productos)) {
+                    item.producto.productos.forEach((p) => {
+                        if (p.item) {
+                            itemsAProcesar.push({
+                                itemId: p.item,
+                                cantidad: (p.cantidad || 1) * (item.cantidad || 1),
+                            });
+                        }
+                    });
+                }
+
+                // Actualizar stock
+                for (const ip of itemsAProcesar) {
+                    const inv = inventarios.find(
+                        (inv) => inv.item?.id === ip.itemId && inv.sucursal === sucursalId
+                    );
+                    if (!inv) {
+                        console.warn(`No se encontró inventario para item ${ip.itemId} en sucursal ${sucursalId}`);
+                        continue;
+                    }
+
+                    const nuevaCantidad = (inv.cantidad_vendida || 0) + ip.cantidad;
+
+                    const resUpdate = await fetch(`${apiUrl}inventario/update/${inv.id}/`, {
+                        method: "PUT",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Token ${token}`,
+                        },
+                        body: JSON.stringify({ cantidad_vendida: nuevaCantidad }),
+                    });
+
+                    if (!resUpdate.ok) {
+                        console.error(`❌ Error actualizando inventario ${inv.id}`);
+                    }
+                }
+            }
+        } catch (err) {
+            console.error("❌ Error al restar inventario:", err);
+        }
+    };
+
+    const procesarPago = async () => {
         if (productos.length === 0) {
             setError("No hay productos para pagar.");
             return;
@@ -84,13 +152,18 @@ export default function PagoCredito() {
             return;
         }
 
+        // Restar inventario
+        await restarInventario(productos);
+
         // Simula pago exitoso
         setError("");
         setPagoExitoso(true);
         localStorage.removeItem("carrito");
+        localStorage.removeItem("metodoPago");
 
         setTimeout(() => {
             setPagoExitoso(false);
+            navigate("/");
         }, 4000);
     };
 
@@ -137,22 +210,15 @@ export default function PagoCredito() {
                                 productos.map((item, i) => (
                                     <tr key={i} className="border-b last:border-none text-gray-700">
                                         <td className="py-2 px-3">
-                                            {item.producto?.nombre ||
-                                                item.producto?.descripcion ||
-                                                "-"}
+                                            {item.producto?.nombre || item.producto?.descripcion || "-"}
                                         </td>
                                         <td className="text-center">{item.cantidad}</td>
-                                        <td className="text-right">
-                                            ${item.total?.toLocaleString() || "0"}
-                                        </td>
+                                        <td className="text-right">${item.total?.toLocaleString() || "0"}</td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td
-                                        colSpan="3"
-                                        className="text-center py-3 text-gray-500"
-                                    >
+                                    <td colSpan="3" className="text-center py-3 text-gray-500">
                                         Carrito vacío
                                     </td>
                                 </tr>
@@ -169,9 +235,7 @@ export default function PagoCredito() {
 
                 {/* Selección de cuotas */}
                 <div className="mb-3">
-                    <label className="block mb-1 text-gray-700 font-medium">
-                        Seleccionar cuotas:
-                    </label>
+                    <label className="block mb-1 text-gray-700 font-medium">Seleccionar cuotas:</label>
                     <select
                         value={cuotas}
                         onChange={(e) => setCuotas(Number(e.target.value))}
@@ -187,21 +251,14 @@ export default function PagoCredito() {
                 {/* Monto por cuota */}
                 <div className="bg-gray-100 p-3 rounded-lg mb-4 text-center text-gray-700">
                     <p>
-                        Cada cuota:{" "}
-                        <span className="font-bold text-red-600">
-                            ${montoCuota}
-                        </span>
+                        Cada cuota: <span className="font-bold text-red-600">${montoCuota}</span>
                     </p>
-                    <p className="text-sm text-gray-500">
-                        Total con recargo: ${totalFinal.toLocaleString()}
-                    </p>
+                    <p className="text-sm text-gray-500">Total con recargo: ${totalFinal.toLocaleString()}</p>
                 </div>
 
                 {/* Datos tarjeta */}
                 <div className="mb-4">
-                    <label className="block mb-1 text-gray-700 font-medium">
-                        Nombre del titular:
-                    </label>
+                    <label className="block mb-1 text-gray-700 font-medium">Nombre del titular:</label>
                     <input
                         type="text"
                         value={nombreTitular}
@@ -212,9 +269,7 @@ export default function PagoCredito() {
                 </div>
 
                 <div className="mb-4">
-                    <label className="block mb-1 text-gray-700 font-medium">
-                        Número de tarjeta:
-                    </label>
+                    <label className="block mb-1 text-gray-700 font-medium">Número de tarjeta:</label>
                     <input
                         type="number"
                         value={numeroTarjeta}
@@ -226,9 +281,7 @@ export default function PagoCredito() {
 
                 <div className="flex gap-3 mb-4">
                     <div className="flex-1">
-                        <label className="block mb-1 text-gray-700 font-medium">
-                            Fecha Exp. (MM/AA):
-                        </label>
+                        <label className="block mb-1 text-gray-700 font-medium">Fecha Exp. (MM/AA):</label>
                         <input
                             type="text"
                             value={fechaExp}
@@ -238,9 +291,7 @@ export default function PagoCredito() {
                         />
                     </div>
                     <div className="w-1/3">
-                        <label className="block mb-1 text-gray-700 font-medium">
-                            CVV:
-                        </label>
+                        <label className="block mb-1 text-gray-700 font-medium">CVV:</label>
                         <input
                             type="number"
                             value={cvv}
@@ -263,7 +314,8 @@ export default function PagoCredito() {
                 <button
                     onClick={procesarPago}
                     className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-red-500 to-red-600 text-white py-3 rounded-lg font-semibold shadow-md hover:scale-[1.02] hover:shadow-lg transition-transform duration-200"
-                ><CheckCircle2 size={18} />
+                >
+                    <CheckCircle2 size={18} />
                     Confirmar Pago
                 </button>
 

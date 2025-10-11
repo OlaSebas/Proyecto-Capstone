@@ -32,15 +32,13 @@ export default function PagoEfectivo() {
         const subtotal = carritoLocal.reduce((sum, item) => sum + (item.total || 0), 0);
         setTotal(subtotal);
     }, []);
+
     // Función para actualizar el estado de la venta
     const actualizarVenta = async (estado, metodo_pago = null) => {
         try {
-            const venta = {
-            id: id,
-            estado: estado,
-            metodo_pago: metodo_pago,
-            } 
+            const venta = { id, estado };
             if (metodo_pago) venta.metodo_pago = metodo_pago;
+
             const response = await fetch(`${apiUrl}api/ventas/`, {
                 method: "PUT",
                 headers: {
@@ -49,11 +47,89 @@ export default function PagoEfectivo() {
                 },
                 body: JSON.stringify(venta),
             });
+
             if (!response.ok) throw new Error(`Error al actualizar la venta: ${JSON.stringify(venta)}`);
 
             console.log("✅ Venta actualizada correctamente");
         } catch (error) {
             console.error("❌ Error en la actualización de la venta:", error);
+        }
+    };
+
+    const restarInventario = async (carrito) => {
+        try {
+            const token = localStorage.getItem("token");
+
+            // 🔹 Obtener sucursal del usuario
+            const resProfile = await fetch(`${apiUrl}api/profile/`, {
+                headers: { Authorization: `Token ${token}` },
+            });
+
+            if (!resProfile.ok) throw new Error("No se pudo obtener el perfil del usuario");
+            const perfil = await resProfile.json();
+            const sucursalId = perfil.caja?.sucursal;
+            if (!sucursalId) throw new Error("El usuario no tiene sucursal asignada");
+            
+
+            // 🔹 Obtener inventario de la sucursal
+            const resInventario = await fetch(`${apiUrl}inventario/`, {
+                headers: { Authorization: `Token ${token}` },
+            });
+            if (!resInventario.ok) throw new Error("No se pudo obtener inventario");
+            const inventarios = await resInventario.json();
+
+            // 🔹 Construir lista de items a procesar
+            for (const item of carrito) {
+                const itemsAProcesar = [];
+                // Productos normales
+                if (item.producto?.item) {
+                    itemsAProcesar.push({
+                        itemId: item.producto.item,
+                        cantidad: item.cantidad,
+                    });
+                }
+                console.log("Item a procesar:", itemsAProcesar);
+
+                // Productos dentro de promociones
+                if (item.producto && Array.isArray(item.producto.productos)) {
+                    item.producto.productos.forEach((p) => {
+                        if (p.item) {  // <-- usar p.item
+                            itemsAProcesar.push({
+                                itemId: p.item,
+                                cantidad: (p.cantidad || 1) * (item.cantidad || 1),
+                            });
+                        }
+                    });
+                }
+                console.log("Items a procesar de promociones:", itemsAProcesar);
+
+            // 🔹 Actualizar stock en backend
+            for (const ip of itemsAProcesar) {
+                    const inv = inventarios.find(
+                        (inv) => inv.item?.id === ip.itemId && inv.sucursal === sucursalId
+                    );
+                    if (!inv) {
+                        console.warn(
+                            `No se encontró inventario para item ${ip.itemId} en sucursal ${sucursalId}`
+                        );
+                        continue;
+                    }
+
+                const resUpdate = await fetch(`${apiUrl}inventario/update/${inv.id}/`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Token ${token}`,
+                    },
+                    body: JSON.stringify({ cantidad_vendida: item.cantidad }),
+                });
+
+                if (!resUpdate.ok) {
+                    console.error(`❌ Error actualizando inventario ${inv.id}`);
+                }}
+    }}    
+    catch (err) {
+            console.error("❌ Error al restar inventario:", err);
         }
     };
 
@@ -76,11 +152,15 @@ export default function PagoEfectivo() {
         setVuelto(vueltoCalculado);
         setPagoExitoso(true);
 
+        // 🔹 Restar inventario
+        await restarInventario(productos);
+
         // ✅ Actualizar venta a PAGADA (estado 2, método 2)
         await actualizarVenta(2, 2);
 
         // Vaciar carrito
         localStorage.removeItem("carrito");
+        localStorage.removeItem("metodoPago");
 
         // Reiniciar mensaje después de 4s
         setTimeout(() => {

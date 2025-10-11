@@ -10,8 +10,8 @@ export default function Carrito() {
   const { sidebarOpen, setSidebarOpen } = useOutletContext();
   const navigate = useNavigate();
 
-  // Datos base fijos o de sesión (ajústalos según tu app)
-  const clienteId = 1; //cliente generico
+  // Datos base
+  const clienteId = 1;
   const sesionCajaId = localStorage.getItem("sesionCaja");
   const estadoPendiente = 1;
 
@@ -61,55 +61,82 @@ export default function Carrito() {
 
   const subtotal = carrito.reduce((sum, item) => sum + (item.total || 0), 0);
 
-  // 🔹 Construir JSON y crear venta en backend
+  // 🔹 Generar venta verificando si son productos o promociones
   const generarVenta = async () => {
-    const detalles = carrito.map((item) => ({
-      producto: item.producto.id || item.producto,
-      cantidad: item.cantidad,
-      precio_unitario: item.producto.precio || item.precio_unitario,
-    }));
-
-    // Si tu carrito guarda promociones aparte, ajusta aquí:
-    const promociones = carrito
-      .filter((item) => item.promocion)
-      .map((item) => ({
-        promocion: item.promocion.id,
-        cantidad: item.cantidad || 1,
-      }));
-
-    const ventaPayload = {
-      total: subtotal,
-      sesion_caja: sesionCajaId,
-      cliente: clienteId,
-      metodo_pago: null,
-      estado: estadoPendiente,
-      detalles,
-      promociones,
-    };
-
-    console.log("🧾 JSON generado:", ventaPayload);
-
     try {
+      const token = localStorage.getItem("token");
+
+      const productos = await JSON.parse(sessionStorage.getItem("productosCache"));
+      const promociones = await JSON.parse(sessionStorage.getItem("promocionesCache"));
+
+      const detalles = [];
+      const promocionesVenta = [];
+
+      carrito.forEach((item) => {
+        const nombreItem =
+          item.producto?.nombre ||
+          item.producto?.descripcion ||
+          item.descripcion ||
+          "";
+
+        // Buscar coincidencias tanto por id como por nombre
+        const productoCoincide = productos.find(
+          (p) => p.id === item.producto?.id || p.descripcion === nombreItem
+        );
+        const promoCoincide = promociones.find(
+          (p) => p.id === item.producto?.id || p.descripcion === nombreItem
+        );
+
+        if (productoCoincide) {
+          detalles.push({
+            producto: productoCoincide.id,
+            cantidad: item.cantidad,
+            precio_unitario: item.producto.precio || productoCoincide.precio,
+          });
+        } else if (promoCoincide) {
+          promocionesVenta.push({
+            promocion: promoCoincide.id,
+            cantidad: item.cantidad || 1,
+          });
+        } else {
+          console.warn("⚠️ No se encontró coincidencia para:", nombreItem);
+        }
+      });
+
+      const ventaPayload = {
+        total: subtotal,
+        sesion_caja: sesionCajaId,
+        cliente: clienteId,
+        metodo_pago: null,
+        estado: estadoPendiente,
+        detalles,
+        promociones: promocionesVenta,
+      };
+
+      console.log("🧾 JSON generado:", ventaPayload);
+
       const response = await fetch(`${apiUrl}/api/ventas/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Token ${localStorage.getItem("token")}`,
+          Authorization: `Token ${token}`,
         },
         body: JSON.stringify(ventaPayload),
       });
 
       if (!response.ok) {
-        throw new Error("Error al crear la venta");
+        const error = await response.json();
+        console.error("❌ Error del backend:", error);
+        throw new Error("Error al crear la venta.");
       }
 
       const data = await response.json();
       console.log("✅ Venta creada:", data);
+      alert("Venta registrada con éxito ✅");
       navigate(`/MetodoPago/${data.id}`);
-
     } catch (error) {
       console.error("❌ Error creando venta:", error);
-      alert("No se pudo crear la venta");
+      alert("No se pudo crear la venta. Ver consola para más detalles.");
     }
   };
 
@@ -160,10 +187,15 @@ export default function Carrito() {
                   {carrito.map((item, index) => (
                     <tr
                       key={index}
-                      className={index % 2 === 0 ? "bg-white/90" : "bg-gray-100/90"}
+                      className={
+                        index % 2 === 0 ? "bg-white/90" : "bg-gray-100/90"
+                      }
                     >
                       <td className="px-6 py-4">
-                        {item.producto?.descripcion || "-"}
+                        {item.producto?.descripcion ||
+                          item.producto?.nombre ||
+                          item.promocion?.descripcion ||
+                          "-"}
                       </td>
                       <td className="px-6 py-4">{item.cantidad || 0}</td>
                       <td className="px-6 py-4">

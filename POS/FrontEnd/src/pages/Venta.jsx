@@ -80,6 +80,9 @@ export default function Ventas() {
       } else {
         alert("Caja cerrada exitosamente");
         setCajaAbierta(false);
+        sessionStorage.clear();
+        localStorage.removeItem("token");
+        localStorage.removeItem("sesionCaja");
         handleLogout();
       }
     } catch (err) {

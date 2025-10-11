@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Banknote, ArrowLeft, CheckCircle2, Clipboard, AlertCircle } from "lucide-react";
+import {
+    Banknote,
+    ArrowLeft,
+    CheckCircle2,
+    Clipboard,
+    AlertCircle,
+} from "lucide-react";
 
 export default function PagoTransferencia() {
     const navigate = useNavigate();
@@ -10,17 +16,12 @@ export default function PagoTransferencia() {
     const [fecha, setFecha] = useState("");
     const [transferenciaHecha, setTransferenciaHecha] = useState(false);
     const [alerta, setAlerta] = useState("");
+    const apiUrl = import.meta.env.VITE_API_URL;
 
     const [form, setForm] = useState({
         nombre: "",
         rut: "",
         dv: "",
-        banco: "",
-        tipoCuenta: "",
-        numeroCuenta: "",
-        correo: "",
-        ccv: "",
-        fechaVencimiento: "",
     });
 
     const datosBanco = {
@@ -46,47 +47,37 @@ export default function PagoTransferencia() {
 
         const carritoLocal = JSON.parse(localStorage.getItem("carrito")) || [];
         setProductos(carritoLocal);
-        const subtotal = carritoLocal.reduce((sum, item) => sum + (item.total || 0), 0);
+
+        const subtotal = carritoLocal.reduce(
+            (sum, item) => sum + (item.total || 0),
+            0
+        );
         setTotal(subtotal);
     }, []);
 
     const handleChange = (e) => {
         let { name, value } = e.target;
 
-        // RUT cuerpo numérico
-        if (name === "rut") {
-            value = value.replace(/\D/g, "").slice(0, 8);
-        }
-
-        // DV solo números o K
-        if (name === "dv") {
-            value = value.toUpperCase().replace(/[^0-9K]/g, "").slice(0, 1);
-        }
-
-        // CCV solo números max 4
-        if (name === "ccv") {
-            value = value.replace(/\D/g, "").slice(0, 4);
-        }
-
-        // Fecha MM/YYYY
-        if (name === "fechaVencimiento") {
-            value = value.replace(/\D/g, "");
-            if (value.length > 2) {
-                let mes = value.slice(0, 2);
-                if (parseInt(mes, 10) > 12) mes = "12";
-                value = mes + "/" + value.slice(2, 6);
-            }
-            if (value.length > 7) value = value.slice(0, 7);
-        }
+        if (name === "rut") value = value.replace(/\D/g, "").slice(0, 8);
+        if (name === "dv")
+            value = value
+                .toUpperCase()
+                .replace(/[^0-9K]/g, "")
+                .slice(0, 1);
 
         setForm({ ...form, [name]: value });
     };
 
-    // Función para formatear RUT con puntos y guión
     const formatearRUT = (rut, dv) => {
         if (!rut) return "";
         let revRut = rut.split("").reverse().join("");
-        let rutFormateado = revRut.match(/.{1,3}/g)?.join(".").split("").reverse().join("") || rut;
+        let rutFormateado =
+            revRut
+                .match(/.{1,3}/g)
+                ?.join(".")
+                .split("")
+                .reverse()
+                .join("") || rut;
         return dv ? `${rutFormateado}-${dv}` : rutFormateado;
     };
 
@@ -99,36 +90,135 @@ export default function PagoTransferencia() {
             multiplo = multiplo < 7 ? multiplo + 1 : 2;
         }
         let dvEsperado = 11 - (suma % 11);
-        dvEsperado = dvEsperado === 11 ? "0" : dvEsperado === 10 ? "K" : dvEsperado.toString();
+        dvEsperado =
+            dvEsperado === 11 ? "0" : dvEsperado === 10 ? "K" : dvEsperado.toString();
         return dv.toUpperCase() === dvEsperado;
     };
 
-    const validarCorreo = (correo) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
-
     const validarFormulario = () => {
-        if (productos.length === 0) { setAlerta("No hay productos en el carrito para pagar."); return false; }
-        if (!form.nombre) { setAlerta("Debes ingresar tu nombre completo."); return false; }
-        if (!form.rut || !form.dv) { setAlerta("Debes ingresar tu RUT y dígito verificador."); return false; }
-        if (!validarRUT(form.rut, form.dv)) { setAlerta("El RUT ingresado no es válido."); return false; }
-        {/*if (!form.banco) { setAlerta("Debes seleccionar tu banco."); return false; }
-        if (!form.tipoCuenta) { setAlerta("Debes seleccionar el tipo de cuenta."); return false; }
-        if (!form.numeroCuenta) { setAlerta("Debes ingresar tu número de cuenta."); return false; }
-        if (!form.correo) { setAlerta("Debes ingresar tu correo electrónico."); return false; }
-        if (!validarCorreo(form.correo)) { setAlerta("El correo ingresado no tiene un formato válido."); return false; }
-        if (!form.ccv || (form.ccv.length < 3 || form.ccv.length > 4)) { setAlerta("El CCV debe tener 3 o 4 dígitos."); return false; }
-        if (!form.fechaVencimiento || !/^(0[1-9]|1[0-2])\/\d{4}$/.test(form.fechaVencimiento)) {
-            setAlerta("Fecha de vencimiento inválida. Usa MM/YYYY con mes entre 01 y 12.");
+        if (productos.length === 0) {
+            setAlerta("No hay productos en el carrito para pagar.");
             return false;
-        }*/}
+        }
+        if (!form.nombre) {
+            setAlerta("Debes ingresar tu nombre completo.");
+            return false;
+        }
+        if (!form.rut || !form.dv) {
+            setAlerta("Debes ingresar tu RUT y dígito verificador.");
+            return false;
+        }
+        if (!validarRUT(form.rut, form.dv)) {
+            setAlerta("El RUT ingresado no es válido.");
+            return false;
+        }
         setAlerta("");
         return true;
     };
 
-    const confirmarTransferencia = () => {
+    const confirmarTransferencia = async () => {
         if (!validarFormulario()) return;
-        setTransferenciaHecha(true);
-        localStorage.removeItem("carrito");
-        setTimeout(() => setTransferenciaHecha(false), 4000);
+
+        try {
+            const carrito = JSON.parse(localStorage.getItem("carrito")) || [];
+            const token = localStorage.getItem("token");
+
+            // 1️⃣ Obtener sucursal
+            const resProfile = await fetch(`${apiUrl}api/profile/`, {
+                headers: { Authorization: `Token ${token}` },
+            });
+            if (!resProfile.ok)
+                throw new Error("No se pudo obtener el perfil del usuario");
+            const perfil = await resProfile.json();
+            const sucursalId = perfil.caja?.sucursal;
+            if (!sucursalId)
+                throw new Error("El usuario no tiene una sucursal asignada");
+
+            // 2️⃣ Obtener inventarios
+            const resInventario = await fetch(`${apiUrl}inventario/`, {
+                headers: { Authorization: `Token ${token}` },
+            });
+            if (!resInventario.ok)
+                throw new Error("No se pudo obtener el inventario desde el servidor");
+            const inventarios = await resInventario.json();
+
+            // 3️⃣ Recorrer productos y promociones
+            // 3️⃣ Recorrer productos y promociones
+            for (const item of carrito) {
+                const itemsAProcesar = [];
+
+                // Productos normales
+                if (item.producto?.item) {
+                    itemsAProcesar.push({
+                        itemId: item.producto.item,
+                        cantidad: item.cantidad,
+                    });
+                }
+                console.log("Item a procesar:", itemsAProcesar);
+
+                // Productos dentro de promociones
+                if (item.producto && Array.isArray(item.producto.productos)) {
+                    item.producto.productos.forEach((p) => {
+                        if (p.item) {  // <-- usar p.item
+                            itemsAProcesar.push({
+                                itemId: p.item,
+                                cantidad: (p.cantidad || 1) * (item.cantidad || 1),
+                            });
+                        }
+                    });
+                }
+                console.log("Items a procesar de promociones:", itemsAProcesar);
+
+                // Si no hay items a procesar, saltar este item
+                if (itemsAProcesar.length === 0) {
+                    console.warn("⚠️ Producto sin item válido o promoción vacía:", item);
+                    continue;
+                }
+
+                // 4️⃣ Actualizar inventario
+                for (const ip of itemsAProcesar) {
+                    const inv = inventarios.find(
+                        (inv) => inv.item?.id === ip.itemId && inv.sucursal === sucursalId
+                    );
+                    if (!inv) {
+                        console.warn(
+                            `No se encontró inventario para item ${ip.itemId} en sucursal ${sucursalId}`
+                        );
+                        continue;
+                    }
+
+                    const resUpdate = await fetch(
+                        `${apiUrl}inventario/update/${inv.id}/`,
+                        {
+                            method: "PUT",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Token ${token}`,
+                            },
+                            body: JSON.stringify({ cantidad_vendida: ip.cantidad }),
+                        }
+                    );
+
+                    if (!resUpdate.ok) {
+                        console.error(`❌ Error al actualizar inventario ${inv.id}`);
+                    } else {
+                        const data = await resUpdate.json();
+                        console.log(
+                            `✅ Inventario actualizado: nuevo stock → ${data.nuevo_stock}`
+                        );
+                    }
+                }
+            }
+
+            // 5️⃣ Limpiar carrito y continuar
+            setTransferenciaHecha(true);
+            localStorage.removeItem("carrito");
+            localStorage.removeItem("metodoPago");
+            setTimeout(() => { setTransferenciaHecha(false); navigate("/") }, 4000);
+        } catch (error) {
+            console.error("❌ Error en la actualización de inventario:", error);
+            alert("No se pudo actualizar el inventario correctamente");
+        }
     };
 
     const copiarDatos = (texto) => {
@@ -142,7 +232,9 @@ export default function PagoTransferencia() {
                 {/* Encabezado */}
                 <div className="flex flex-col items-center text-center mb-6">
                     <Banknote size={40} className="text-red-600 mb-2" />
-                    <h2 className="text-3xl font-extrabold text-gray-800 tracking-tight">Pago por Transferencia</h2>
+                    <h2 className="text-3xl font-extrabold text-gray-800 tracking-tight">
+                        Pago por Transferencia
+                    </h2>
                     <p className="text-gray-600 text-sm mt-1">Danny Pollos</p>
                 </div>
 
@@ -175,15 +267,26 @@ export default function PagoTransferencia() {
                         <tbody>
                             {productos.length > 0 ? (
                                 productos.map((item, i) => (
-                                    <tr key={i} className="border-b last:border-none text-gray-700">
-                                        <td className="py-2 px-3">{item.producto?.nombre || item.producto?.descripcion || "-"}</td>
+                                    <tr
+                                        key={i}
+                                        className="border-b last:border-none text-gray-700"
+                                    >
+                                        <td className="py-2 px-3">
+                                            {item.producto?.nombre ||
+                                                item.producto?.descripcion ||
+                                                "-"}
+                                        </td>
                                         <td className="text-center">{item.cantidad}</td>
-                                        <td className="text-right">${item.total?.toLocaleString() || "0"}</td>
+                                        <td className="text-right">
+                                            ${item.total?.toLocaleString() || "0"}
+                                        </td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="3" className="text-center py-3 text-gray-500">Carrito vacío</td>
+                                    <td colSpan="3" className="text-center py-3 text-gray-500">
+                                        Carrito vacío
+                                    </td>
                                 </tr>
                             )}
                         </tbody>
@@ -198,56 +301,74 @@ export default function PagoTransferencia() {
 
                 {/* Datos bancarios */}
                 <div className="bg-red-50 rounded-lg p-4 border border-red-300 mb-4 text-sm text-gray-700">
-                    <h3 className="font-bold text-red-800 mb-2">Datos para Transferencia:</h3>
+                    <h3 className="font-bold text-red-800 mb-2">
+                        Datos para Transferencia:
+                    </h3>
                     <p className="font-semibold">
                         <strong>Titular:</strong> {datosBanco.titular}{" "}
-                        <Clipboard className="inline ml-2 cursor-pointer text-red-600 hover:text-red-800" size={16} onClick={() => copiarDatos(datosBanco.titular)} />
+                        <Clipboard
+                            className="inline ml-2 cursor-pointer text-red-600 hover:text-red-800"
+                            size={16}
+                            onClick={() => copiarDatos(datosBanco.titular)}
+                        />
                     </p>
-                    <p className="font-semibold"><strong>RUT:</strong> {datosBanco.rut}</p>
-                    <p className="font-semibold"><strong>Banco:</strong> {datosBanco.banco}</p>
-                    <p className="font-semibold"><strong>Tipo de cuenta:</strong> {datosBanco.tipoCuenta}</p>
+                    <p className="font-semibold">
+                        <strong>RUT:</strong> {datosBanco.rut}
+                    </p>
+                    <p className="font-semibold">
+                        <strong>Banco:</strong> {datosBanco.banco}
+                    </p>
+                    <p className="font-semibold">
+                        <strong>Tipo de cuenta:</strong> {datosBanco.tipoCuenta}
+                    </p>
                     <p className="font-semibold">
                         <strong>N° de cuenta:</strong> {datosBanco.numeroCuenta}{" "}
-                        <Clipboard className="inline ml-2 cursor-pointer text-red-600 hover:text-red-800" size={16} onClick={() => copiarDatos(datosBanco.numeroCuenta)} />
+                        <Clipboard
+                            className="inline ml-2 cursor-pointer text-red-600 hover:text-red-800"
+                            size={16}
+                            onClick={() => copiarDatos(datosBanco.numeroCuenta)}
+                        />
                     </p>
-                    <p className="font-semibold"><strong>Correo:</strong> {datosBanco.correo}</p>
+                    <p className="font-semibold">
+                        <strong>Correo:</strong> {datosBanco.correo}
+                    </p>
                 </div>
 
                 {/* Datos del cliente */}
                 <div className="mb-6">
-                    <h3 className="font-semibold text-lg mb-3 text-gray-700">Ingresa tus datos:</h3>
+                    <h3 className="font-semibold text-lg mb-3 text-gray-700">
+                        Ingresa tus datos:
+                    </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input type="text" name="nombre" value={form.nombre} onChange={handleChange} placeholder="Ej: Juan Pérez" className="border p-2 rounded-md w-full" />
-
-                        {/* RUT con DV */}
+                        <input
+                            type="text"
+                            name="nombre"
+                            value={form.nombre}
+                            onChange={handleChange}
+                            placeholder="Ej: Juan Pérez"
+                            className="border p-2 rounded-md w-full"
+                        />
                         <div className="flex gap-2">
-                            <input type="text" name="rut" value={form.rut} onChange={handleChange} placeholder="12345678" className="border p-2 rounded-md w-3/4" />
-                            <input type="text" name="dv" value={form.dv} onChange={handleChange} placeholder="K" className="border p-2 rounded-md w-1/4" />
+                            <input
+                                type="text"
+                                name="rut"
+                                value={form.rut}
+                                onChange={handleChange}
+                                placeholder="12345678"
+                                className="border p-2 rounded-md w-3/4"
+                            />
+                            <input
+                                type="text"
+                                name="dv"
+                                value={form.dv}
+                                onChange={handleChange}
+                                placeholder="K"
+                                className="border p-2 rounded-md w-1/4"
+                            />
                         </div>
-                        <div className="col-span-2 text-gray-600 text-sm">Formato RUT: {formatearRUT(form.rut, form.dv)}</div>
-                        {/*
-                        <select name="banco" value={form.banco} onChange={handleChange} className="border p-2 rounded-md w-full">
-                            <option value="">Selecciona tu banco</option>
-                            <option value="Banco de Chile">Banco de Chile</option>
-                            <option value="Banco Estado">Banco Estado</option>
-                            <option value="Banco Santander">Banco Santander</option>
-                            <option value="Banco BCI">Banco BCI</option>
-                            <option value="Scotiabank Chile">Scotiabank Chile</option>
-                            <option value="Banco Itaú">Banco Itaú</option>
-                            <option value="Banco Falabella">Banco Falabella</option>
-                            <option value="Banco Ripley">Banco Ripley</option>
-                        </select>
-                        <select name="tipoCuenta" value={form.tipoCuenta} onChange={handleChange} className="border p-2 rounded-md w-full">
-                            <option value="">Selecciona tipo de cuenta</option>
-                            <option value="Cuenta Corriente">Cuenta Corriente</option>
-                            <option value="Cuenta Vista">Cuenta Vista</option>
-                            <option value="Cuenta RUT">Cuenta RUT</option>
-                            <option value="Cuenta Ahorro">Cuenta Ahorro</option>
-                        </select>
-                        <input type="text" name="numeroCuenta" value={form.numeroCuenta} onChange={handleChange} placeholder="Ej: 123456789012" className="border p-2 rounded-md w-full" />
-                        <input type="email" name="correo" value={form.correo} onChange={handleChange} placeholder="Ej: correo@ejemplo.com" className="border p-2 rounded-md w-full" />
-                        <input type="text" name="fechaVencimiento" value={form.fechaVencimiento} onChange={handleChange} placeholder="MM/YYYY" className="border p-2 rounded-md w-full" />
-                        <input type="text" name="ccv" value={form.ccv} onChange={handleChange} placeholder="CCV (3-4 dígitos)" className="border p-2 rounded-md w-full" />*/}
+                        <div className="col-span-2 text-gray-600 text-sm">
+                            Formato RUT: {formatearRUT(form.rut, form.dv)}
+                        </div>
                     </div>
                 </div>
 
@@ -260,7 +381,10 @@ export default function PagoTransferencia() {
                 )}
 
                 {/* Confirmar pago */}
-                <button onClick={confirmarTransferencia} className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-red-500 to-red-600 text-white py-3 rounded-lg font-semibold shadow-md hover:scale-[1.02] hover:shadow-lg transition-transform duration-200">
+                <button
+                    onClick={confirmarTransferencia}
+                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-red-500 to-red-600 text-white py-3 rounded-lg font-semibold shadow-md hover:scale-[1.02] hover:shadow-lg transition-transform duration-200"
+                >
                     <CheckCircle2 size={18} />
                     Confirmar Transferencia
                 </button>
@@ -279,7 +403,10 @@ export default function PagoTransferencia() {
                 </div>
 
                 {/* Botón volver */}
-                <button onClick={() => navigate("/Carrito")} className="mt-8 w-full flex items-center justify-center gap-2 bg-gray-200 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-300 transition-all duration-200">
+                <button
+                    onClick={() => navigate("/Carrito")}
+                    className="mt-8 w-full flex items-center justify-center gap-2 bg-gray-200 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-300 transition-all duration-200"
+                >
                     <ArrowLeft size={18} />
                     Volver a métodos de pago
                 </button>

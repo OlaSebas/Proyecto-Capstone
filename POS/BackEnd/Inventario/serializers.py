@@ -68,10 +68,11 @@ class ComunaSerializer(serializers.ModelSerializer):
 class PromocionProductoSerializer(serializers.ModelSerializer):
     # Mostrar la descripción del producto en lugar de solo su ID
     producto_descripcion = serializers.CharField(source="producto.descripcion", read_only=True)
+    item = serializers.IntegerField(source="producto.item.id", read_only=True)
 
     class Meta:
         model = PromocionProducto
-        fields = ["id",'promocion', "producto", "producto_descripcion", "cantidad"]
+        fields = ["id",'promocion', "producto", "producto_descripcion", "cantidad", "item"]
 
 
 class PromocionSerializer(serializers.ModelSerializer):

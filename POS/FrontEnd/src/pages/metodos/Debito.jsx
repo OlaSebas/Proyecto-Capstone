@@ -1,13 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-    CreditCard,
-    ArrowLeft,
-    CheckCircle2,
-    AlertTriangle,
-} from "lucide-react";
+import { CreditCard, ArrowLeft, CheckCircle2, AlertTriangle } from "lucide-react";
 
 export default function PagoDebito() {
+    const apiUrl = import.meta.env.VITE_API_URL;
     const navigate = useNavigate();
     const [productos, setProductos] = useState([]);
     const [total, setTotal] = useState(0);
@@ -18,6 +14,7 @@ export default function PagoDebito() {
     const [pagoExitoso, setPagoExitoso] = useState(false);
     const [error, setError] = useState("");
 
+    // Carga del carrito y boleta
     useEffect(() => {
         const hoy = new Date();
         const fechaStr = hoy.toLocaleString("es-CL", {
@@ -32,14 +29,86 @@ export default function PagoDebito() {
 
         const carritoLocal = JSON.parse(localStorage.getItem("carrito")) || [];
         setProductos(carritoLocal);
-        const subtotal = carritoLocal.reduce(
-            (sum, item) => sum + (item.total || 0),
-            0
-        );
+        const subtotal = carritoLocal.reduce((sum, item) => sum + (item.total || 0), 0);
         setTotal(subtotal);
     }, []);
 
-    const procesarPago = () => {
+    // Función para restar inventario
+    const restarInventario = async (carrito) => {
+        try {
+            const token = localStorage.getItem("token");
+
+            // Obtener sucursal del usuario
+            const resProfile = await fetch(`${apiUrl}api/profile/`, {
+                headers: { Authorization: `Token ${token}` },
+            });
+            if (!resProfile.ok) throw new Error("No se pudo obtener el perfil del usuario");
+            const perfil = await resProfile.json();
+            const sucursalId = perfil.caja?.sucursal;
+            if (!sucursalId) throw new Error("El usuario no tiene sucursal asignada");
+
+            // Obtener inventario
+            const resInventario = await fetch(`${apiUrl}inventario/`, {
+                headers: { Authorization: `Token ${token}` },
+            });
+            if (!resInventario.ok) throw new Error("No se pudo obtener inventario");
+            const inventarios = await resInventario.json();
+
+            for (const item of carrito) {
+                const itemsAProcesar = [];
+
+                // Productos normales
+                if (item.producto?.item) {
+                    itemsAProcesar.push({
+                        itemId: item.producto.item,
+                        cantidad: item.cantidad,
+                    });
+                }
+
+                // Productos dentro de promociones
+                if (item.producto && Array.isArray(item.producto.productos)) {
+                    item.producto.productos.forEach((p) => {
+                        if (p.item) {
+                            itemsAProcesar.push({
+                                itemId: p.item,
+                                cantidad: (p.cantidad || 1) * (item.cantidad || 1),
+                            });
+                        }
+                    });
+                }
+
+                // Actualizar stock
+                for (const ip of itemsAProcesar) {
+                    const inv = inventarios.find(
+                        (inv) => inv.item?.id === ip.itemId && inv.sucursal === sucursalId
+                    );
+                    if (!inv) {
+                        console.warn(`No se encontró inventario para item ${ip.itemId} en sucursal ${sucursalId}`);
+                        continue;
+                    }
+
+                    const nuevaCantidad = (inv.cantidad_vendida || 0) + ip.cantidad;
+
+                    const resUpdate = await fetch(`${apiUrl}inventario/update/${inv.id}/`, {
+                        method: "PUT",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Token ${token}`,
+                        },
+                        body: JSON.stringify({ cantidad_vendida: nuevaCantidad }),
+                    });
+
+                    if (!resUpdate.ok) {
+                        console.error(`❌ Error actualizando inventario ${inv.id}`);
+                    }
+                }
+            }
+        } catch (err) {
+            console.error("❌ Error al restar inventario:", err);
+        }
+    };
+
+    const procesarPago = async () => {
         if (productos.length === 0) {
             setError("No hay productos para pagar.");
             return;
@@ -55,13 +124,18 @@ export default function PagoDebito() {
             return;
         }
 
+        // Restar inventario
+        await restarInventario(productos);
+
         // Simulación de pago exitoso
         setError("");
         setPagoExitoso(true);
         localStorage.removeItem("carrito");
+        localStorage.removeItem("metodoPago");
 
         setTimeout(() => {
             setPagoExitoso(false);
+            navigate("/Ventas");
         }, 4000);
     };
 
@@ -98,47 +172,23 @@ export default function PagoDebito() {
                     <table className="w-full text-sm">
                         <thead className="bg-gray-100 border-b border-gray-300">
                             <tr>
-                                <th className="py-2 px-3 text-left text-gray-600">
-                                    Producto
-                                </th>
-                                <th className="py-2 px-3 text-center text-gray-600">
-                                    Cant.
-                                </th>
-                                <th className="py-2 px-3 text-right text-gray-600">
-                                    Subtotal
-                                </th>
+                                <th className="py-2 px-3 text-left text-gray-600">Producto</th>
+                                <th className="py-2 px-3 text-center text-gray-600">Cant.</th>
+                                <th className="py-2 px-3 text-right text-gray-600">Subtotal</th>
                             </tr>
                         </thead>
                         <tbody>
                             {productos.length > 0 ? (
                                 productos.map((item, i) => (
-                                    <tr
-                                        key={i}
-                                        className="border-b last:border-none text-gray-700"
-                                    >
-                                        <td className="py-2 px-3">
-                                            {item.producto?.nombre ||
-                                                item.producto?.descripcion ||
-                                                "-"}
-                                        </td>
-                                        <td className="text-center">
-                                            {item.cantidad}
-                                        </td>
-                                        <td className="text-right">
-                                            $
-                                            {item.total?.toLocaleString() ||
-                                                "0"}
-                                        </td>
+                                    <tr key={i} className="border-b last:border-none text-gray-700">
+                                        <td className="py-2 px-3">{item.producto?.nombre || item.producto?.descripcion || "-"}</td>
+                                        <td className="text-center">{item.cantidad}</td>
+                                        <td className="text-right">${item.total?.toLocaleString() || "0"}</td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td
-                                        colSpan="3"
-                                        className="text-center py-3 text-gray-500"
-                                    >
-                                        Carrito vacío
-                                    </td>
+                                    <td colSpan="3" className="text-center py-3 text-gray-500">Carrito vacío</td>
                                 </tr>
                             )}
                         </tbody>
@@ -153,9 +203,7 @@ export default function PagoDebito() {
 
                 {/* Datos de tarjeta */}
                 <div className="mb-4">
-                    <label className="block mb-1 text-gray-700 font-medium">
-                        Nombre del titular:
-                    </label>
+                    <label className="block mb-1 text-gray-700 font-medium">Nombre del titular:</label>
                     <input
                         type="text"
                         value={nombreTitular}
@@ -166,9 +214,7 @@ export default function PagoDebito() {
                 </div>
 
                 <div className="mb-4">
-                    <label className="block mb-1 text-gray-700 font-medium">
-                        Número de tarjeta:
-                    </label>
+                    <label className="block mb-1 text-gray-700 font-medium">Número de tarjeta:</label>
                     <input
                         type="number"
                         value={numeroTarjeta}
@@ -190,7 +236,8 @@ export default function PagoDebito() {
                 <button
                     onClick={procesarPago}
                     className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-red-500 to-red-600 text-white py-3 rounded-lg font-semibold shadow-md hover:scale-[1.02] hover:shadow-lg transition-transform duration-200"
-                ><CheckCircle2 size={18} />
+                >
+                    <CheckCircle2 size={18} />
                     Confirmar Pago
                 </button>
 

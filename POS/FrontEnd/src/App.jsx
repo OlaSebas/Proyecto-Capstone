@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
+import './App.css';
 import Login from "./pages/login/Login";
 import Layout from "./components/Layout";
 import Venta from "./pages/Venta";
@@ -10,11 +11,11 @@ import MetodoPago from "./pages/MetodoPago";
 import ProtectedRoute from "./components/protectedRoute";
 import ViewAdminPR from "./components/ViewAdminPR";
 import RegistroUsuario from "./pages/admin/RegistroUsuario";
-import AgregarProducto from "./pages/AgregarProducto";
-import AgregarPromocion from "./pages/AgregarPromocion";
+import AgregarProducto from "./pages/formularios/AgregarProducto";
+import AgregarPromocion from "./pages/formularios/AgregarPromocion";
+import Inventario from "./pages/formularios/GestionInvent";
 import PedidosDelivery from "./pages/PedidosDelivery";
 import Proveedores from "./pages/Proveedor";
-import './App.css';
 import Sucursal from "./pages/Sucursal";
 import InventarioSuc from "./pages/InventarioSuc";
 import SucursalForm from "./pages/formularios/SucursalForm";
@@ -59,6 +60,7 @@ function App() {
           <Route path="/Debito/:id" element={<Debito />} />
           <Route path="/Credito/:id" element={<Credito />} />
           <Route path="/Transferencia/:id" element={<Transferencia />} />
+          <Route path="/GestionInvent" element={<ViewAdminPR><Inventario /></ViewAdminPR>} />
         </Route>
 
         {/* Redirección por defecto */}

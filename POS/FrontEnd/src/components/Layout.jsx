@@ -66,6 +66,10 @@ export function Layout() {
             className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold">
             <Package2 size={20} /> Gestion Promoción
           </Link>
+          <Link to="/GestionInvent"
+            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold">
+            <Package size={20} /> Gestion Inventario
+          </Link>
           <Link to="/RegistroUsuario"
             className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold">
             <UserPlus size={20} /> Registro Usuario

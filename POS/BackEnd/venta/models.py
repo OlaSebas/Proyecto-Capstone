@@ -120,12 +120,15 @@ class DetalleVenta(models.Model):
     venta = models.ForeignKey(Venta, on_delete=models.CASCADE)
     producto = models.ForeignKey(Producto, null=True, blank=True, on_delete=models.CASCADE)
     promocion = models.ForeignKey(Promocion, null=True, blank=True, on_delete=models.CASCADE)
-    cantidad = models.IntegerField()
+    cantidad = models.DecimalField(max_digits=10, decimal_places=2)
     precio_unitario = models.IntegerField()
     total = models.IntegerField()
 
     def save(self, *args, **kwargs):
-        self.total = self.cantidad * self.precio_unitario
+        if self.cantidad < 1:
+            self.total = self.precio_unitario
+        else:
+            self.total = self.cantidad * self.precio_unitario
         super().save(*args, **kwargs)
 
     def __str__(self):

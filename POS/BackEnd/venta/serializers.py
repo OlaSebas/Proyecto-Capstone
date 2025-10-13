@@ -45,6 +45,7 @@ class ClienteSerializer(serializers.ModelSerializer):
 
 class DetalleVentaSerializer(serializers.ModelSerializer):
     total = serializers.IntegerField(read_only=True)
+    cantidad = serializers.DecimalField(max_digits=10, decimal_places=2)
     class Meta:
         model = DetalleVenta
         fields = '__all__'

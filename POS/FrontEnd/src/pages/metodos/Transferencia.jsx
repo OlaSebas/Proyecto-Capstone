@@ -146,24 +146,35 @@ export default function PagoTransferencia() {
             // 3️⃣ Recorrer productos y promociones
             for (const item of carrito) {
                 const itemsAProcesar = [];
-
                 // Productos normales
                 if (item.producto?.item) {
+                    if (item.producto.eq_pollo !== null) {
+                        itemsAProcesar.push({
+                            itemId: item.producto.item,
+                            cantidad: item.cantidad * item.producto.eq_pollo,
+                        });
+                    } else {
                     itemsAProcesar.push({
                         itemId: item.producto.item,
                         cantidad: item.cantidad,
                     });
+                }
                 }
                 console.log("Item a procesar:", itemsAProcesar);
 
                 // Productos dentro de promociones
                 if (item.producto && Array.isArray(item.producto.productos)) {
                     item.producto.productos.forEach((p) => {
-                        if (p.item) {  // <-- usar p.item
+                        if (p.item) {  
+                            if (p.eq_pollo !== null) {
+                                itemsAProcesar.push({
+                                    itemId: p.item,
+                                    cantidad: (p.cantidad || 1) * (item.cantidad || 1) * p.eq_pollo,})}
+                            else{
                             itemsAProcesar.push({
                                 itemId: p.item,
                                 cantidad: (p.cantidad || 1) * (item.cantidad || 1),
-                            });
+                            });}
                         }
                     });
                 }

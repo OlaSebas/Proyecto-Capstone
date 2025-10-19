@@ -3,6 +3,7 @@ import './App.css';
 import Login from "./pages/login/Login";
 import Layout from "./components/Layout";
 import Venta from "./pages/Venta";
+import ReporteVenta from "./pages/ReporteVenta";
 import Producto from "./pages/Producto";
 import InventarioStock from "./pages/InventarioStock";
 import Home from "./pages/Home";
@@ -61,6 +62,7 @@ function App() {
           <Route path="/Credito/:id" element={<Credito />} />
           <Route path="/Transferencia/:id" element={<Transferencia />} />
           <Route path="/GestionInvent" element={<ViewAdminPR><Inventario /></ViewAdminPR>} />
+          <Route path="/ReporteVenta" element={<ViewAdminPR><ReporteVenta /></ViewAdminPR>} />
         </Route>
 
         {/* Redirección por defecto */}

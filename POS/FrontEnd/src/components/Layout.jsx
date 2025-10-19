@@ -70,6 +70,10 @@ export function Layout() {
             className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold">
             <Package size={20} /> Gestion Inventario
           </Link>
+          <Link to="/ReporteVenta"
+            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold">
+            <ClipboardList size={20} /> Reporte de Ventas
+          </Link>
           <Link to="/RegistroUsuario"
             className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold">
             <UserPlus size={20} /> Registro Usuario

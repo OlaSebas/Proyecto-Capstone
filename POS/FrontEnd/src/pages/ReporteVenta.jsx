@@ -6,7 +6,7 @@ import {
 import { Menu, ChevronDown, ChevronUp, DollarSign, Package, Star } from "lucide-react";
 
 export default function ReporteVentas({ toggleSidebar }) {
-    const apiUrl = "http://127.0.0.1:8000/";
+    const apiUrl = import.meta.env.VITE_API_URL;
     const token = localStorage.getItem("token");
 
     const [ventas, setVentas] = useState([]);

@@ -3,20 +3,11 @@ import { Plus, List, Clock } from "lucide-react";
 import { useOutletContext, Link } from "react-router-dom";
 
 export default function Ventas() {
-  const [acciones, setAcciones] = useState([]);
   const [hora, setHora] = useState("");
   const [cajaAbierta, setCajaAbierta] = useState(false);
   const apiUrl = import.meta.env.VITE_API_URL;
 
   const { sidebarOpen, setSidebarOpen } = useOutletContext();
-
-  // Consultar acciones
-  useEffect(() => {
-    fetch(`${apiUrl}api/ventas/`)
-      .then((res) => res.json())
-      .then((data) => setAcciones(data.acciones || []))
-      .catch((err) => console.error(err));
-  }, [apiUrl]);
 
   // Consultar si hay sesión de caja activa
   useEffect(() => {

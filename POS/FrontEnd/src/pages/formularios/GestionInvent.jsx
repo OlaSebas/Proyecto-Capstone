@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { PlusCircle, Trash2, Edit2, XCircle } from "lucide-react";
+import { useOutletContext, useNavigate } from "react-router-dom";
 
 export default function InventarioPage() {
     const [inventario, setInventario] = useState([]);
@@ -16,7 +17,8 @@ export default function InventarioPage() {
     const [mensaje, setMensaje] = useState("");
     const [loading, setLoading] = useState(true);
     const [tabActiva, setTabActiva] = useState("inventario"); // inventario o formulario
-
+    const [hora, setHora] = useState("");
+    const { sidebarOpen, setSidebarOpen } = useOutletContext();
     const token = localStorage.getItem("token");
     const apiUrl = "http://127.0.0.1:8000/inventario/";
 
@@ -45,6 +47,23 @@ export default function InventarioPage() {
 
         cargarSucursales();
     }, [token]);
+
+    // Reloj en vivo
+    useEffect(() => {
+        const actualizarHora = () => {
+            const now = new Date();
+            setHora(
+                now.toLocaleTimeString("es-CL", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                })
+            );
+        };
+        actualizarHora();
+        const intervalo = setInterval(actualizarHora, 1000);
+        return () => clearInterval(intervalo);
+    }, []);
 
     useEffect(() => {
         if (!sucursalActiva) {
@@ -186,8 +205,18 @@ export default function InventarioPage() {
 
     return (
         <div className="flex flex-col min-h-screen bg-gray-100">
-            <header className="bg-white shadow px-4 sm:px-6 py-4 flex justify-between items-center">
-                <h1 className="text-2xl sm:text-3xl font-bold text-red-700 text-center flex-1">Gestión de Inventario</h1>
+            {/* Header */}
+            <header className="flex justify-between items-center bg-white shadow px-6 py-4">
+                <button
+                    onClick={() => setSidebarOpen(!sidebarOpen)}
+                    className="px-3 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                >
+                    ☰
+                </button>
+                <h2 className="text-3xl font-bold text-gray-800 flex-1 text-center">
+                    Gestion de Inventario
+                </h2>
+                <span className="text-gray-600 font-medium">{hora}</span>
             </header>
 
             <main className="flex-1 flex flex-col p-4 sm:p-6 items-center w-full">

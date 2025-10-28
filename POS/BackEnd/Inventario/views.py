@@ -50,9 +50,6 @@ def inventario_update(request, inventario_id):
     if cantidad_vendida is None:
         return Response({"error": "Debe indicar la cantidad vendida"}, status=status.HTTP_400_BAD_REQUEST)
 
-    if cantidad_vendida <= 0:
-        return Response({"error": "Cantidad vendida debe ser positiva"}, status=status.HTTP_400_BAD_REQUEST)
-
     # 🔹 Resta el stock
     inventario.stock_actual = Decimal(inventario.stock_actual) - Decimal(cantidad_vendida)
     if inventario.stock_actual < 0:

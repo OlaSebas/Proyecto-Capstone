@@ -112,15 +112,18 @@ export default function ReporteVentas({ toggleSidebar }) {
     // Filtro para dashboards (solo ventas pagadas dentro del rango de fechas)
     const ventasFiltradasDashboards = useMemo(() => {
         return ventas.filter((v) => {
-            if (v.estado !== 2) return false;
+            if (v.estado !== 2) return false; // solo ventas pagadas
 
             const fechaVenta = new Date(v.fecha);
+            const cumpleSucursal =
+                !sucursalSeleccionada || v.usuario?.caja?.sucursal === Number(sucursalSeleccionada);
             const cumpleFechaInicio = !fechaInicio || fechaVenta >= new Date(fechaInicio);
             const cumpleFechaFin = !fechaFin || fechaVenta <= new Date(fechaFin);
 
-            return cumpleFechaInicio && cumpleFechaFin;
+            return cumpleSucursal && cumpleFechaInicio && cumpleFechaFin;
         });
-    }, [ventas, fechaInicio, fechaFin]);
+    }, [ventas, sucursalSeleccionada, fechaInicio, fechaFin]);
+
 
     const totalVendido = ventasFiltradasDashboards.reduce((sum, v) => sum + (v.total || 0), 0);
     const totalProductos = ventasFiltradasDashboards.reduce(

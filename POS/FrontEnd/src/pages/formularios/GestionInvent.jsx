@@ -20,7 +20,7 @@ export default function InventarioPage() {
     const [hora, setHora] = useState("");
     const { sidebarOpen, setSidebarOpen } = useOutletContext();
     const token = localStorage.getItem("token");
-    const apiUrl = "http://127.0.0.1:8000/inventario/";
+    const apiUrl = import.meta.env.VITE_API_URL_INVENTARIO;
 
     useEffect(() => {
         if (!token) {

@@ -3,7 +3,7 @@ import { useNavigate, useParams, useOutletContext } from "react-router-dom";
 import { Wallet, CreditCard, Smartphone, DollarSign } from "lucide-react";
 
 export default function MetodoPago() {
-    const { id } = useParams(); // ✅ ID de la venta desde la URL
+    const { id } = useParams(); // ID de la venta desde la URL
     const navigate = useNavigate();
     const { sidebarOpen, setSidebarOpen } = useOutletContext();
     const [hora, setHora] = useState("");
@@ -27,7 +27,7 @@ export default function MetodoPago() {
     const seleccionarMetodo = (metodo) => {
         localStorage.setItem("metodoPago", metodo);
 
-        // ✅ Redirigir incluyendo el ID de la venta
+        // Redirigir incluyendo el ID de la venta
         if (metodo === "Efectivo") {
             navigate(`/Efectivo/${id}`);
         } else if (metodo === "Débito") {

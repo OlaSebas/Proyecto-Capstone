@@ -3,9 +3,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.response import Response
 from rest_framework import status, viewsets
+from django.shortcuts import get_object_or_404
 from decimal import Decimal
-from .models import Inventario, Producto, Sucursal, Comuna, Promocion, PromocionProducto,Insumo,Categoria, Item
-from .serializers import CategoriaSerializer,InventarioSerializer, ProductoSerializer, SucursalSerializer, ComunaSerializer, PromocionSerializer, PromocionProductoSerializer,InsumoSerializer, ItemSerializer
+from .models import Inventario, Producto, Sucursal, Comuna, Promocion, PromocionProducto,Insumo,Categoria, Item, HistorialInventario
+from .serializers import CategoriaSerializer,InventarioSerializer, ProductoSerializer, SucursalSerializer, ComunaSerializer, PromocionSerializer, PromocionProductoSerializer,InsumoSerializer, ItemSerializer, HistorialInventarioSerializer
 
 
 
@@ -391,3 +392,41 @@ def item_delete(request, item_id):
 
     item.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+# Vistas de Inventario Historial
+@api_view(['GET', 'POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def historial_inventario_list(request):
+    if request.method == 'GET':
+        historial = HistorialInventario.objects.all()
+        serializer = HistorialInventarioSerializer(historial, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    elif request.method == 'POST':
+        serializer = HistorialInventarioSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET', 'PUT', 'DELETE'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def historial_inventario_detail(request, pk):
+    historial = get_object_or_404(HistorialInventario, pk=pk)
+
+    if request.method == 'GET':
+        serializer = HistorialInventarioSerializer(historial)
+        return Response(serializer.data)
+
+    elif request.method == 'PUT':
+        serializer = HistorialInventarioSerializer(historial, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'DELETE':
+        historial.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

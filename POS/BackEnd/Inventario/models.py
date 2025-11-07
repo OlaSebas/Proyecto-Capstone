@@ -101,3 +101,11 @@ class PromocionProducto(models.Model):
 
     def __str__(self):
         return f"{self.promocion.descripcion} - {self.producto.descripcion} (x{self.cantidad})"
+    
+class HistorialInventario(models.Model):
+    inventario = models.ForeignKey(Inventario, on_delete=models.CASCADE)
+    fecha_ingresoInventario = models.DateTimeField(auto_now_add=True)
+    cantidad_ingresada = models.DecimalField(max_digits=10, decimal_places=2, null=False)
+
+    def __str__(self):
+        return f"Historial de {self.inventario} - {self.fecha_ingresoInventario}"

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Region, Ciudad, Comuna, Sucursal, Insumo,Categoria, Producto, Inventario,Promocion, PromocionProducto, Item
+from .models import Region, Ciudad, Comuna, Sucursal, Insumo,Categoria, Producto, Inventario,Promocion, PromocionProducto, Item, HistorialInventario
 from django.conf import settings
 
 
@@ -89,3 +89,7 @@ class CategoriaSerializer(serializers.ModelSerializer):
         model = Categoria
         fields = "__all__"
 
+class HistorialInventarioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HistorialInventario
+        fields = "__all__"

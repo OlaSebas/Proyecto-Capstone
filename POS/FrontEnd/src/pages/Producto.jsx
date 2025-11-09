@@ -21,7 +21,7 @@ export default function Productos() {
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL;
 
-  // Fetch productos
+  // Obtener productos
   useEffect(() => {
     const fetchProductos = async () => {
       try {
@@ -31,15 +31,14 @@ export default function Productos() {
         if (!res.ok) throw new Error("Error al obtener productos");
         const data = await res.json();
         setProductos(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.error("Error cargando productos:", error);
+      } catch {
         setProductos([]);
       }
     };
     fetchProductos();
   }, [apiUrl]);
 
-  // Fetch promociones
+  // Obtener promociones
   useEffect(() => {
     const fetchPromociones = async () => {
       try {
@@ -49,15 +48,14 @@ export default function Productos() {
         if (!res.ok) throw new Error("Error al obtener promociones");
         const data = await res.json();
         setPromociones(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.error("Error cargando promociones:", error);
+      } catch {
         setPromociones([]);
       }
     };
     fetchPromociones();
   }, [apiUrl]);
 
-  // Fetch categorías
+  // Obtener categorías
   useEffect(() => {
     const fetchCategorias = async () => {
       try {
@@ -67,8 +65,7 @@ export default function Productos() {
         if (!res.ok) throw new Error("Error al obtener categorías");
         const data = await res.json();
         setCategorias(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.error("Error cargando categorías:", error);
+      } catch {
         setCategorias([]);
       }
     };
@@ -92,7 +89,7 @@ export default function Productos() {
     return () => clearInterval(intervalo);
   }, []);
 
-  // Cargar carrito de localStorage
+  // Cargar carrito desde localStorage
   useEffect(() => {
     const carritoGuardado = localStorage.getItem("carrito");
     if (carritoGuardado) setCarrito(JSON.parse(carritoGuardado));
@@ -127,7 +124,7 @@ export default function Productos() {
 
   const subtotal = carrito.reduce((sum, item) => sum + (item.total || 0), 0);
 
-  // Filtrar productos según búsqueda y categoría
+  // Filtrado de productos
   const productosFiltrados = productos.filter((producto) => {
     if (mostrarPromociones) return false;
     if (categoriaSeleccionada && producto.categoria !== categoriaSeleccionada)
@@ -137,7 +134,7 @@ export default function Productos() {
       .includes(busqueda.toLowerCase());
   });
 
-  // Filtrar promociones según búsqueda
+  // Filtrado de promociones
   const promocionesFiltradas = promociones.filter((promo) =>
     (promo.descripcion || promo.nombre || "")
       .toLowerCase()
@@ -161,19 +158,24 @@ export default function Productos() {
       </header>
 
       <main className="flex-1 p-6 overflow-y-auto flex flex-col items-center">
-        {/* Botones de categorías y promociones */}
-        <div className="flex gap-2 mb-4">
+        {/* Filtros de categorías y promociones */}
+        <div className="flex gap-2 mb-4 flex-wrap justify-center">
           {categorias.slice(0, 3).map((cat) => (
             <button
               key={cat.id}
               onClick={() => {
-                setCategoriaSeleccionada(cat.id);
-                setMostrarPromociones(false);
+                // Si se hace clic en la misma categoría, se deselecciona
+                if (categoriaSeleccionada === cat.id) {
+                  setCategoriaSeleccionada(null);
+                } else {
+                  setCategoriaSeleccionada(cat.id);
+                  setMostrarPromociones(false);
+                }
               }}
-              className={`px-4 py-2 rounded-full border ${
+              className={`px-4 py-2 rounded-full border transition ${
                 categoriaSeleccionada === cat.id
-                  ? "bg-red-600 text-white"
-                  : "bg-white hover:bg-gray-100"
+                  ? "bg-red-600 text-white border-red-700"
+                  : "bg-white hover:bg-gray-100 text-gray-800"
               }`}
             >
               {cat.descripcion}
@@ -181,13 +183,18 @@ export default function Productos() {
           ))}
           <button
             onClick={() => {
-              setCategoriaSeleccionada(null);
-              setMostrarPromociones(true);
+              // Si ya se muestran promociones, se desactiva
+              if (mostrarPromociones) {
+                setMostrarPromociones(false);
+              } else {
+                setCategoriaSeleccionada(null);
+                setMostrarPromociones(true);
+              }
             }}
-            className={`px-4 py-2 rounded-full border ${
+            className={`px-4 py-2 rounded-full border transition ${
               mostrarPromociones
-                ? "bg-red-600 text-white"
-                : "bg-white hover:bg-gray-100"
+                ? "bg-red-600 text-white border-red-700"
+                : "bg-white hover:bg-gray-100 text-gray-800"
             }`}
           >
             Promociones
@@ -201,7 +208,7 @@ export default function Productos() {
             placeholder="Buscar producto..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            className="w-full px-4 py-3 text-lg sm:text-xl border border-gray-300 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400  focus:border-blue-400 transition"
+            className="w-full px-4 py-3 text-lg sm:text-xl border border-gray-300 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
           />
         </div>
 
@@ -209,7 +216,9 @@ export default function Productos() {
         {!mostrarPromociones && (
           <>
             {productosFiltrados.length === 0 ? (
-              <p className="text-gray-500 text-center">No se encontraron productos.</p>
+              <p className="text-gray-500 text-center">
+                No se encontraron productos.
+              </p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-6xl w-full">
                 {productosFiltrados.map((producto) => (
@@ -226,7 +235,9 @@ export default function Productos() {
                     <p className="font-medium text-gray-700 text-center">
                       {producto.descripcion || producto.nombre}
                     </p>
-                    <p className="text-red-600 font-bold">${producto.precio || "0"}</p>
+                    <p className="text-red-600 font-bold">
+                      ${producto.precio || "0"}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -238,7 +249,9 @@ export default function Productos() {
         {mostrarPromociones && (
           <>
             {promocionesFiltradas.length === 0 ? (
-              <p className="text-gray-500 text-center">No se encontraron promociones.</p>
+              <p className="text-gray-500 text-center">
+                No se encontraron promociones.
+              </p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-6xl w-full">
                 {promocionesFiltradas.map((promo) => (
@@ -255,7 +268,9 @@ export default function Productos() {
                     <p className="font-medium text-gray-700 text-center">
                       {promo.descripcion || promo.nombre}
                     </p>
-                    <p className="text-red-600 font-bold">${promo.precio || "0"}</p>
+                    <p className="text-red-600 font-bold">
+                      ${promo.precio || "0"}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -263,6 +278,7 @@ export default function Productos() {
           </>
         )}
 
+        {/* Botón volver */}
         <div className="mt-8 w-full flex justify-center">
           <button
             onClick={() => window.history.back()}
@@ -340,7 +356,9 @@ export default function Productos() {
                             ${item.producto.precio.toLocaleString()}
                           </span>
                         </p>
-                        <p className="text-gray-500">Cantidad: {item.cantidad}</p>
+                        <p className="text-gray-500">
+                          Cantidad: {item.cantidad}
+                        </p>
                         {item.refresco && (
                           <p className="text-gray-500 text-xs">
                             Bebida: {item.refresco.nombre} ($

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useOutletContext, useNavigate } from "react-router-dom";
 import PreCarrito from "../components/PreCarrito";
 import { motion, AnimatePresence } from "framer-motion";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, CupSoda, Drumstick, Package, Tag } from "lucide-react";
 
 export default function Productos() {
   const [productos, setProductos] = useState([]);
@@ -28,7 +28,6 @@ export default function Productos() {
         const res = await fetch(`${apiUrl}inventario/productos/`, {
           headers: { Authorization: `Token ${localStorage.getItem("token")}` },
         });
-        if (!res.ok) throw new Error("Error al obtener productos");
         const data = await res.json();
         setProductos(Array.isArray(data) ? data : []);
       } catch {
@@ -45,7 +44,6 @@ export default function Productos() {
         const res = await fetch(`${apiUrl}inventario/promociones/`, {
           headers: { Authorization: `Token ${localStorage.getItem("token")}` },
         });
-        if (!res.ok) throw new Error("Error al obtener promociones");
         const data = await res.json();
         setPromociones(Array.isArray(data) ? data : []);
       } catch {
@@ -62,7 +60,6 @@ export default function Productos() {
         const res = await fetch(`${apiUrl}inventario/categorias/`, {
           headers: { Authorization: `Token ${localStorage.getItem("token")}` },
         });
-        if (!res.ok) throw new Error("Error al obtener categorías");
         const data = await res.json();
         setCategorias(Array.isArray(data) ? data : []);
       } catch {
@@ -72,7 +69,7 @@ export default function Productos() {
     fetchCategorias();
   }, [apiUrl]);
 
-  // Reloj en vivo
+  // Reloj
   useEffect(() => {
     const actualizarHora = () => {
       const now = new Date();
@@ -84,12 +81,11 @@ export default function Productos() {
         })
       );
     };
-    actualizarHora();
     const intervalo = setInterval(actualizarHora, 1000);
     return () => clearInterval(intervalo);
   }, []);
 
-  // Cargar carrito desde localStorage
+  // Carrito localStorage
   useEffect(() => {
     const carritoGuardado = localStorage.getItem("carrito");
     if (carritoGuardado) setCarrito(JSON.parse(carritoGuardado));
@@ -124,7 +120,7 @@ export default function Productos() {
 
   const subtotal = carrito.reduce((sum, item) => sum + (item.total || 0), 0);
 
-  // Filtrado de productos
+  // Filtrados
   const productosFiltrados = productos.filter((producto) => {
     if (mostrarPromociones) return false;
     if (categoriaSeleccionada && producto.categoria !== categoriaSeleccionada)
@@ -134,12 +130,18 @@ export default function Productos() {
       .includes(busqueda.toLowerCase());
   });
 
-  // Filtrado de promociones
   const promocionesFiltradas = promociones.filter((promo) =>
     (promo.descripcion || promo.nombre || "")
       .toLowerCase()
       .includes(busqueda.toLowerCase())
   );
+
+  // Íconos para categorías comunes
+  const iconosCategorias = {
+    Bebestibles: <CupSoda className="w-5 h-5" />,
+    Comida: <Drumstick className="w-5 h-5" />,
+    Otros: <Package className="w-5 h-5" />,
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
@@ -158,47 +160,46 @@ export default function Productos() {
       </header>
 
       <main className="flex-1 p-6 overflow-y-auto flex flex-col items-center">
-        {/* Filtros de categorías y promociones */}
-        <div className="flex gap-2 mb-4 flex-wrap justify-center">
+        {/* FILTRO PROFESIONAL */}
+        <div className="flex flex-wrap justify-center gap-3 mb-6">
           {categorias.slice(0, 3).map((cat) => (
-            <button
+            <motion.button
               key={cat.id}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => {
-                // Si se hace clic en la misma categoría, se deselecciona
-                if (categoriaSeleccionada === cat.id) {
-                  setCategoriaSeleccionada(null);
-                } else {
-                  setCategoriaSeleccionada(cat.id);
-                  setMostrarPromociones(false);
-                }
-              }}
-              className={`px-4 py-2 rounded-full border transition ${
-                categoriaSeleccionada === cat.id
-                  ? "bg-red-600 text-white border-red-700"
-                  : "bg-white hover:bg-gray-100 text-gray-800"
-              }`}
-            >
-              {cat.descripcion}
-            </button>
-          ))}
-          <button
-            onClick={() => {
-              // Si ya se muestran promociones, se desactiva
-              if (mostrarPromociones) {
+                setCategoriaSeleccionada(
+                  categoriaSeleccionada === cat.id ? null : cat.id
+                );
                 setMostrarPromociones(false);
-              } else {
-                setCategoriaSeleccionada(null);
-                setMostrarPromociones(true);
-              }
+              }}
+              className={`flex items-center gap-2 px-5 py-2 rounded-full font-medium transition-all shadow-sm border ${categoriaSeleccionada === cat.id
+                  ? "bg-red-600 text-white border-red-700 shadow-md"
+                  : "bg-white text-gray-700 hover:bg-gray-100 border-gray-300"
+                }`}
+            >
+              {iconosCategorias[cat.descripcion] || (
+                <Package className="w-5 h-5" />
+              )}
+              {cat.descripcion}
+            </motion.button>
+          ))}
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              setMostrarPromociones(!mostrarPromociones);
+              setCategoriaSeleccionada(null);
             }}
-            className={`px-4 py-2 rounded-full border transition ${
-              mostrarPromociones
-                ? "bg-red-600 text-white border-red-700"
-                : "bg-white hover:bg-gray-100 text-gray-800"
-            }`}
+            className={`flex items-center gap-2 px-5 py-2 rounded-full font-medium transition-all shadow-sm border ${mostrarPromociones
+                ? "bg-red-600 text-white border-red-700 shadow-md"
+                : "bg-white text-gray-700 hover:bg-gray-100 border-gray-300"
+              }`}
           >
+            <Tag className="w-5 h-5" />
             Promociones
-          </button>
+          </motion.button>
         </div>
 
         {/* Buscador */}
@@ -208,77 +209,68 @@ export default function Productos() {
             placeholder="Buscar producto..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            className="w-full px-4 py-3 text-lg sm:text-xl border border-gray-300 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
+            className="w-full px-4 py-3 text-lg sm:text-xl border border-gray-300 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
           />
         </div>
 
-        {/* Productos */}
-        {!mostrarPromociones && (
-          <>
-            {productosFiltrados.length === 0 ? (
-              <p className="text-gray-500 text-center">
-                No se encontraron productos.
-              </p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-6xl w-full">
-                {productosFiltrados.map((producto) => (
-                  <div
-                    key={producto.id}
-                    onClick={() => setProductoSeleccionado(producto)}
-                    className="bg-white border rounded-lg flex flex-col items-center justify-between p-4 shadow hover:shadow-lg transition cursor-pointer h-64"
-                  >
-                    <img
-                      src={producto.imagen}
-                      alt={producto.nombre}
-                      className="w-full h-32 object-contain mb-2"
-                    />
-                    <p className="font-medium text-gray-700 text-center">
-                      {producto.descripcion || producto.nombre}
-                    </p>
-                    <p className="text-red-600 font-bold">
-                      ${producto.precio || "0"}
-                    </p>
-                  </div>
-                ))}
+        {/* Productos / Promociones */}
+        {!mostrarPromociones ? (
+          productosFiltrados.length === 0 ? (
+            <p className="text-gray-500 text-center">
+              No se encontraron productos.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-6xl w-full">
+              {productosFiltrados.map((producto) => (
+                <div
+                  key={producto.id}
+                  onClick={() => setProductoSeleccionado(producto)}
+                  className="bg-white border rounded-lg flex flex-col items-center justify-between p-4 shadow hover:shadow-lg transition cursor-pointer h-64"
+                >
+                  <img
+                    src={producto.imagen}
+                    alt={producto.nombre}
+                    className="w-full h-32 object-contain mb-2"
+                  />
+                  <p className="font-medium text-gray-700 text-center">
+                    {producto.descripcion || producto.nombre}
+                  </p>
+                  <p className="text-red-600 font-bold">
+                    ${producto.precio || "0"}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )
+        ) : promocionesFiltradas.length === 0 ? (
+          <p className="text-gray-500 text-center">
+            No se encontraron promociones.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-6xl w-full">
+            {promocionesFiltradas.map((promo) => (
+              <div
+                key={promo.id}
+                onClick={() => setProductoSeleccionado(promo)}
+                className="bg-white border rounded-lg flex flex-col items-center justify-between p-4 shadow hover:shadow-lg transition cursor-pointer h-64"
+              >
+                <img
+                  src={promo.imagen}
+                  alt={promo.nombre}
+                  className="w-full h-32 object-contain mb-2"
+                />
+                <p className="font-medium text-gray-700 text-center">
+                  {promo.descripcion || promo.nombre}
+                </p>
+                <p className="text-red-600 font-bold">
+                  ${promo.precio || "0"}
+                </p>
               </div>
-            )}
-          </>
+            ))}
+          </div>
         )}
 
-        {/* Promociones */}
-        {mostrarPromociones && (
-          <>
-            {promocionesFiltradas.length === 0 ? (
-              <p className="text-gray-500 text-center">
-                No se encontraron promociones.
-              </p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-6xl w-full">
-                {promocionesFiltradas.map((promo) => (
-                  <div
-                    key={promo.id}
-                    onClick={() => setProductoSeleccionado(promo)}
-                    className="bg-white border rounded-lg flex flex-col items-center justify-between p-4 shadow hover:shadow-lg transition cursor-pointer h-64"
-                  >
-                    <img
-                      src={promo.imagen}
-                      alt={promo.nombre}
-                      className="w-full h-32 object-contain mb-2"
-                    />
-                    <p className="font-medium text-gray-700 text-center">
-                      {promo.descripcion || promo.nombre}
-                    </p>
-                    <p className="text-red-600 font-bold">
-                      ${promo.precio || "0"}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Botón volver */}
+        {/* Volver */}
         <div className="mt-8 w-full flex justify-center">
           <button
             onClick={() => window.history.back()}
@@ -289,7 +281,7 @@ export default function Productos() {
         </div>
       </main>
 
-      {/* Modal PreCarrito */}
+      {/* Modal PreCarrito y Carrito */}
       {productoSeleccionado && (
         <PreCarrito
           producto={productoSeleccionado}
@@ -411,7 +403,7 @@ export default function Productos() {
 
           <button
             onClick={() => navigate("/carrito")}
-            className="mt-3 w-full bg-red-600 text-white py-2 rounded-lg hover:bg-orange-700"
+            className="mt-3 w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
           >
             Ver Pedido
           </button>

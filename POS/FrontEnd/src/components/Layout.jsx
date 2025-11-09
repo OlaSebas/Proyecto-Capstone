@@ -85,7 +85,7 @@ export function Layout() {
                 to="/Sucursal"
                 className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
               >
-                <HousePlus size={20} /> Sucursal
+                <HousePlus size={20} /> Sucursal/Inventario
               </Link>
 
               <Link
@@ -106,7 +106,7 @@ export function Layout() {
                 to="/GestionInvent"
                 className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
               >
-                <Package size={20} /> Gestión Inventario
+                <Package size={20} /> #Gestión Inventario#
               </Link>
 
               <Link

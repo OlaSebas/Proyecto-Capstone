@@ -14,11 +14,10 @@ import ViewAdminPR from "./components/ViewAdminPR";
 import RegistroUsuario from "./pages/admin/RegistroUsuario";
 import AgregarProducto from "./pages/formularios/AgregarProducto";
 import AgregarPromocion from "./pages/formularios/AgregarPromocion";
-import Inventario from "./pages/formularios/GestionInvent";
 import PedidosDelivery from "./pages/PedidosDelivery";
 import Proveedores from "./pages/Proveedor";
 import Sucursal from "./pages/Sucursal";
-import InventarioSuc from "./pages/InventarioSuc";
+
 import SucursalForm from "./pages/formularios/SucursalForm";
 import SucursalEdit from "./pages/editor/SucursalEdit";
 import Efectivo from "./pages/metodos/Efectivo";
@@ -49,7 +48,6 @@ function App() {
           <Route path="/RegistroUsuario" element={<ViewAdminPR><RegistroUsuario /></ViewAdminPR>} />
           <Route path="/carrito" element={<Carrito />} />
           <Route path= "/Sucursal" element={<ViewAdminPR><Sucursal /></ViewAdminPR>} />
-          <Route path="/inventarioSuc/:sucursalId" element={<InventarioSuc />} />
           <Route path="/sucursalForm" element={<ViewAdminPR><SucursalForm /></ViewAdminPR>} />
           <Route path="/sucursalEdit/:id" element={<ViewAdminPR><SucursalEdit /></ViewAdminPR>} />
           <Route path="/AgregarProducto" element={<ViewAdminPR><AgregarProducto /></ViewAdminPR>} />
@@ -61,7 +59,6 @@ function App() {
           <Route path="/Debito/:id" element={<Debito />} />
           <Route path="/Credito/:id" element={<Credito />} />
           <Route path="/Transferencia/:id" element={<Transferencia />} />
-          <Route path="/GestionInvent" element={<ViewAdminPR><Inventario /></ViewAdminPR>} />
           <Route path="/ReporteVenta" element={<ViewAdminPR><ReporteVenta /></ViewAdminPR>} />
         </Route>
 

@@ -1,166 +1,434 @@
-import { useState, useEffect } from "react";
-import { Pencil, Trash2 } from "lucide-react";
-import { useOutletContext, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { PlusCircle, Trash2, Edit2, XCircle, Pencil } from "lucide-react";
+import { useOutletContext } from "react-router-dom";
 
-export default function Sucursales() {
+export default function InventarioSucursalesPage() {
   const { sidebarOpen, setSidebarOpen } = useOutletContext();
   const [sucursales, setSucursales] = useState([]);
+  const [sucursalSeleccionada, setSucursalSeleccionada] = useState(null);
+  const [inventario, setInventario] = useState([]);
+  const [tabActiva, setTabActiva] = useState("inventario");
   const [hora, setHora] = useState("");
+  const [nuevo, setNuevo] = useState({
+    tipo: "item",
+    descripcion: "",
+    stock_actual: "",
+    fecha_ingreso: new Date().toISOString().split("T")[0],
+  });
+  const [editando, setEditando] = useState(null);
+  const [mensaje, setMensaje] = useState("");
+  const token = localStorage.getItem("token");
   const apiUrl = import.meta.env.VITE_API_URL_INVENTARIO;
-  const navigate = useNavigate();
 
+  // Cargar sucursales
   useEffect(() => {
     fetch(`${apiUrl}sucursales/`, {
-      headers: {
-        Authorization: `Token ${localStorage.getItem("token")}`,
-      },
+      headers: { Authorization: `Token ${token}` },
     })
       .then((res) => res.json())
       .then((data) => setSucursales(Array.isArray(data) ? data : []))
       .catch(() => setSucursales([]));
-  }, [apiUrl]);
+  }, [apiUrl, token]);
 
+  // Actualizar hora
   useEffect(() => {
     const actualizarHora = () => {
       const now = new Date();
-      const time = now.toLocaleTimeString("es-CL", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      });
-      setHora(time);
+      setHora(
+        now.toLocaleTimeString("es-CL", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        })
+      );
     };
     actualizarHora();
     const intervalo = setInterval(actualizarHora, 1000);
     return () => clearInterval(intervalo);
   }, []);
 
+  // Cargar inventario según sucursal
+  const toggleSucursal = async (sucursalId) => {
+    if (sucursalSeleccionada === sucursalId) {
+      setSucursalSeleccionada(null);
+      setInventario([]);
+      return;
+    }
+
+    setSucursalSeleccionada(sucursalId);
+    try {
+      const res = await fetch(`${apiUrl}${sucursalId}/`, {
+        headers: { Authorization: `Token ${token}` },
+      });
+      const data = await res.json();
+      const invNormalizado = Array.isArray(data)
+        ? data.map((item) => ({
+            id: item.id,
+            tipo: item.item ? "item" : "insumo",
+            descripcion:
+              item.item?.descripcion ||
+              item.insumo?.descripcion ||
+              item.descripcion ||
+              "",
+            stock_actual: item.stock_actual,
+            unidad:
+              item.item?.unidad_medida ||
+              item.insumo?.unidad_medida ||
+              "-",
+            fecha_ingreso: item.fecha_ingreso ?? "-",
+          }))
+        : [];
+      setInventario(invNormalizado);
+    } catch {
+      setInventario([]);
+    }
+  };
+
+  // Guardar inventario
+  const guardarInventario = async (e) => {
+    e.preventDefault();
+    if (
+      !nuevo.descripcion ||
+      !nuevo.stock_actual ||
+      !sucursalSeleccionada ||
+      !nuevo.fecha_ingreso
+    ) {
+      setMensaje("Completa todos los campos obligatorios.");
+      return;
+    }
+
+    try {
+      const payload = { ...nuevo, sucursal: sucursalSeleccionada };
+      const axiosConfig = { headers: { Authorization: `Token ${token}` } };
+
+      if (editando) {
+        await axios.put(`${apiUrl}update/${editando}/`, payload, axiosConfig);
+        setMensaje("Inventario actualizado");
+        setEditando(null);
+      } else {
+        await axios.post(`${apiUrl}create/`, payload, axiosConfig);
+        setMensaje("Inventario agregado");
+      }
+
+      toggleSucursal(sucursalSeleccionada);
+      setNuevo({
+        tipo: "item",
+        descripcion: "",
+        stock_actual: "",
+        fecha_ingreso: new Date().toISOString().split("T")[0],
+      });
+      setTabActiva("inventario");
+    } catch {
+      setMensaje("Error al guardar inventario");
+    }
+  };
+
+  const eliminarInventario = async (id) => {
+    if (!window.confirm("¿Seguro que deseas eliminar este registro?")) return;
+    try {
+      await axios.delete(`${apiUrl}delete/${id}/`, {
+        headers: { Authorization: `Token ${token}` },
+      });
+      setInventario((prev) => prev.filter((i) => i.id !== id));
+      setMensaje("Registro eliminado");
+    } catch {
+      setMensaje("Error al eliminar registro");
+    }
+  };
+
+  const editarRegistro = (registro) => {
+    setNuevo({
+      tipo: registro.tipo,
+      descripcion: registro.descripcion,
+      stock_actual: registro.stock_actual,
+      fecha_ingreso:
+        registro.fecha_ingreso && registro.fecha_ingreso !== "-"
+          ? registro.fecha_ingreso
+          : new Date().toISOString().split("T")[0],
+    });
+    setEditando(registro.id);
+    setTabActiva("formulario");
+    setMensaje("Editando registro...");
+  };
+
+  const cancelarEdicion = () => {
+    setNuevo({
+      tipo: "item",
+      descripcion: "",
+      stock_actual: "",
+      fecha_ingreso: new Date().toISOString().split("T")[0],
+    });
+    setEditando(null);
+    setTabActiva("inventario");
+    setMensaje("");
+  };
+
+  // Obtener nombre de la sucursal seleccionada
+  const nombreSucursal =
+    sucursales.find((s) => s.id === sucursalSeleccionada)?.descripcion || "";
+
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100">
-      {/* Header con título centrado y hora */}
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      {/* Header */}
       <header className="flex justify-between items-center bg-white shadow px-6 py-4">
-        {/* Botón ☰ */}
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
           className="px-3 py-2 bg-gray-200 rounded hover:bg-gray-300"
         >
           ☰
         </button>
-
-        {/* Título */}
-        <h2 className="text-3xl font-bold text-gray-800 flex-1 text-center">
-          Sucursales
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 text-center flex-1">
+          Sucursales e Inventario
         </h2>
-
-        {/* Hora */}
         <span className="text-gray-600 font-medium">{hora}</span>
       </header>
 
-      {/* Subtítulo */}
-      <div className="flex justify-center mt-6 px-4">
-        <p className="text-gray-700 text-lg text-center max-w-2xl">
-          Administre las sucursales disponibles en el sistema
-        </p>
-      </div>
-
-      {/* Cards de sucursales */}
-      <main className="flex-1 p-6 overflow-y-auto flex flex-col items-center">
-        {sucursales.length === 0 ? (
-          <p className="text-gray-600 text-center">Cargando sucursales...</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-4xl w-full">
-            {sucursales.map((sucursal) => (
-              <div
-                key={sucursal.id}
-                onClick={() => navigate(`/inventarioSuc/${sucursal.id}`)}
-                className={`bg-white border rounded-lg flex flex-col items-center justify-between shadow hover:shadow-lg transition cursor-pointer text-center ${
-                  sidebarOpen ? "p-6" : "p-8"
-                }`}
-              >
-                <p
-                  className={`font-semibold text-gray-800 mb-2 transition-all ${
-                    sidebarOpen ? "text-base" : "text-lg"
-                  }`}
+      <main className="flex-1 p-6 overflow-y-auto">
+        {/* Cards de sucursales */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-10">
+          {sucursales.map((sucursal) => (
+            <div
+              key={sucursal.id}
+              onClick={() => toggleSucursal(sucursal.id)}
+              className={`bg-white border rounded-lg shadow hover:shadow-lg transition cursor-pointer text-center p-6 ${
+                sucursalSeleccionada === sucursal.id
+                  ? "ring-2 ring-red-500"
+                  : ""
+              }`}
+            >
+              <p className="font-semibold text-gray-800 text-lg">
+                {sucursal.descripcion}
+              </p>
+              <p className="text-gray-500 mb-4">Comuna: {sucursal.Comuna}</p>
+              <div className="flex justify-center gap-2">
+                <button
+                  onClick={(e) => e.stopPropagation()}
+                  className="px-3 py-1 bg-gray-800 text-white rounded hover:bg-gray-900 flex items-center gap-1"
                 >
-                  {sucursal.descripcion}
-                </p>
-                <p
-                  className={`text-gray-500 mb-4 transition-all ${
-                    sidebarOpen ? "text-xs" : "text-sm"
-                  }`}
+                  <Pencil size={16} /> Editar
+                </button>
+                <button
+                  onClick={(e) => e.stopPropagation()}
+                  className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 flex items-center gap-1"
                 >
-                  Comuna: {sucursal.Comuna}
-                </p>
-
-                {/* Botones */}
-                <div className="flex gap-2 w-full justify-center mt-auto">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/sucursalEdit/${sucursal.id}`);
-                    }}
-                    className={`flex-1 max-w-[100px] text-white rounded-lg hover:bg-blue-600 transition flex items-center justify-center ${
-                      sidebarOpen
-                        ? "px-2 py-1 text-xs bg-gray-800 text-white rounded hover:bg-gray-900"
-                        : "px-3 py-2 text-sm bg-gray-800 text-white rounded hover:bg-gray-900"
-                    }`}
-                  >
-                    <Pencil size={sidebarOpen ? 14 : 16} /> Editar
-                  </button>
-
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (
-                        confirm(
-                          `¿Seguro que quieres eliminar la sucursal ${sucursal.descripcion}?`
-                        )
-                      ) {
-                        fetch(`${apiUrl}sucursales/delete/${sucursal.id}/`, {
-                          method: "DELETE",
-                          headers: {
-                            Authorization: `Token ${localStorage.getItem(
-                              "token"
-                            )}`,
-                          },
-                        })
-                          .then((res) => {
-                            if (!res.ok)
-                              throw new Error("Error al eliminar sucursal");
-                            setSucursales((prev) =>
-                              prev.filter((s) => s.id !== sucursal.id)
-                            );
-                          })
-                          .catch((err) => alert(err.message));
-                      }
-                    }}
-                    className={`flex-1 max-w-[100px] text-white rounded-lg hover:bg-red-600 transition flex items-center justify-center ${
-                      sidebarOpen
-                        ? "px-2 py-1 text-xs bg-red-500"
-                        : "px-3 py-2 text-sm bg-red-500"
-                    }`}
-                  >
-                    <Trash2 size={sidebarOpen ? 14 : 16} /> Eliminar
-                  </button>
-                </div>
+                  <Trash2 size={16} /> Eliminar
+                </button>
               </div>
-            ))}
+            </div>
+          ))}
+        </div>
+
+        {/* Sección de inventario con tabs */}
+        {sucursalSeleccionada && (
+          <div className="w-full max-w-6xl mx-auto bg-white shadow-lg rounded-lg border border-gray-200 overflow-hidden">
+            <div className="flex justify-center items-center px-6 py-4 bg-red-100 border-b border-red-300">
+              <h3 className="text-xl font-semibold text-red-800 text-center">
+                Inventario {nombreSucursal ? `– ${nombreSucursal}` : ""}
+              </h3>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mt-4">
+              {["inventario", "formulario"].map((t) => (
+                <button
+                  key={t}
+                  className={`px-3 sm:px-4 py-1 sm:py-2 rounded-t-lg ${
+                    tabActiva === t
+                      ? "bg-red-600 text-white"
+                      : "bg-gray-300 text-gray-700 hover:bg-gray-400"
+                  }`}
+                  onClick={() => setTabActiva(t)}
+                >
+                  {t === "inventario"
+                    ? "Inventario"
+                    : editando
+                    ? "Editar Registro"
+                    : "Agregar Inventario"}
+                </button>
+              ))}
+            </div>
+
+            <div className="p-6 border-t border-red-300">
+              {tabActiva === "inventario" && (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-gray-700 border-collapse divide-y divide-red-300">
+                    <thead className="bg-red-200 text-red-900 border-b border-red-300">
+                      <tr>
+                        <th className="px-6 py-3 border-r border-red-300">ID</th>
+                        <th className="px-6 py-3 border-r border-red-300">Tipo</th>
+                        <th className="px-6 py-3 border-r border-red-300">Descripción</th>
+                        <th className="px-6 py-3 border-r border-red-300">Stock</th>
+                        <th className="px-6 py-3 border-r border-red-300">Unidad</th>
+                        <th className="px-6 py-3 border-r border-red-300">Fecha</th>
+                        <th className="px-6 py-3">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-red-200">
+                      {inventario.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={7}
+                            className="px-6 py-4 text-center text-gray-500"
+                          >
+                            No hay inventario disponible
+                          </td>
+                        </tr>
+                      ) : (
+                        inventario.map((inv, i) => (
+                          <tr
+                            key={inv.id}
+                            className={`${
+                              i % 2 === 0 ? "bg-white" : "bg-red-50"
+                            } hover:bg-red-100 transition`}
+                          >
+                            <td className="px-6 py-4 border-r border-red-200">
+                              {inv.id}
+                            </td>
+                            <td className="px-6 py-4 border-r border-red-200 capitalize">
+                              {inv.tipo}
+                            </td>
+                            <td className="px-6 py-4 border-r border-red-200">
+                              {inv.descripcion}
+                            </td>
+                            <td className="px-6 py-4 border-r border-red-200">
+                              {inv.stock_actual}
+                            </td>
+                            <td className="px-6 py-4 border-r border-red-200">
+                              {inv.unidad}
+                            </td>
+                            <td className="px-6 py-4 border-r border-red-200">
+                              {inv.fecha_ingreso}
+                            </td>
+                            <td className="px-6 py-4 flex gap-2">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  editarRegistro({
+                                    ...inv,
+                                    fecha_ingreso:
+                                      inv.fecha_ingreso &&
+                                      inv.fecha_ingreso !== "-"
+                                        ? inv.fecha_ingreso
+                                        : new Date()
+                                            .toISOString()
+                                            .split("T")[0],
+                                  });
+                                }}
+                                className="px-2 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 text-xs"
+                              >
+                                <Edit2 size={14} />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  eliminarInventario(inv.id);
+                                }}
+                                className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {tabActiva === "formulario" && (
+                <form
+                  onSubmit={guardarInventario}
+                  className="flex flex-col gap-4 mt-4"
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        Tipo
+                      </label>
+                      <select
+                        value={nuevo.tipo}
+                        onChange={(e) =>
+                          setNuevo({ ...nuevo, tipo: e.target.value })
+                        }
+                        className="w-full border rounded px-2 py-1"
+                      >
+                        <option value="item">Item</option>
+                        <option value="insumo">Insumo</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        Descripción
+                      </label>
+                      <input
+                        type="text"
+                        value={nuevo.descripcion}
+                        onChange={(e) =>
+                          setNuevo({ ...nuevo, descripcion: e.target.value })
+                        }
+                        className="w-full border rounded px-2 py-1"
+                        placeholder="Nombre"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        Stock actual
+                      </label>
+                      <input
+                        type="number"
+                        value={nuevo.stock_actual}
+                        onChange={(e) =>
+                          setNuevo({ ...nuevo, stock_actual: e.target.value })
+                        }
+                        className="w-full border rounded px-2 py-1"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        Fecha de ingreso
+                      </label>
+                      <input
+                        type="date"
+                        value={nuevo.fecha_ingreso}
+                        onChange={(e) =>
+                          setNuevo({ ...nuevo, fecha_ingreso: e.target.value })
+                        }
+                        className="w-full border rounded px-2 py-1"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 mt-4">
+                    <button
+                      type="submit"
+                      className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                    >
+                      <PlusCircle size={18} />{" "}
+                      {editando ? "Guardar" : "Agregar"}
+                    </button>
+                    {editando && (
+                      <button
+                        type="button"
+                        onClick={cancelarEdicion}
+                        className="flex items-center gap-2 bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400"
+                      >
+                        <XCircle size={18} /> Cancelar
+                      </button>
+                    )}
+                  </div>
+                </form>
+              )}
+            </div>
           </div>
         )}
-
-        {/* Botón agregar */}
-        <div className="mt-8 w-full max-w-4xl flex justify-end">
-          <button
-            onClick={() => navigate("/SucursalForm")}
-            className={`text-white rounded-lg hover:bg-gray-800 transition ${
-              sidebarOpen
-                ? "px-4 py-2 text-sm bg-gray-900"
-                : "px-6 py-2 bg-gray-900"
-            }`}
-          >
-            Agregar
-          </button>
-        </div>
       </main>
     </div>
   );

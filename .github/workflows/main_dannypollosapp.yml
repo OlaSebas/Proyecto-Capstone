@@ -32,7 +32,7 @@ jobs:
         with:
           name: python-app
           path: |
-            POS/BackEnd/**
+            POS/BackEnd/
             !POS/BackEnd/antenv/
 
       # 🚫 Opting Out of Oryx Build (comentarios originales preservados)
@@ -64,4 +64,5 @@ jobs:
           app-name: 'DannyPollosApp'
           slot-name: 'Production'
           package: 'POS/BackEnd'
+
 

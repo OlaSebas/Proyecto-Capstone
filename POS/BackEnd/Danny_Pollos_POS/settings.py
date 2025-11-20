@@ -146,10 +146,10 @@ CORS_ALLOWED_ORIGINS = [
     "http://192.168.1.10:5173",
     #URL AZURE,
     "https://happy-river-0d9616c1e.3.azurestaticapps.net",
-    "dannypollosapp-ggbtgnbrapetc2b6.brazilsouth-01.azurewebsites.net"
+    "https://dannypollosapp-ggbtgnbrapetc2b6.brazilsouth-01.azurewebsites.net"
 ] 
 
 CSRF_TRUSTED_ORIGINS = [
     "https://happy-river-0d9616c1e.3.azurestaticapps.net",
-    "dannypollosapp-ggbtgnbrapetc2b6.brazilsouth-01.azurewebsites.net"
+    "https://dannypollosapp-ggbtgnbrapetc2b6.brazilsouth-01.azurewebsites.net"
 ]

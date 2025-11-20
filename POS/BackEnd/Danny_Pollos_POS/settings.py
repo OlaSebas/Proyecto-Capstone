@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-*ialbuw0fp719ywv)u2337@kd*17640jj^%z4)=h*nzsektwx!
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 #PRUEBA para vista en telefonos
-ALLOWED_HOSTS = ['192.168.1.10', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['192.168.1.10', 'localhost', '127.0.0.1','dannypollosapp-ggbtgnbrapetc2b6.brazilsouth-01.azurewebsites.net']
 
 
 # Application definition
@@ -144,5 +144,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://192.168.1.10:5173",
-    #URL AZURE
+    #URL AZURE,
+    "https://happy-river-0d9616c1e.3.azurestaticapps.net"
 ] 

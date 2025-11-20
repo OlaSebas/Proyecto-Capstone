@@ -91,7 +91,7 @@ export default function Login() {
         console.warn("⚠️ No se pudieron cargar productos/promociones al cache:", cacheError);
       }
 
-      window.location.href = "/home";
+      window.location.href = "/";
     } catch (err) {
       setError(err.message);
     } finally {

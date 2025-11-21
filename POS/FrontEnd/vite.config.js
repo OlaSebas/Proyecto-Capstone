@@ -5,6 +5,9 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   base: "/",   // 👈 ESTA LÍNEA ES NECESARIA PARA DEPLOY EN AZURE
   plugins: [react(),tailwindcss(),],
+  build: {
+    outDir: 'dist',
+  },
   server: {
     port: 5173,
     host:"0.0.0.0"

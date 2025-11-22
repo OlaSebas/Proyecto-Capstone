@@ -2,9 +2,12 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { PlusCircle, Trash2, Edit2, XCircle, Pencil } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function InventarioSucursalesPage() {
+  const navigate = useNavigate();
   const { sidebarOpen, setSidebarOpen } = useOutletContext();
+
   const [sucursales, setSucursales] = useState([]);
   const [sucursalSeleccionada, setSucursalSeleccionada] = useState(null);
   const [inventario, setInventario] = useState([]);
@@ -20,6 +23,10 @@ export default function InventarioSucursalesPage() {
   const [mensaje, setMensaje] = useState("");
   const token = localStorage.getItem("token");
   const apiUrl = import.meta.env.VITE_API_URL_INVENTARIO;
+
+  const editarSucursal = (sucursal) => {
+    navigate(`/sucursalEdit/${sucursal.id}`);
+  };
 
   // Cargar sucursales
   useEffect(() => {
@@ -57,11 +64,14 @@ export default function InventarioSucursalesPage() {
     }
 
     setSucursalSeleccionada(sucursalId);
+
     try {
       const res = await fetch(`${apiUrl}${sucursalId}/`, {
         headers: { Authorization: `Token ${token}` },
       });
       const data = await res.json();
+
+      // ⭐ CORRECCIÓN: usar fecha de última actualización real
       const invNormalizado = Array.isArray(data)
         ? data.map((item) => ({
             id: item.id,
@@ -73,12 +83,17 @@ export default function InventarioSucursalesPage() {
               "",
             stock_actual: item.stock_actual,
             unidad:
-              item.item?.unidad_medida ||
-              item.insumo?.unidad_medida ||
+              item.item?.unidad_medida || item.insumo?.unidad_medida || "-",
+
+            // ⭐ ESTA ES LA FECHA REAL DE ÚLTIMA ACTUALIZACIÓN
+            fecha_ingreso:
+              item.fecha_modificacion ??
+              item.updated_at ??
+              item.fecha_ingreso ??
               "-",
-            fecha_ingreso: item.fecha_ingreso ?? "-",
           }))
         : [];
+
       setInventario(invNormalizado);
     } catch {
       setInventario([]);
@@ -88,6 +103,7 @@ export default function InventarioSucursalesPage() {
   // Guardar inventario
   const guardarInventario = async (e) => {
     e.preventDefault();
+
     if (
       !nuevo.descripcion ||
       !nuevo.stock_actual ||
@@ -112,12 +128,14 @@ export default function InventarioSucursalesPage() {
       }
 
       toggleSucursal(sucursalSeleccionada);
+
       setNuevo({
         tipo: "item",
         descripcion: "",
         stock_actual: "",
         fecha_ingreso: new Date().toISOString().split("T")[0],
       });
+
       setTabActiva("inventario");
     } catch {
       setMensaje("Error al guardar inventario");
@@ -126,10 +144,12 @@ export default function InventarioSucursalesPage() {
 
   const eliminarInventario = async (id) => {
     if (!window.confirm("¿Seguro que deseas eliminar este registro?")) return;
+
     try {
       await axios.delete(`${apiUrl}delete/${id}/`, {
         headers: { Authorization: `Token ${token}` },
       });
+
       setInventario((prev) => prev.filter((i) => i.id !== id));
       setMensaje("Registro eliminado");
     } catch {
@@ -147,6 +167,7 @@ export default function InventarioSucursalesPage() {
           ? registro.fecha_ingreso
           : new Date().toISOString().split("T")[0],
     });
+
     setEditando(registro.id);
     setTabActiva("formulario");
     setMensaje("Editando registro...");
@@ -159,12 +180,12 @@ export default function InventarioSucursalesPage() {
       stock_actual: "",
       fecha_ingreso: new Date().toISOString().split("T")[0],
     });
+
     setEditando(null);
     setTabActiva("inventario");
     setMensaje("");
   };
 
-  // Obtener nombre de la sucursal seleccionada
   const nombreSucursal =
     sucursales.find((s) => s.id === sucursalSeleccionada)?.descripcion || "";
 
@@ -184,6 +205,12 @@ export default function InventarioSucursalesPage() {
         <span className="text-gray-600 font-medium">{hora}</span>
       </header>
 
+      {mensaje && (
+        <div className="mx-6 mt-4 p-3 rounded bg-yellow-100 text-yellow-800 border border-yellow-200">
+          {mensaje}
+        </div>
+      )}
+
       <main className="flex-1 p-6 overflow-y-auto">
         {/* Cards de sucursales */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-10">
@@ -201,13 +228,18 @@ export default function InventarioSucursalesPage() {
                 {sucursal.descripcion}
               </p>
               <p className="text-gray-500 mb-4">Comuna: {sucursal.Comuna}</p>
+
               <div className="flex justify-center gap-2">
                 <button
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    editarSucursal(sucursal);
+                  }}
                   className="px-3 py-1 bg-gray-800 text-white rounded hover:bg-gray-900 flex items-center gap-1"
                 >
                   <Pencil size={16} /> Editar
                 </button>
+
                 <button
                   onClick={(e) => e.stopPropagation()}
                   className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 flex items-center gap-1"
@@ -219,7 +251,6 @@ export default function InventarioSucursalesPage() {
           ))}
         </div>
 
-        {/* Sección de inventario con tabs */}
         {sucursalSeleccionada && (
           <div className="w-full max-w-6xl mx-auto bg-white shadow-lg rounded-lg border border-gray-200 overflow-hidden">
             <div className="flex justify-center items-center px-6 py-4 bg-red-100 border-b border-red-300">
@@ -255,15 +286,28 @@ export default function InventarioSucursalesPage() {
                   <table className="w-full text-left text-gray-700 border-collapse divide-y divide-red-300">
                     <thead className="bg-red-200 text-red-900 border-b border-red-300">
                       <tr>
-                        <th className="px-6 py-3 border-r border-red-300">ID</th>
-                        <th className="px-6 py-3 border-r border-red-300">Tipo</th>
-                        <th className="px-6 py-3 border-r border-red-300">Descripción</th>
-                        <th className="px-6 py-3 border-r border-red-300">Stock</th>
-                        <th className="px-6 py-3 border-r border-red-300">Unidad</th>
-                        <th className="px-6 py-3 border-r border-red-300">Fecha</th>
+                        <th className="px-6 py-3 border-r border-red-300">
+                          ID
+                        </th>
+                        <th className="px-6 py-3 border-r border-red-300">
+                          Tipo
+                        </th>
+                        <th className="px-6 py-3 border-r border-red-300">
+                          Descripción
+                        </th>
+                        <th className="px-6 py-3 border-r border-red-300">
+                          Stock
+                        </th>
+                        <th className="px-6 py-3 border-r border-red-300">
+                          Unidad
+                        </th>
+                        <th className="px-6 py-3 border-r border-red-300">
+                          Fecha
+                        </th>
                         <th className="px-6 py-3">Acciones</th>
                       </tr>
                     </thead>
+
                     <tbody className="divide-y divide-red-200">
                       {inventario.length === 0 ? (
                         <tr>
@@ -297,28 +341,23 @@ export default function InventarioSucursalesPage() {
                             <td className="px-6 py-4 border-r border-red-200">
                               {inv.unidad}
                             </td>
+
+                            {/* ⭐ FECHA REAL DE LA ÚLTIMA ACTUALIZACIÓN */}
                             <td className="px-6 py-4 border-r border-red-200">
                               {inv.fecha_ingreso}
                             </td>
+
                             <td className="px-6 py-4 flex gap-2">
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  editarRegistro({
-                                    ...inv,
-                                    fecha_ingreso:
-                                      inv.fecha_ingreso &&
-                                      inv.fecha_ingreso !== "-"
-                                        ? inv.fecha_ingreso
-                                        : new Date()
-                                            .toISOString()
-                                            .split("T")[0],
-                                  });
+                                  editarRegistro(inv);
                                 }}
                                 className="px-2 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 text-xs"
                               >
                                 <Edit2 size={14} />
                               </button>
+
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -349,9 +388,7 @@ export default function InventarioSucursalesPage() {
                       </label>
                       <select
                         value={nuevo.tipo}
-                        onChange={(e) =>
-                          setNuevo({ ...nuevo, tipo: e.target.value })
-                        }
+                        onChange={(e) => setNuevo({ ...nuevo, tipo: e.target.value })}
                         className="w-full border rounded px-2 py-1"
                       >
                         <option value="item">Item</option>
@@ -366,9 +403,7 @@ export default function InventarioSucursalesPage() {
                       <input
                         type="text"
                         value={nuevo.descripcion}
-                        onChange={(e) =>
-                          setNuevo({ ...nuevo, descripcion: e.target.value })
-                        }
+                        onChange={(e) => setNuevo({ ...nuevo, descripcion: e.target.value })}
                         className="w-full border rounded px-2 py-1"
                         placeholder="Nombre"
                         required
@@ -382,9 +417,7 @@ export default function InventarioSucursalesPage() {
                       <input
                         type="number"
                         value={nuevo.stock_actual}
-                        onChange={(e) =>
-                          setNuevo({ ...nuevo, stock_actual: e.target.value })
-                        }
+                        onChange={(e) => setNuevo({ ...nuevo, stock_actual: e.target.value })}
                         className="w-full border rounded px-2 py-1"
                         required
                       />
@@ -411,9 +444,9 @@ export default function InventarioSucursalesPage() {
                       type="submit"
                       className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
                     >
-                      <PlusCircle size={18} />{" "}
-                      {editando ? "Guardar" : "Agregar"}
+                      <PlusCircle size={18} /> {editando ? "Guardar" : "Agregar"}
                     </button>
+
                     {editando && (
                       <button
                         type="button"

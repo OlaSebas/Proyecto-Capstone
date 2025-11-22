@@ -7,9 +7,9 @@ import {
     Menu, ChevronDown, ChevronUp, DollarSign, Package, Star,
     ArrowLeft, ArrowRight
 } from "lucide-react";
-import { useOutletContext, useNavigate } from "react-router-dom";
+import { useOutletContext} from "react-router-dom";
 
-export default function ReporteVentas({ toggleSidebar }) {
+export default function ReporteVentas() {
     const apiUrl = import.meta.env.VITE_API_URL;
     const token = localStorage.getItem("token");
 
@@ -32,11 +32,11 @@ export default function ReporteVentas({ toggleSidebar }) {
     const [tipoDashboardSucursal, setTipoDashboardSucursal] = useState("pastel");
 
     const [periodoVentas, setPeriodoVentas] = useState("diaria");
-    const [semanaSeleccionada, setSemanaSeleccionada] = useState("");
+    const [_semanaSeleccionada, _setSemanaSeleccionada] = useState("");
 
     const [estadoVentasTabla, setEstadoVentasTabla] = useState(2);
     const [paginaActual, setPaginaActual] = useState(1);
-    const VENTAS_POR_PAGINA = 10;
+    const VENTAS_POR_PAGINA = 15;
 
     // Nueva paleta de colores
     const COLORS = [
@@ -84,7 +84,7 @@ export default function ReporteVentas({ toggleSidebar }) {
             }
         };
         cargarSucursales();
-    }, [token]);
+    }, [token, apiUrl]);
 
     useEffect(() => {
         const fetchVentas = async () => {
@@ -101,7 +101,7 @@ export default function ReporteVentas({ toggleSidebar }) {
             }
         };
         fetchVentas();
-    }, [token]);
+    }, [token, apiUrl]);
 
     const ventasFiltradasTabla = useMemo(() => {
         return ventas.filter((v) => {
@@ -142,7 +142,7 @@ export default function ReporteVentas({ toggleSidebar }) {
         );
         const ordenado = Object.entries(contador).sort((a, b) => b[1] - a[1]);
         return ordenado[0]
-            ? `Producto ${ordenado[0][0]} (${ordenado[0][1]} unidades)`
+            ? ("Producto " + ordenado[0][0]) + ` (${ordenado[0][1]} unidades)`
             : "-";
     }, [ventasFiltradasDashboards]);
 
@@ -201,7 +201,7 @@ export default function ReporteVentas({ toggleSidebar }) {
     const cambiarPagina = (inc) =>
         setPaginaActual((p) => Math.min(Math.max(p + inc, 1), totalPaginas));
 
-    const colorFila = (estado) =>
+    const _colorFila = (estado) =>
         estado === 1
             ? "bg-yellow-100"
             : estado === 2
@@ -301,6 +301,7 @@ export default function ReporteVentas({ toggleSidebar }) {
                         </div>
                     </div>
                 </div>
+
                 {/* DASHBOARDS */}
 
                 {/* Ventas Diarias/Mensuales */}

@@ -3,7 +3,7 @@ import { useState } from "react";
 export default function PreCarrito({ producto, onClose, onAddToCart }) {
   const [cantidad, setCantidad] = useState(1);
   const [refresco, setRefresco] = useState(null);
-  const [adicionales, setAdicionales] = useState([]);
+  const [adicionales] = useState([]);
   const [preferencias, setPreferencias] = useState("");
 
   const refrescosDisponibles = [
@@ -14,23 +14,9 @@ export default function PreCarrito({ producto, onClose, onAddToCart }) {
     { id: 5, nombre: "Frucola", precio: 1500 },
   ];
 
-  const adicionalesDisponibles = [
-    { id: 1, nombre: "Mayonesa", precio: 500 },
-    { id: 2, nombre: "Ketchup", precio: 500 },
-    { id: 3, nombre: "Mostaza", precio: 500 },
-  ];
-
   const toggleRefresco = (r) => {
     if (refresco?.id === r.id) setRefresco(null);
     else setRefresco(r);
-  };
-
-  const toggleAdicional = (a) => {
-    if (adicionales.find((item) => item.id === a.id)) {
-      setAdicionales(adicionales.filter((item) => item.id !== a.id));
-    } else {
-      setAdicionales([...adicionales, a]);
-    }
   };
 
   const total =
@@ -100,26 +86,6 @@ export default function PreCarrito({ producto, onClose, onAddToCart }) {
                 {r.nombre}
               </div>
               <span>${r.precio.toLocaleString()}</span>
-            </label>
-          ))}
-
-          <h3 className="font-semibold mt-4 text-gray-800">
-            Adicionales (Opcional)
-          </h3>
-          {adicionalesDisponibles.map((a) => (
-            <label
-              key={a.id}
-              className="flex justify-between items-center border-b border-gray-200 py-1 cursor-pointer text-gray-700"
-            >
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={!!adicionales.find((item) => item.id === a.id)}
-                  onChange={() => toggleAdicional(a)}
-                />
-                {a.nombre}
-              </div>
-              <span>${a.precio.toLocaleString()}</span>
             </label>
           ))}
 

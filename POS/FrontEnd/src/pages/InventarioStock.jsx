@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 
 export default function InventarioStock() {
   const [stock, setStock] = useState([]);
@@ -25,7 +25,7 @@ export default function InventarioStock() {
       }
     };
     fetchUser();
-  }, []);
+  }, [apiUrl]);
 
   // Cargar inventario y hora
   useEffect(() => {

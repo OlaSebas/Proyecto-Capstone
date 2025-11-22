@@ -2,22 +2,19 @@ import { Link, Outlet } from "react-router-dom";
 import { useState, useEffect } from "react";
 import {
   Home,
-  ShoppingCart,
-  Package,
   ClipboardList,
   UserPlus,
   LogOut,
   HousePlus,
   PackagePlus,
   Package2,
-  Hotel
 } from "lucide-react";
 
 export function Layout() {
   const apiUrl = import.meta.env.VITE_API_URL;
-  const [nombre, setNombre] = useState("");
+  const [_nombre, setNombre] = useState("");
   const [usuario, setUsuario] = useState("");
-  const [isStaff, setIsStaff] = useState(false); // Estado real del staff
+  const [isStaff, setIsStaff] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
@@ -41,8 +38,8 @@ export function Layout() {
         // Guarda el valor actual
         setNombre(data.first_name || "");
         setUsuario(data.username || "");
-        setIsStaff(Boolean(data.is_staff)); // 👈 Asegura que sea booleano
-        localStorage.setItem("is_staff", JSON.stringify(data.is_staff)); // 👈 Guardado seguro
+        setIsStaff(Boolean(data.is_staff)); 
+        localStorage.setItem("is_staff", JSON.stringify(data.is_staff)); 
       } catch (error) {
         console.error("Error al cargar perfil:", error);
       }
@@ -100,13 +97,6 @@ export function Layout() {
                 className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
               >
                 <Package2 size={20} /> Gestión Promoción
-              </Link>
-
-              <Link
-                to="/GestionInvent"
-                className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
-              >
-                <Package size={20} /> #Gestión Inventario#
               </Link>
 
               <Link

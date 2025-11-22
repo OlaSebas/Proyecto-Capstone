@@ -1,0 +1,8 @@
+id,password,last_login,username,email,first_name,last_name,is_active,is_staff,is_superuser,date_joined,caja_id
+1,pbkdf2_sha256$1000000$qvkxFD3a0li2oCGN4C1dfJ$QsyQB2ay15N8twWJUs9g54f9rhHBnb+fwZkocUVxr6U=,2025-10-13 21:04:21.889189,Sebastian,se.herrerap@duocuc.cl,Sebastian,Herrera,1,1,1,2025-09-08 00:52:32,
+2,pbkdf2_sha256$1000000$CbyYl0XK24V6lXU6KNkIGK$SyaDRJCehfkuEdOpfCRvvBP4QTL6VJiVPgM2GTtQdmk=,2025-11-21 01:36:31.954815,Esteban,este@gmail.com,Esteban,Badilla,1,1,1,2025-09-08 01:32:19,
+12,pbkdf2_sha256$1000000$QkEOmMmqDNC8Uayvat5xec$JWlDnE33jBruL5tQDd23KqSPXnRh375HcIIL2lsnMAU=,2025-09-13 20:14:30.598424,Leandro,lea.palma@duocuc.cl,Lea,Roemo,1,1,0,2025-09-12 21:44:58.797149,
+14,pbkdf2_sha256$1000000$HW159ivKfY7vXDRsK3RMsS$5vo+zmidWFNbaz5Mft9NyMh3qoC0YVTVQngoQypic6c=,,Camilo,ca.garridoc@duocuc.cl,El corrido,oh,1,1,0,2025-09-12 21:58:24.467589,
+15,pbkdf2_sha256$1000000$80M20zuwLnFW9TUto5KvY7$gwx+WdA9y7njfFurhqgeAis8IjonhiYlRZf9x3JRygQ=,,Vendedor1,Ven.dedor@pollos.cl,Ven,dedor,1,0,0,2025-09-22 20:13:14,1
+20,pbkdf2_sha256$1000000$04D05yUw31tfA0UsGPTVoU$AYbnjTpDFwJG/NVmt1kLyTQ7cu8LDQRZ8XCHjECm/sQ=,,Vendedor3,Ven.dedor3@pollos.cl,Vend,edor,1,0,0,2025-10-02 20:10:44,2
+21,ola123,,SistemaAntiguo,sistema@antiguo.cl,TEST,TEST,1,0,0,2025-11-21 01:37:57,3

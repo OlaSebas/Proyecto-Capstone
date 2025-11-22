@@ -1,0 +1,9 @@
+id,descripcion,precio,imagen,fecha_inicio,fecha_fin
+16,Colacion costillar                      ,5000,,2025-11-19,
+17,Colacion para llevar,5990,products/imagen_2025-11-19_202119121.png,2025-11-19,
+18,Menu 4 (1/2 pollo + papas medianas,11490,products/imagen_2025-11-19_202227924.png,2025-11-19,
+19,Menu 5 (1 pollo entero + papa),18990,products/imagen_2025-11-19_202249803.png,2025-11-19,
+20,Menu 6 (pollo entero+ papas +bebida1.5),20990,products/imagen_2025-11-19_202314065.png,2025-11-19,
+21,Menu 7 (pollo entero+papas+bebida 1.5),23990,products/imagen_2025-11-19_202319925.png,2025-11-19,
+22,"1/2 pollo+papas medianas+bebida 1,5",13490,products/imagen_2025-11-19_202336337.png,2025-11-19,
+25,Promo pollo + papa extra grande,21990,products/imagen_2025-11-19_202634179.png,2025-11-19,

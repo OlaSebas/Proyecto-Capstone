@@ -134,6 +134,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = 'static/'
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
 #CAMBIO DE URL PARA PRODUCCION
 #SITE_DOMAIN = "http://127.0.0.1:8000"
 SITE_DOMAIN = "https://dannypollosapp-ggbtgnbrapetc2b6.brazilsouth-01.azurewebsites.net"

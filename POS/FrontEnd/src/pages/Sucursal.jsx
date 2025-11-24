@@ -6,13 +6,16 @@ import { useNavigate } from "react-router-dom";
 
 export default function InventarioSucursalesPage() {
   const navigate = useNavigate();
-  const { sidebarOpen, setSidebarOpen } = useOutletContext();
+  const { sidebarOpen, setSidebarOpen } =
+    useOutletContext?.() ?? { sidebarOpen: false, setSidebarOpen: () => {} };
 
   const [sucursales, setSucursales] = useState([]);
   const [sucursalSeleccionada, setSucursalSeleccionada] = useState(null);
   const [inventario, setInventario] = useState([]);
   const [tabActiva, setTabActiva] = useState("inventario");
   const [hora, setHora] = useState("");
+  const [mensaje, setMensaje] = useState("");
+
   const [nuevo, setNuevo] = useState({
     tipo: "item",
     descripcion: "",
@@ -20,7 +23,7 @@ export default function InventarioSucursalesPage() {
     fecha_ingreso: new Date().toISOString().split("T")[0],
   });
   const [editando, setEditando] = useState(null);
-  const [mensaje, setMensaje] = useState("");
+
   const token = localStorage.getItem("token");
   const apiUrl = import.meta.env.VITE_API_URL_INVENTARIO;
 
@@ -28,7 +31,26 @@ export default function InventarioSucursalesPage() {
     navigate(`/sucursalEdit/${sucursal.id}`);
   };
 
-  // Cargar sucursales
+  const irAgregarSucursal = () => {
+    navigate("/formularForm");
+  };
+
+  // reloj
+  useEffect(() => {
+    const tick = () =>
+      setHora(
+        new Date().toLocaleTimeString("es-CL", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        })
+      );
+    tick();
+    const t = setInterval(tick, 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  // cargar sucursales
   useEffect(() => {
     fetch(`${apiUrl}sucursales/`, {
       headers: { Authorization: `Token ${token}` },
@@ -38,40 +60,19 @@ export default function InventarioSucursalesPage() {
       .catch(() => setSucursales([]));
   }, [apiUrl, token]);
 
-  // Actualizar hora
-  useEffect(() => {
-    const actualizarHora = () => {
-      const now = new Date();
-      setHora(
-        now.toLocaleTimeString("es-CL", {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-        })
-      );
-    };
-    actualizarHora();
-    const intervalo = setInterval(actualizarHora, 1000);
-    return () => clearInterval(intervalo);
-  }, []);
-
-  // Cargar inventario según sucursal
+  // cargar inventario por sucursal
   const toggleSucursal = async (sucursalId) => {
     if (sucursalSeleccionada === sucursalId) {
       setSucursalSeleccionada(null);
       setInventario([]);
       return;
     }
-
     setSucursalSeleccionada(sucursalId);
-
     try {
       const res = await fetch(`${apiUrl}${sucursalId}/`, {
         headers: { Authorization: `Token ${token}` },
       });
       const data = await res.json();
-
-      // ⭐ CORRECCIÓN: usar fecha de última actualización real
       const invNormalizado = Array.isArray(data)
         ? data.map((item) => ({
             id: item.id,
@@ -82,60 +83,42 @@ export default function InventarioSucursalesPage() {
               item.descripcion ||
               "",
             stock_actual: item.stock_actual,
-            unidad:
-              item.item?.unidad_medida || item.insumo?.unidad_medida || "-",
-
-            // ⭐ ESTA ES LA FECHA REAL DE ÚLTIMA ACTUALIZACIÓN
+            unidad: item.item?.unidad_medida || item.insumo?.unidad_medida || "-",
             fecha_ingreso:
-              item.fecha_modificacion ??
-              item.updated_at ??
-              item.fecha_ingreso ??
-              "-",
+              item.fecha_modificacion ?? item.updated_at ?? item.fecha_ingreso ?? "-",
           }))
         : [];
-
       setInventario(invNormalizado);
     } catch {
       setInventario([]);
     }
   };
 
-  // Guardar inventario
+  // guardar (crear/editar)
   const guardarInventario = async (e) => {
     e.preventDefault();
-
-    if (
-      !nuevo.descripcion ||
-      !nuevo.stock_actual ||
-      !sucursalSeleccionada ||
-      !nuevo.fecha_ingreso
-    ) {
+    if (!nuevo.descripcion || !nuevo.stock_actual || !sucursalSeleccionada || !nuevo.fecha_ingreso) {
       setMensaje("Completa todos los campos obligatorios.");
       return;
     }
-
     try {
       const payload = { ...nuevo, sucursal: sucursalSeleccionada };
-      const axiosConfig = { headers: { Authorization: `Token ${token}` } };
-
+      const cfg = { headers: { Authorization: `Token ${token}` } };
       if (editando) {
-        await axios.put(`${apiUrl}update/${editando}/`, payload, axiosConfig);
+        await axios.put(`${apiUrl}update/${editando}/`, payload, cfg);
         setMensaje("Inventario actualizado");
         setEditando(null);
       } else {
-        await axios.post(`${apiUrl}create/`, payload, axiosConfig);
+        await axios.post(`${apiUrl}create/`, payload, cfg);
         setMensaje("Inventario agregado");
       }
-
-      toggleSucursal(sucursalSeleccionada);
-
+      await toggleSucursal(sucursalSeleccionada);
       setNuevo({
         tipo: "item",
         descripcion: "",
         stock_actual: "",
         fecha_ingreso: new Date().toISOString().split("T")[0],
       });
-
       setTabActiva("inventario");
     } catch {
       setMensaje("Error al guardar inventario");
@@ -144,12 +127,10 @@ export default function InventarioSucursalesPage() {
 
   const eliminarInventario = async (id) => {
     if (!window.confirm("¿Seguro que deseas eliminar este registro?")) return;
-
     try {
       await axios.delete(`${apiUrl}delete/${id}/`, {
         headers: { Authorization: `Token ${token}` },
       });
-
       setInventario((prev) => prev.filter((i) => i.id !== id));
       setMensaje("Registro eliminado");
     } catch {
@@ -167,7 +148,6 @@ export default function InventarioSucursalesPage() {
           ? registro.fecha_ingreso
           : new Date().toISOString().split("T")[0],
     });
-
     setEditando(registro.id);
     setTabActiva("formulario");
     setMensaje("Editando registro...");
@@ -180,7 +160,6 @@ export default function InventarioSucursalesPage() {
       stock_actual: "",
       fecha_ingreso: new Date().toISOString().split("T")[0],
     });
-
     setEditando(null);
     setTabActiva("inventario");
     setMensaje("");
@@ -190,86 +169,137 @@ export default function InventarioSucursalesPage() {
     sucursales.find((s) => s.id === sucursalSeleccionada)?.descripcion || "";
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="flex justify-between items-center bg-white shadow px-6 py-4">
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="px-3 py-2 bg-gray-200 rounded hover:bg-gray-300"
-        >
-          ☰
-        </button>
-        <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 text-center flex-1">
-          Sucursales e Inventario
-        </h2>
-        <span className="text-gray-600 font-medium">{hora}</span>
+    <div className="min-h-screen bg-gradient-to-br from-red-100 via-white to-red-200">
+      {/* HEADER */}
+      <header className="bg-white shadow">
+        <div className="mx-auto max-w-7xl px-3 sm:px-6">
+          {/* móvil */}
+          <div className="block md:hidden py-3">
+            <button
+              onClick={() => setSidebarOpen((v) => !v)}
+              aria-label="Abrir/Cerrar barra lateral"
+              className="w-full h-10 inline-flex items-center justify-center rounded-md border border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200"
+            >
+              ☰
+            </button>
+            <div className="mt-3 text-center">
+              <h1 className="text-2xl font-extrabold text-gray-900">
+                Sucursales e Inventario
+              </h1>
+              <p className="mt-1 text-gray-600 font-medium">{hora}</p>
+            </div>
+            {/* botón agregar sucursal (móvil) */}
+            <button
+              onClick={irAgregarSucursal}
+              className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gray-900 text-white py-2.5 font-semibold shadow hover:bg-gray-800"
+            >
+              <PlusCircle size={18} />
+              Agregar sucursal
+            </button>
+          </div>
+
+          {/* desktop/tablet */}
+          <div className="hidden md:flex items-center justify-between py-4">
+            <button
+              onClick={() => setSidebarOpen((v) => !v)}
+              aria-label="Abrir/Cerrar barra lateral"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200"
+            >
+              ☰
+            </button>
+
+            <h1 className="flex-1 px-3 text-center text-3xl font-extrabold text-gray-900">
+              Sucursales e Inventario
+            </h1>
+
+            <div className="flex items-center gap-3">
+              {/* botón agregar sucursal (desktop) */}
+              <button
+                onClick={irAgregarSucursal}
+                className="inline-flex items-center gap-2 rounded-lg bg-gray-900 text-white px-3 py-2 font-medium shadow hover:bg-gray-800"
+              >
+                <PlusCircle size={18} />
+                Agregar sucursal
+              </button>
+              <span className="min-w-[120px] text-right text-gray-600 font-medium">
+                {hora}
+              </span>
+            </div>
+          </div>
+        </div>
       </header>
 
+      {/* mensaje inline */}
       {mensaje && (
-        <div className="mx-6 mt-4 p-3 rounded bg-yellow-100 text-yellow-800 border border-yellow-200">
-          {mensaje}
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 pt-4">
+          <div className="rounded-lg border px-4 py-3 text-sm bg-yellow-50 border-yellow-200 text-yellow-900">
+            {mensaje}
+          </div>
         </div>
       )}
 
-      <main className="flex-1 p-6 overflow-y-auto">
-        {/* Cards de sucursales */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-10">
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
+        {/* CARDS de sucursales */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
           {sucursales.map((sucursal) => (
             <div
               key={sucursal.id}
               onClick={() => toggleSucursal(sucursal.id)}
-              className={`bg-white border rounded-lg shadow hover:shadow-lg transition cursor-pointer text-center p-6 ${
-                sucursalSeleccionada === sucursal.id
-                  ? "ring-2 ring-red-500"
-                  : ""
+              className={`bg-white/90 backdrop-blur border rounded-xl p-5 shadow-sm hover:shadow-md transition cursor-pointer ${
+                sucursalSeleccionada === sucursal.id ? "ring-2 ring-red-500" : "border-gray-200"
               }`}
             >
-              <p className="font-semibold text-gray-800 text-lg">
+              <p className="font-semibold text-gray-900 text-lg">
                 {sucursal.descripcion}
               </p>
-              <p className="text-gray-500 mb-4">Comuna: {sucursal.Comuna}</p>
+              <p className="text-gray-600 mb-4">
+                Comuna: <span className="font-medium">{sucursal.Comuna}</span>
+              </p>
 
-              <div className="flex justify-center gap-2">
+              <div className="flex flex-wrap justify-center gap-2">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     editarSucursal(sucursal);
                   }}
-                  className="px-3 py-1 bg-gray-800 text-white rounded hover:bg-gray-900 flex items-center gap-1"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-900 text-white rounded-md hover:bg-gray-800"
                 >
-                  <Pencil size={16} /> Editar
+                  <Pencil size={16} />
+                  Editar
                 </button>
 
                 <button
                   onClick={(e) => e.stopPropagation()}
-                  className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 flex items-center gap-1"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700"
                 >
-                  <Trash2 size={16} /> Eliminar
+                  <Trash2 size={16} />
+                  Eliminar
                 </button>
               </div>
             </div>
           ))}
         </div>
 
+        {/* PANEL inventario */}
         {sucursalSeleccionada && (
-          <div className="w-full max-w-6xl mx-auto bg-white shadow-lg rounded-lg border border-gray-200 overflow-hidden">
-            <div className="flex justify-center items-center px-6 py-4 bg-red-100 border-b border-red-300">
-              <h3 className="text-xl font-semibold text-red-800 text-center">
+          <div className="w-full bg-white/90 backdrop-blur shadow-lg rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-4 sm:px-6 py-4 bg-red-50 border-b border-red-200">
+              <h3 className="text-lg sm:text-xl font-semibold text-red-800 text-center">
                 Inventario {nombreSucursal ? `– ${nombreSucursal}` : ""}
               </h3>
             </div>
 
-            {/* Tabs */}
-            <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mt-4">
+            {/* tabs */}
+            <div className="flex flex-wrap justify-center gap-2 sm:gap-3 px-4 sm:px-6 pt-4">
               {["inventario", "formulario"].map((t) => (
                 <button
                   key={t}
-                  className={`px-3 sm:px-4 py-1 sm:py-2 rounded-t-lg ${
-                    tabActiva === t
-                      ? "bg-red-600 text-white"
-                      : "bg-gray-300 text-gray-700 hover:bg-gray-400"
-                  }`}
                   onClick={() => setTabActiva(t)}
+                  className={`px-4 py-2 rounded-full border text-sm font-medium transition shadow-sm ${
+                    tabActiva === t
+                      ? "bg-red-600 text-white border-red-700 shadow"
+                      : "bg-white text-gray-700 hover:bg-gray-100 border-gray-300"
+                  }`}
                 >
                   {t === "inventario"
                     ? "Inventario"
@@ -280,41 +310,25 @@ export default function InventarioSucursalesPage() {
               ))}
             </div>
 
-            <div className="p-6 border-t border-red-300">
+            <div className="p-4 sm:p-6">
               {tabActiva === "inventario" && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-gray-700 border-collapse divide-y divide-red-300">
-                    <thead className="bg-red-200 text-red-900 border-b border-red-300">
+                <div className="overflow-x-auto rounded-lg border border-gray-200">
+                  <table className="w-full text-left text-gray-800">
+                    <thead className="bg-gray-100 sticky top-0 z-10">
                       <tr>
-                        <th className="px-6 py-3 border-r border-red-300">
-                          ID
-                        </th>
-                        <th className="px-6 py-3 border-r border-red-300">
-                          Tipo
-                        </th>
-                        <th className="px-6 py-3 border-r border-red-300">
-                          Descripción
-                        </th>
-                        <th className="px-6 py-3 border-r border-red-300">
-                          Stock
-                        </th>
-                        <th className="px-6 py-3 border-r border-red-300">
-                          Unidad
-                        </th>
-                        <th className="px-6 py-3 border-r border-red-300">
-                          Fecha
-                        </th>
-                        <th className="px-6 py-3">Acciones</th>
+                        <th className="px-4 sm:px-6 py-3">ID</th>
+                        <th className="px-4 sm:px-6 py-3">Tipo</th>
+                        <th className="px-4 sm:px-6 py-3">Descripción</th>
+                        <th className="px-4 sm:px-6 py-3">Stock</th>
+                        <th className="px-4 sm:px-6 py-3">Unidad</th>
+                        <th className="px-4 sm:px-6 py-3">Fecha</th>
+                        <th className="px-4 sm:px-6 py-3 text-center">Acciones</th>
                       </tr>
                     </thead>
-
-                    <tbody className="divide-y divide-red-200">
+                    <tbody>
                       {inventario.length === 0 ? (
                         <tr>
-                          <td
-                            colSpan={7}
-                            className="px-6 py-4 text-center text-gray-500"
-                          >
+                          <td colSpan={7} className="px-6 py-6 text-center text-gray-500">
                             No hay inventario disponible
                           </td>
                         </tr>
@@ -322,51 +336,37 @@ export default function InventarioSucursalesPage() {
                         inventario.map((inv, i) => (
                           <tr
                             key={inv.id}
-                            className={`${
-                              i % 2 === 0 ? "bg-white" : "bg-red-50"
-                            } hover:bg-red-100 transition`}
+                            className={`${i % 2 ? "bg-white" : "bg-gray-50"} hover:bg-gray-100 transition`}
                           >
-                            <td className="px-6 py-4 border-r border-red-200">
-                              {inv.id}
-                            </td>
-                            <td className="px-6 py-4 border-r border-red-200 capitalize">
-                              {inv.tipo}
-                            </td>
-                            <td className="px-6 py-4 border-r border-red-200">
-                              {inv.descripcion}
-                            </td>
-                            <td className="px-6 py-4 border-r border-red-200">
-                              {inv.stock_actual}
-                            </td>
-                            <td className="px-6 py-4 border-r border-red-200">
-                              {inv.unidad}
-                            </td>
-
-                            {/* ⭐ FECHA REAL DE LA ÚLTIMA ACTUALIZACIÓN */}
-                            <td className="px-6 py-4 border-r border-red-200">
-                              {inv.fecha_ingreso}
-                            </td>
-
-                            <td className="px-6 py-4 flex gap-2">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  editarRegistro(inv);
-                                }}
-                                className="px-2 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 text-xs"
-                              >
-                                <Edit2 size={14} />
-                              </button>
-
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  eliminarInventario(inv.id);
-                                }}
-                                className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
-                              >
-                                <Trash2 size={14} />
-                              </button>
+                            <td className="px-4 sm:px-6 py-3">{inv.id}</td>
+                            <td className="px-4 sm:px-6 py-3 capitalize">{inv.tipo}</td>
+                            <td className="px-4 sm:px-6 py-3">{inv.descripcion}</td>
+                            <td className="px-4 sm:px-6 py-3">{inv.stock_actual}</td>
+                            <td className="px-4 sm:px-6 py-3">{inv.unidad}</td>
+                            <td className="px-4 sm:px-6 py-3">{inv.fecha_ingreso}</td>
+                            <td className="px-4 sm:px-6 py-3">
+                              <div className="flex justify-center gap-2">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    editarRegistro(inv);
+                                  }}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-900 text-white rounded-md hover:bg-gray-800 text-sm"
+                                >
+                                  <Edit2 size={16} />
+                                  Editar
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    eliminarInventario(inv.id);
+                                  }}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm"
+                                >
+                                  <Trash2 size={16} />
+                                  Eliminar
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))
@@ -377,19 +377,14 @@ export default function InventarioSucursalesPage() {
               )}
 
               {tabActiva === "formulario" && (
-                <form
-                  onSubmit={guardarInventario}
-                  className="flex flex-col gap-4 mt-4"
-                >
+                <form onSubmit={guardarInventario} className="mt-2 space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Tipo
-                      </label>
+                      <label className="block text-sm font-medium mb-1 text-gray-700">Tipo</label>
                       <select
                         value={nuevo.tipo}
                         onChange={(e) => setNuevo({ ...nuevo, tipo: e.target.value })}
-                        className="w-full border rounded px-2 py-1"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
                       >
                         <option value="item">Item</option>
                         <option value="insumo">Insumo</option>
@@ -397,52 +392,44 @@ export default function InventarioSucursalesPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Descripción
-                      </label>
+                      <label className="block text-sm font-medium mb-1 text-gray-700">Descripción</label>
                       <input
                         type="text"
                         value={nuevo.descripcion}
                         onChange={(e) => setNuevo({ ...nuevo, descripcion: e.target.value })}
-                        className="w-full border rounded px-2 py-1"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
                         placeholder="Nombre"
                         required
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Stock actual
-                      </label>
+                      <label className="block text-sm font-medium mb-1 text-gray-700">Stock actual</label>
                       <input
                         type="number"
                         value={nuevo.stock_actual}
                         onChange={(e) => setNuevo({ ...nuevo, stock_actual: e.target.value })}
-                        className="w-full border rounded px-2 py-1"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
                         required
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Fecha de ingreso
-                      </label>
+                      <label className="block text-sm font-medium mb-1 text-gray-700">Fecha de ingreso</label>
                       <input
                         type="date"
                         value={nuevo.fecha_ingreso}
-                        onChange={(e) =>
-                          setNuevo({ ...nuevo, fecha_ingreso: e.target.value })
-                        }
-                        className="w-full border rounded px-2 py-1"
+                        onChange={(e) => setNuevo({ ...nuevo, fecha_ingreso: e.target.value })}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
                         required
                       />
                     </div>
                   </div>
 
-                  <div className="flex gap-2 mt-4">
+                  <div className="flex flex-wrap gap-2">
                     <button
                       type="submit"
-                      className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                      className="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
                     >
                       <PlusCircle size={18} /> {editando ? "Guardar" : "Agregar"}
                     </button>
@@ -451,7 +438,7 @@ export default function InventarioSucursalesPage() {
                       <button
                         type="button"
                         onClick={cancelarEdicion}
-                        className="flex items-center gap-2 bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400"
+                        className="inline-flex items-center gap-2 bg-gray-300 text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-400"
                       >
                         <XCircle size={18} /> Cancelar
                       </button>

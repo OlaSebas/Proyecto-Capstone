@@ -33,7 +33,7 @@ export default function Login() {
       if (data.User.caja) {
         const cajaId = data.User.caja.id;
         localStorage.setItem("caja", cajaId);
-        alert(`🛠 Caja asignada: ${cajaId}`);
+        console.info(`Caja asignada: ${cajaId}`);
 
         // Abrir sesión de caja
         try {
@@ -62,9 +62,8 @@ export default function Login() {
       }
 
       console.log("✅ Usuario logeado:", data.User);
-      alert(`Bienvenido ${data.User.username}`);
 
-      // 🔹 Crear cache temporal de productos y promociones
+      // Cache temporal de productos y promociones (no bloqueante)
       try {
         const [productosRes, promocionesRes] = await Promise.all([
           fetch(`${apiUrl}inventario/productos/`, {

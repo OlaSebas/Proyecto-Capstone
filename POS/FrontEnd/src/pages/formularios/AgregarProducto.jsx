@@ -1,410 +1,533 @@
 import React, { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
-import { CupSoda, Drumstick, Package, Filter } from "lucide-react";
+import { CupSoda, Drumstick, Package, Filter, Pencil, Trash2 } from "lucide-react";
 
 export default function GestionProductos() {
-    const [tab, setTab] = useState("agregar");
-    const [nombre, setNombre] = useState("");
-    const [precio, setPrecio] = useState("");
-    const [imagen, setImagen] = useState(null);
-    const [preview, setPreview] = useState(null);
-    const [hora, setHora] = useState("");
-    const [productos, setProductos] = useState([]);
-    const [categorias, setCategorias] = useState([]);
-    const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
-    const [modalEliminar, setModalEliminar] = useState({ abierto: false, productoId: null });
-    const [modalEditar, setModalEditar] = useState({ abierto: false, producto: null });
+  const [tab, setTab] = useState("agregar");
+  const [nombre, setNombre] = useState("");
+  const [precio, setPrecio] = useState("");
+  const [imagen, setImagen] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [hora, setHora] = useState("");
 
-    const apiUrl = import.meta.env.VITE_API_URL_INVENTARIO;
-    const { sidebarOpen, setSidebarOpen } = useOutletContext();
+  const [productos, setProductos] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
 
-    // Actualizar hora cada segundo
-    useEffect(() => {
-        const actualizarHora = () => {
-            const now = new Date();
-            setHora(
-                now.toLocaleTimeString("es-CL", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    second: "2-digit",
-                })
-            );
-        };
-        actualizarHora();
-        const intervalo = setInterval(actualizarHora, 1000);
-        return () => clearInterval(intervalo);
-    }, []);
+  const [modalEliminar, setModalEliminar] = useState({ abierto: false, productoId: null });
+  const [modalEditar, setModalEditar] = useState({ abierto: false, producto: null });
 
-    // Cargar productos y categorías
-    const fetchProductos = async () => {
-        try {
-            const res = await fetch(`${apiUrl}productos/`, {
-                headers: { Authorization: `Token ${localStorage.getItem("token")}` },
-            });
-            const data = await res.json();
-            setProductos(data);
-        } catch (err) {
-            console.error("Error al cargar productos:", err);
-        }
-    };
+  const [msg, setMsg] = useState({ type: "", text: "" }); // mensajes inline
 
-    const fetchCategorias = async () => {
-        try {
-            const res = await fetch(`${apiUrl}categorias/`, {
-                headers: { Authorization: `Token ${localStorage.getItem("token")}` },
-            });
-            const data = await res.json();
-            setCategorias(data);
-        } catch (err) {
-            console.error("Error al cargar categorías:", err);
-        }
-    };
+  const apiUrl = import.meta.env.VITE_API_URL_INVENTARIO;
+  const { sidebarOpen, setSidebarOpen } =
+    useOutletContext?.() ?? { sidebarOpen: false, setSidebarOpen: () => {} };
 
-    useEffect(() => {
-        fetchProductos();
-        fetchCategorias();
-    }, []);
+  // ===== helpers =====
+  const formatCLP = (v) =>
+    new Intl.NumberFormat("es-CL", {
+      style: "currency",
+      currency: "CLP",
+      maximumFractionDigits: 0,
+    }).format(Number(v ?? 0));
 
-    // Imagen
-    const handleImagenChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setImagen(file);
-            setPreview(URL.createObjectURL(file));
-        } else {
-            setImagen(null);
-            setPreview(null);
-        }
-    };
+  // Reloj
+  useEffect(() => {
+    const tick = () =>
+      setHora(
+        new Date().toLocaleTimeString("es-CL", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        })
+      );
+    tick();
+    const t = setInterval(tick, 1000);
+    return () => clearInterval(t);
+  }, []);
 
-    // Agregar producto
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (!nombre || !precio || !imagen) {
-            alert("Completa todos los campos");
-            return;
-        }
-        const formData = new FormData();
-        formData.append("descripcion", nombre);
-        formData.append("precio", precio);
-        formData.append("imagen", imagen);
+  // Cargar productos y categorías
+  const fetchProductos = async () => {
+    try {
+      const res = await fetch(`${apiUrl}productos/`, {
+        headers: { Authorization: `Token ${localStorage.getItem("token")}` },
+      });
+      const data = await res.json();
+      setProductos(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Error al cargar productos:", err);
+      setMsg({ type: "error", text: "No se pudieron cargar los productos." });
+    }
+  };
 
-        try {
-            const res = await fetch(`${apiUrl}productos/create/`, {
-                method: "POST",
-                headers: { Authorization: `Token ${localStorage.getItem("token")}` },
-                body: formData,
-            });
-            if (!res.ok) throw new Error("Error al agregar producto");
-            const data = await res.json();
-            setProductos([...productos, data]);
-            setNombre("");
-            setPrecio("");
-            setImagen(null);
-            setPreview(null);
-            alert("Producto agregado con éxito");
-        } catch (err) {
-            console.error(err);
-            alert("Error al agregar producto");
-        }
-    };
+  const fetchCategorias = async () => {
+    try {
+      const res = await fetch(`${apiUrl}categorias/`, {
+        headers: { Authorization: `Token ${localStorage.getItem("token")}` },
+      });
+      const data = await res.json();
+      setCategorias(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Error al cargar categorías:", err);
+      setMsg({ type: "error", text: "No se pudieron cargar las categorías." });
+    }
+  };
 
-    // Eliminar producto
-    const abrirModalEliminar = (id) => setModalEliminar({ abierto: true, productoId: id });
-    const cancelarEliminar = () => setModalEliminar({ abierto: false, productoId: null });
-    const confirmarEliminar = async () => {
-        const id = modalEliminar.productoId;
-        try {
-            const res = await fetch(`${apiUrl}productos/delete/${id}/`, {
-                method: "DELETE",
-                headers: { Authorization: `Token ${localStorage.getItem("token")}` },
-            });
-            if (!res.ok) throw new Error("Error al eliminar producto");
-            setProductos(productos.filter((p) => p.id !== id));
-            setModalEliminar({ abierto: false, productoId: null });
-        } catch (err) {
-            console.error(err);
-            alert("Error al eliminar producto");
-        }
-    };
+  useEffect(() => {
+    fetchProductos();
+    fetchCategorias();
+  }, []);
 
-    // Editar producto
-    const abrirModalEditar = (producto) => {
-        setModalEditar({ abierto: true, producto });
-        setNombre(producto.descripcion);
-        setPrecio(producto.precio);
-        setPreview(producto.imagen);
-        setImagen(null);
-    };
-    const cancelarEditar = () => {
-        setModalEditar({ abierto: false, producto: null });
-        setNombre("");
-        setPrecio("");
-        setImagen(null);
-        setPreview(null);
-    };
-    const confirmarEditar = async () => {
-        const producto = modalEditar.producto;
-        const formData = new FormData();
-        formData.append("descripcion", nombre);
-        formData.append("precio", precio);
-        if (imagen) formData.append("imagen", imagen);
+  // Imagen
+  const handleImagenChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImagen(file);
+      setPreview(URL.createObjectURL(file));
+    } else {
+      setImagen(null);
+      setPreview(null);
+    }
+  };
 
-        try {
-            const res = await fetch(`${apiUrl}productos/update/${producto.id}/`, {
-                method: "PUT",
-                headers: { Authorization: `Token ${localStorage.getItem("token")}` },
-                body: formData,
-            });
-            if (!res.ok) throw new Error("Error al editar producto");
-            const data = await res.json();
-            setProductos(productos.map((p) => (p.id === producto.id ? data : p)));
-            cancelarEditar();
-            alert("Producto actualizado correctamente");
-        } catch (err) {
-            console.error(err);
-            alert("Error al editar producto");
-        }
-    };
+  // Agregar producto
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setMsg({ type: "", text: "" });
 
-    // Filtrado
-    const productosFiltrados = productos.filter((p) =>
-        categoriaSeleccionada ? p.categoria === categoriaSeleccionada : true
-    );
+    if (!nombre || !precio || !imagen) {
+      setMsg({ type: "error", text: "Completa nombre, precio e imagen." });
+      return;
+    }
 
-    return (
-        <div className="flex flex-col min-h-screen bg-gray-100">
-            {/* Header */}
-            <header className="flex justify-between items-center bg-white shadow px-6 py-4">
-                <button
-                    onClick={() => setSidebarOpen(!sidebarOpen)}
-                    className="px-3 py-2 bg-gray-200 rounded hover:bg-gray-300"
-                >
-                    ☰
-                </button>
-                <h2 className="text-3xl font-bold text-gray-800 flex-1 text-center">
-                    Gestión de Productos
-                </h2>
-                <span className="text-gray-600 font-medium">{hora}</span>
-            </header>
+    const formData = new FormData();
+    formData.append("descripcion", nombre);
+    formData.append("precio", precio);
+    formData.append("imagen", imagen);
 
-            <main className="flex-1 flex flex-col p-6 items-center">
-                {/* Tabs */}
-                <div className="flex justify-center gap-4 mb-6">
-                    {["agregar", "administrar"].map((t) => (
-                        <button
-                            key={t}
-                            className={`px-5 py-2 rounded-t-lg font-medium transition-all ${tab === t
-                                    ? "bg-red-600 text-white shadow"
-                                    : "bg-gray-300 text-gray-700 hover:bg-gray-400"
-                                }`}
-                            onClick={() => setTab(t)}
-                        >
-                            {t === "agregar" ? "Agregar Producto" : "Administrar / Editar"}
-                        </button>
-                    ))}
-                </div>
+    try {
+      const res = await fetch(`${apiUrl}productos/create/`, {
+        method: "POST",
+        headers: { Authorization: `Token ${localStorage.getItem("token")}` },
+        body: formData,
+      });
+      if (!res.ok) throw new Error("Error al agregar producto");
+      const data = await res.json();
+      setProductos((prev) => [...prev, data]);
+      setNombre("");
+      setPrecio("");
+      setImagen(null);
+      setPreview(null);
+      setMsg({ type: "success", text: "Producto agregado con éxito." });
+    } catch (err) {
+      console.error(err);
+      setMsg({ type: "error", text: "Error al agregar el producto." });
+    }
+  };
 
-                {/* Contenido principal */}
-                <div className="w-full max-w-5xl bg-white shadow-lg rounded-b-lg p-6 border-t-0">
-                    {/* Agregar producto */}
-                    {tab === "agregar" && (
-                        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                            <div className="flex justify-center mb-4">
-                                <label
-                                    htmlFor="imagen"
-                                    className="w-40 h-40 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-50 overflow-hidden transition-all"
-                                >
-                                    {preview ? (
-                                        <img src={preview} alt="Preview" className="w-full h-full object-cover" />
-                                    ) : (
-                                        <span className="text-gray-400 text-5xl select-none">+</span>
-                                    )}
-                                </label>
-                                <input id="imagen" type="file" accept="image/*" className="hidden" onChange={handleImagenChange} />
-                            </div>
+  // Eliminar producto
+  const abrirModalEliminar = (id) => setModalEliminar({ abierto: true, productoId: id });
+  const cancelarEliminar = () => setModalEliminar({ abierto: false, productoId: null });
+  const confirmarEliminar = async () => {
+    const id = modalEliminar.productoId;
+    try {
+      const res = await fetch(`${apiUrl}productos/delete/${id}/`, {
+        method: "DELETE",
+        headers: { Authorization: `Token ${localStorage.getItem("token")}` },
+      });
+      if (!res.ok) throw new Error("Error al eliminar producto");
+      setProductos((prev) => prev.filter((p) => p.id !== id));
+      setModalEliminar({ abierto: false, productoId: null });
+      setMsg({ type: "success", text: "Producto eliminado." });
+    } catch (err) {
+      console.error(err);
+      setMsg({ type: "error", text: "No se pudo eliminar el producto." });
+    }
+  };
 
-                            <input
-                                type="text"
-                                value={nombre}
-                                onChange={(e) => setNombre(e.target.value)}
-                                placeholder="Nombre del producto"
-                                className="border rounded px-3 py-2 w-full"
-                            />
-                            <input
-                                type="number"
-                                value={precio}
-                                onChange={(e) => setPrecio(e.target.value)}
-                                placeholder="Precio"
-                                className="border rounded px-3 py-2 w-full"
-                            />
-                            <button type="submit" className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-all">
-                                Agregar
-                            </button>
-                        </form>
-                    )}
+  // Editar producto
+  const abrirModalEditar = (producto) => {
+    setModalEditar({ abierto: true, producto });
+    setNombre(producto.descripcion);
+    setPrecio(producto.precio);
+    setPreview(producto.imagen);
+    setImagen(null);
+  };
+  const cancelarEditar = () => {
+    setModalEditar({ abierto: false, producto: null });
+    setNombre("");
+    setPrecio("");
+    setImagen(null);
+    setPreview(null);
+  };
+  const confirmarEditar = async () => {
+    const producto = modalEditar.producto;
+    const formData = new FormData();
+    formData.append("descripcion", nombre);
+    formData.append("precio", precio);
+    if (imagen) formData.append("imagen", imagen);
 
-                    {/* Administrar productos */}
-                    {tab === "administrar" && (
-                        <div>
-                            {/* Filtro de categorías */}
-                            <div className="flex flex-wrap justify-center gap-3 mb-8">
-                                <button
-                                    onClick={() => setCategoriaSeleccionada(null)}
-                                    className={`flex items-center gap-2 px-5 py-2 rounded-full border shadow-sm transition-all ${!categoriaSeleccionada
-                                            ? "bg-red-600 text-white border-red-700 shadow-md"
-                                            : "bg-white hover:bg-gray-50 text-gray-800 border-gray-300"
-                                        }`}
-                                >
-                                    <Filter size={18} />
-                                    Todos
-                                </button>
+    try {
+      const res = await fetch(`${apiUrl}productos/update/${producto.id}/`, {
+        method: "PUT",
+        headers: { Authorization: `Token ${localStorage.getItem("token")}` },
+        body: formData,
+      });
+      if (!res.ok) throw new Error("Error al editar producto");
+      const data = await res.json();
+      setProductos((prev) => prev.map((p) => (p.id === producto.id ? data : p)));
+      cancelarEditar();
+      setMsg({ type: "success", text: "Producto actualizado." });
+    } catch (err) {
+      console.error(err);
+      setMsg({ type: "error", text: "No se pudo actualizar el producto." });
+    }
+  };
 
-                                {categorias.map((cat) => {
-                                    const icon =
-                                        cat.descripcion.toLowerCase().includes("bebida") ? (
-                                            <CupSoda size={18} />
-                                        ) : cat.descripcion.toLowerCase().includes("comida") ? (
-                                            <Drumstick size={18} />
-                                        ) : (
-                                            <Package size={18} />
-                                        );
-                                    return (
-                                        <button
-                                            key={cat.id}
-                                            onClick={() =>
-                                                setCategoriaSeleccionada(
-                                                    categoriaSeleccionada === cat.id ? null : cat.id
-                                                )
-                                            }
-                                            className={`flex items-center gap-2 px-5 py-2 rounded-full border shadow-sm transition-all ${categoriaSeleccionada === cat.id
-                                                    ? "bg-red-600 text-white border-red-700 shadow-md scale-105"
-                                                    : "bg-white hover:bg-gray-50 text-gray-800 border-gray-300"
-                                                }`}
-                                        >
-                                            {icon}
-                                            {cat.descripcion}
-                                        </button>
-                                    );
-                                })}
-                            </div>
+  // Filtrado
+  const productosFiltrados = productos.filter((p) =>
+    categoriaSeleccionada ? p.categoria === categoriaSeleccionada : true
+  );
 
-                            {/* Tabla */}
-                            {productosFiltrados.length > 0 ? (
-                                <table className="w-full border-collapse text-left text-gray-800">
-                                    <thead>
-                                        <tr className="bg-gray-200">
-                                            <th className="px-4 py-2">Imagen</th>
-                                            <th className="px-4 py-2">Nombre</th>
-                                            <th className="px-4 py-2">Precio</th>
-                                            <th className="px-4 py-2 text-center">Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {productosFiltrados.map((p) => (
-                                            <tr key={p.id} className="border-b hover:bg-gray-50 transition-all">
-                                                <td className="px-4 py-2 w-20">
-                                                    <img
-                                                        src={p.imagen}
-                                                        alt={p.descripcion}
-                                                        className="w-16 h-16 object-cover rounded"
-                                                    />
-                                                </td>
-                                                <td className="px-4 py-2">{p.descripcion}</td>
-                                                <td className="px-4 py-2">${p.precio}</td>
-                                                <td className="px-4 py-2 flex justify-center gap-2">
-                                                    <button
-                                                        onClick={() => abrirModalEditar(p)}
-                                                        className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
-                                                    >
-                                                        Editar
-                                                    </button>
-                                                    <button
-                                                        onClick={() => abrirModalEliminar(p.id)}
-                                                        className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
-                                                    >
-                                                        Eliminar
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            ) : (
-                                <p className="text-center text-gray-500 mt-4">
-                                    No hay productos disponibles
-                                </p>
-                            )}
-                        </div>
-                    )}
-                </div>
-
-                {/* Modales */}
-                {modalEliminar.abierto && (
-                    <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-                        <div className="bg-white p-6 rounded shadow-lg w-80">
-                            <h3 className="text-xl font-bold mb-4 text-gray-800">Confirmar Eliminación</h3>
-                            <p className="text-gray-600">¿Estás seguro de eliminar este producto?</p>
-                            <div className="mt-4 flex justify-end gap-4">
-                                <button
-                                    onClick={cancelarEliminar}
-                                    className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400 transition"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    onClick={confirmarEliminar}
-                                    className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 transition"
-                                >
-                                    Eliminar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {modalEditar.abierto && (
-                    <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-                        <div className="bg-white p-6 rounded shadow-lg w-80 flex flex-col gap-3">
-                            <h3 className="text-xl font-bold mb-2 text-gray-800">Editar Producto</h3>
-                            <input
-                                type="text"
-                                value={nombre}
-                                onChange={(e) => setNombre(e.target.value)}
-                                placeholder="Nombre"
-                                className="border rounded px-3 py-2"
-                            />
-                            <input
-                                type="number"
-                                value={precio}
-                                onChange={(e) => setPrecio(e.target.value)}
-                                placeholder="Precio"
-                                className="border rounded px-3 py-2"
-                            />
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onChange={handleImagenChange}
-                                className="border rounded px-3 py-2"
-                            />
-                            <div className="flex justify-end gap-3 mt-2">
-                                <button
-                                    onClick={cancelarEditar}
-                                    className="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400 transition"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    onClick={confirmarEditar}
-                                    className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-                                >
-                                    Guardar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </main>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-red-100 via-white to-red-200">
+      {/* HEADER (móvil apilado / desktop alineado) */}
+      <header className="bg-white shadow">
+        <div className="mx-auto max-w-7xl px-3 sm:px-6">
+          {/* Móvil */}
+          <div className="block md:hidden py-3">
+            <button
+              onClick={() => setSidebarOpen((v) => !v)}
+              aria-label="Abrir/Cerrar barra lateral"
+              className="w-full h-10 inline-flex items-center justify-center rounded-md border border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200"
+            >
+              ☰
+            </button>
+            <div className="mt-3 text-center">
+              <h1 className="text-2xl font-extrabold text-gray-900">Gestión de Productos</h1>
+              <p className="mt-1 text-gray-600 font-medium">{hora}</p>
+            </div>
+          </div>
+          {/* Desktop/Tablet */}
+          <div className="hidden md:flex items-center justify-between py-4">
+            <button
+              onClick={() => setSidebarOpen((v) => !v)}
+              aria-label="Abrir/Cerrar barra lateral"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200"
+            >
+              ☰
+            </button>
+            <h1 className="flex-1 px-3 text-center text-3xl font-extrabold text-gray-900">
+              Gestión de Productos
+            </h1>
+            <span className="min-w-[120px] text-right text-gray-600 font-medium">{hora}</span>
+          </div>
         </div>
-    );
+      </header>
+
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
+        {/* Mensajes inline */}
+        {msg.text && (
+          <div
+            className={`mb-6 rounded-lg border px-4 py-3 text-sm ${
+              msg.type === "success"
+                ? "bg-green-50 border-green-200 text-green-800"
+                : "bg-red-50 border-red-200 text-red-800"
+            }`}
+          >
+            {msg.text}
+          </div>
+        )}
+
+        {/* Tabs */}
+        <div className="flex justify-center gap-3 sm:gap-4 mb-6">
+          {["agregar", "administrar"].map((t) => (
+            <button
+              key={t}
+              className={`px-4 sm:px-5 py-2 rounded-full font-medium transition-all shadow-sm border ${
+                tab === t
+                  ? "bg-red-600 text-white border-red-700 shadow-md"
+                  : "bg-white text-gray-700 hover:bg-gray-100 border-gray-300"
+              }`}
+              onClick={() => setTab(t)}
+            >
+              {t === "agregar" ? "Agregar Producto" : "Administrar / Editar"}
+            </button>
+          ))}
+        </div>
+
+        {/* Contenido principal */}
+        <div className="w-full bg-white/90 backdrop-blur shadow-lg rounded-xl p-5 sm:p-6 border border-gray-200">
+          {/* ===== Agregar (se mantiene como tenías) ===== */}
+          {tab === "agregar" && (
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="flex flex-col items-center">
+                <label
+                  htmlFor="imagen"
+                  className="w-44 h-44 sm:w-48 sm:h-48 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer hover:bg-gray-50 overflow-hidden transition-all"
+                >
+                  {preview ? (
+                    <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-gray-400 text-5xl select-none">+</span>
+                  )}
+                </label>
+                <input id="imagen" type="file" accept="image/*" className="hidden" onChange={handleImagenChange} />
+                <p className="text-xs text-gray-500 mt-2">PNG/JPG hasta ~2MB</p>
+              </div>
+
+              <div className="flex flex-col gap-4">
+                <input
+                  type="text"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  placeholder="Nombre del producto"
+                  className="border rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-red-400"
+                />
+                <input
+                  type="number"
+                  value={precio}
+                  onChange={(e) => setPrecio(e.target.value)}
+                  placeholder="Precio"
+                  className="border rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-red-400"
+                />
+                <button
+                  type="submit"
+                  className="px-6 py-2 rounded-lg bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold shadow hover:shadow-md"
+                >
+                  Agregar
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* ===== Administrar (mejorado) ===== */}
+          {tab === "administrar" && (
+            <div>
+              {/* Filtro categorías */}
+              <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-5">
+                <button
+                  onClick={() => setCategoriaSeleccionada(null)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full border shadow-sm transition-all ${
+                    !categoriaSeleccionada
+                      ? "bg-red-600 text-white border-red-700 shadow-md"
+                      : "bg-white hover:bg-gray-50 text-gray-800 border-gray-300"
+                  }`}
+                >
+                  <Filter size={18} />
+                  Todos
+                </button>
+
+                {categorias.map((cat) => {
+                  const icon =
+                    cat.descripcion?.toLowerCase().includes("bebida") ||
+                    cat.descripcion?.toLowerCase().includes("bebestible") ? (
+                      <CupSoda size={18} />
+                    ) : cat.descripcion?.toLowerCase().includes("comida") ? (
+                      <Drumstick size={18} />
+                    ) : (
+                      <Package size={18} />
+                    );
+
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() =>
+                        setCategoriaSeleccionada(categoriaSeleccionada === cat.id ? null : cat.id)
+                      }
+                      className={`flex items-center gap-2 px-4 py-2 rounded-full border shadow-sm transition-all ${
+                        categoriaSeleccionada === cat.id
+                          ? "bg-red-600 text-white border-red-700 shadow-md scale-[1.02]"
+                          : "bg-white hover:bg-gray-50 text-gray-800 border-gray-300"
+                      }`}
+                    >
+                      {icon}
+                      {cat.descripcion}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Tabla → Cards responsive (estilo mejorado) */}
+              {productosFiltrados.length > 0 ? (
+                <>
+                  {/* Tabla (sm+) */}
+                  <div className="hidden sm:block">
+                    <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+                      <table className="w-full text-left text-gray-800">
+                        <thead className="bg-gray-100 sticky top-0 z-10">
+                          <tr>
+                            <th className="px-4 py-3 font-semibold">Imagen</th>
+                            <th className="px-4 py-3 font-semibold">Nombre</th>
+                            <th className="px-4 py-3 font-semibold">Precio</th>
+                            <th className="px-4 py-3 text-center font-semibold">Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {productosFiltrados.map((p, i) => (
+                            <tr
+                              key={p.id}
+                              className={`${i % 2 ? "bg-white" : "bg-gray-50"} hover:bg-gray-100 transition`}
+                            >
+                              <td className="px-4 py-3 w-20">
+                                <img
+                                  src={p.imagen || ""}
+                                  onError={(e) => (e.currentTarget.src = "")}
+                                  alt={p.descripcion}
+                                  className="w-16 h-16 object-cover rounded border border-gray-200"
+                                />
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className="font-medium text-gray-900">{p.descripcion}</span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className="text-gray-900 font-semibold">
+                                  {formatCLP(p.precio)}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex justify-center gap-2">
+                                  <button
+                                    onClick={() => abrirModalEditar(p)}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-900 text-white rounded-md hover:bg-gray-800"
+                                  >
+                                    <Pencil size={16} />
+                                    Editar
+                                  </button>
+                                  <button
+                                    onClick={() => abrirModalEliminar(p.id)}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700"
+                                  >
+                                    <Trash2 size={16} />
+                                    Eliminar
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Cards (móvil) */}
+                  <ul className="sm:hidden grid grid-cols-1 gap-3">
+                    {productosFiltrados.map((p) => (
+                      <li
+                        key={p.id}
+                        className="bg-white/95 border border-gray-200 rounded-xl p-4 shadow-sm"
+                      >
+                        <div className="flex gap-3">
+                          <img
+                            src={p.imagen || ""}
+                            onError={(e) => (e.currentTarget.src = "")}
+                            alt={p.descripcion}
+                            className="w-16 h-16 object-cover rounded border border-gray-200"
+                          />
+                          <div className="flex-1">
+                            <p className="font-semibold text-gray-900">{p.descripcion}</p>
+                            <p className="text-gray-900 font-medium mt-0.5">
+                              {formatCLP(p.precio)}
+                            </p>
+                            <div className="mt-3 grid grid-cols-2 gap-2">
+                              <button
+                                onClick={() => abrirModalEditar(p)}
+                                className="px-3 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800"
+                              >
+                                Editar
+                              </button>
+                              <button
+                                onClick={() => abrirModalEliminar(p.id)}
+                                className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                              >
+                                Eliminar
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-10 text-center">
+                  <Package className="w-10 h-10 text-gray-400" />
+                  <p className="mt-2 text-gray-600">No hay productos disponibles</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Modal: Eliminar */}
+        {modalEliminar.abierto && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 px-4">
+            <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-md">
+              <h3 className="text-xl font-bold mb-2 text-gray-900">Confirmar Eliminación</h3>
+              <p className="text-gray-600">¿Estás seguro de eliminar este producto?</p>
+              <div className="mt-4 flex justify-end gap-3">
+                <button
+                  onClick={cancelarEliminar}
+                  className="px-4 py-2 rounded-md bg-gray-200 text-gray-800 hover:bg-gray-300"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmarEliminar}
+                  className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal: Editar */}
+        {modalEditar.abierto && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 px-4">
+            <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-md">
+              <h3 className="text-xl font-bold mb-3 text-gray-900">Editar Producto</h3>
+              <div className="flex flex-col gap-3">
+                <input
+                  type="text"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  placeholder="Nombre"
+                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
+                />
+                <input
+                  type="number"
+                  value={precio}
+                  onChange={(e) => setPrecio(e.target.value)}
+                  placeholder="Precio"
+                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
+                />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImagenChange}
+                  className="border rounded-lg px-3 py-2"
+                />
+                <div className="flex justify-end gap-3 pt-1">
+                  <button
+                    onClick={cancelarEditar}
+                    className="px-3 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={confirmarEditar}
+                    className="px-3 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800"
+                  >
+                    Guardar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
+  );
 }

@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-*ialbuw0fp719ywv)u2337@kd*17640jj^%z4)=h*nzsektwx!
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 #PRUEBA para vista en telefonos
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['192.168.1.10', 'localhost', '127.0.0.1','dannypollosapp-ggbtgnbrapetc2b6.brazilsouth-01.azurewebsites.net']
 
 
 # Application definition
@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'venta',
     'Inventario',
     'coreapi',
+    'whitenoise.runserver_nostatic',
 ]
 
 
@@ -57,6 +58,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 
 ROOT_URLCONF = 'Danny_Pollos_POS.urls'
 
@@ -118,7 +120,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'es-cl'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Santiago'
 
 USE_I18N = True
 
@@ -128,12 +130,14 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
-
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = 'static/'
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
 #CAMBIO DE URL PARA PRODUCCION
-SITE_DOMAIN = "http://127.0.0.1:8000"
+#SITE_DOMAIN = "http://127.0.0.1:8000"
+SITE_DOMAIN = "https://dannypollosapp-ggbtgnbrapetc2b6.brazilsouth-01.azurewebsites.net"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -143,6 +147,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 #URLS Permitidos
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
-    "http://192.168.1.6:5173",
-    #URL AZURE
+    "http://192.168.1.10:5173",
+    #URL AZURE,
+    "https://happy-river-0d9616c1e.3.azurestaticapps.net",
+    "https://dannypollosapp-ggbtgnbrapetc2b6.brazilsouth-01.azurewebsites.net"
+] 
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://happy-river-0d9616c1e.3.azurestaticapps.net",
+    "https://dannypollosapp-ggbtgnbrapetc2b6.brazilsouth-01.azurewebsites.net"
 ]

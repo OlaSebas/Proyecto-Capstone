@@ -1,35 +1,56 @@
 import { Link, Outlet } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Home, ShoppingCart, Package, ClipboardList, UserPlus, LogOut, HousePlus, PackagePlus, Package2, Hotel} from "lucide-react";
+import {
+  Home,
+  ClipboardList,
+  UserPlus,
+  LogOut,
+  HousePlus,
+  PackagePlus,
+  Package2,
+} from "lucide-react";
 
 export function Layout() {
   const apiUrl = import.meta.env.VITE_API_URL;
-  const [nombre, setNombre] = useState("");
+  const [_nombre, setNombre] = useState("");
   const [usuario, setUsuario] = useState("");
+  const [isStaff, setIsStaff] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const is_staff = localStorage.getItem("is_staff");
 
   useEffect(() => {
-    const fetchNombre = async () => {
+    const fetchPerfil = async () => {
       try {
         const response = await fetch(`${apiUrl}api/profile/`, {
           headers: {
             Authorization: `Token ${localStorage.getItem("token")}`,
           },
         });
+
+        if (!response.ok) {
+          throw new Error("Error al obtener el perfil");
+        }
+
         const data = await response.json();
-        setNombre(data.first_name);
-        setUsuario(data.username);
-        localStorage.setItem("is_staff", data.is_staff);
+
+        // Limpia valores anteriores del localStorage
+        localStorage.removeItem("is_staff");
+
+        // Guarda el valor actual
+        setNombre(data.first_name || "");
+        setUsuario(data.username || "");
+        setIsStaff(Boolean(data.is_staff)); 
+        localStorage.setItem("is_staff", JSON.stringify(data.is_staff)); 
       } catch (error) {
         console.error("Error al cargar perfil:", error);
       }
     };
-    fetchNombre();
-  }, []);
+
+    fetchPerfil();
+  }, [apiUrl]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("is_staff"); // 👈 Limpieza extra
     window.location.href = "/Login";
   };
 
@@ -47,30 +68,51 @@ export function Layout() {
         </div>
 
         <nav className="flex flex-col gap-3 text-lg flex-1">
-          <Link to="/Home"
-            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold">
+          <Link
+            to="/Home"
+            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
+          >
             <Home size={20} /> Inicio
           </Link>
 
-          {is_staff && (
-          <>
-          <Link to="/Sucursal"
-            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold">
-            <HousePlus size={20} /> Sucursal
-          </Link>
-          <Link to="/AgregarProducto"
-            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold">
-            <PackagePlus size={20} /> Gestion Producto
-          </Link>
-          <Link to="/AgregarPromocion"
-            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold">
-            <Package2 size={20} /> Gestion Promoción
-          </Link>
-          <Link to="/RegistroUsuario"
-            className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold">
-            <UserPlus size={20} /> Registro Usuario
-          </Link>
-          </>
+          {/* Enlaces visibles solo para staff */}
+          {isStaff && (
+            <>
+              <Link
+                to="/Sucursal"
+                className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
+              >
+                <HousePlus size={20} /> Sucursal/Inventario
+              </Link>
+
+              <Link
+                to="/AgregarProducto"
+                className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
+              >
+                <PackagePlus size={20} /> Gestión Producto
+              </Link>
+
+              <Link
+                to="/AgregarPromocion"
+                className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
+              >
+                <Package2 size={20} /> Gestión Promoción
+              </Link>
+
+              <Link
+                to="/ReporteVenta"
+                className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
+              >
+                <ClipboardList size={20} /> Reporte de Ventas
+              </Link>
+
+              <Link
+                to="/RegistroUsuario"
+                className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
+              >
+                <UserPlus size={20} /> Registro Usuario
+              </Link>
+            </>
           )}
         </nav>
 

@@ -1,0 +1,8 @@
+id,last_login,username,email,first_name,last_name,is_active,is_staff,is_superuser,date_joined,caja_id
+1,2025-10-13 21:04:21.889189,Sebastian,se.herrerap@duocuc.cl,Sebastian,Herrera,1,1,1,2025-09-08 00:52:32,
+2,2025-11-21 01:36:31.954815,Esteban,este@gmail.com,Esteban,Badilla,1,1,1,2025-09-08 01:32:19,
+12,2025-09-13 20:14:30.598424,Leandro,lea.palma@duocuc.cl,Lea,Roemo,1,1,0,2025-09-12 21:44:58.797149,
+14,,Camilo,ca.garridoc@duocuc.cl,El corrido,oh,1,1,0,2025-09-12 21:58:24.467589,
+15,,Vendedor1,Ven.dedor@pollos.cl,Ven,dedor,1,0,0,2025-09-22 20:13:14,1
+20,,Vendedor3,Ven.dedor3@pollos.cl,Vend,edor,1,0,0,2025-10-02 20:10:44,2
+21,,SistemaAntiguo,sistema@antiguo.cl,TEST,TEST,1,0,0,2025-11-21 01:37:57,3

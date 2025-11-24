@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils.timezone import now
-from Inventario.models import Producto, Sucursal
+from Inventario.models import Producto, Sucursal, Promocion
 
 # Create your models here.
 class UserManager(BaseUserManager):
@@ -24,6 +24,13 @@ class UserManager(BaseUserManager):
             raise ValueError('Superuser must have is_superuser=True.')
 
         return self.create_user(username, email, password, **extra_fields)
+    
+class Caja(models.Model):
+    nombre = models.CharField(max_length=100)
+    sucursal = models.ForeignKey(Sucursal, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.nombre
 
 class customUser(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=150, unique=True)
@@ -34,6 +41,7 @@ class customUser(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=now)
+    caja = models.ForeignKey(Caja, on_delete=models.SET_NULL, null=True, blank=True)
 
     objects = UserManager()
 
@@ -71,14 +79,6 @@ class MetodoPago(models.Model):
     def __str__(self):
         return self.nombre
 
-class Caja(models.Model):
-    nombre = models.CharField(max_length=100)
-    sucursal = models.ForeignKey(Sucursal, on_delete=models.CASCADE)
-    vendedor = models.ForeignKey(customUser,blank=True, null=True, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return self.nombre
-
 class SesionCaja(models.Model):
     fecha_apertura = models.DateTimeField(auto_now_add=True)
     fecha_cierre = models.DateTimeField(null=True, blank=True)
@@ -104,19 +104,32 @@ class Venta(models.Model):
     total = models.IntegerField()
     sesion_caja = models.ForeignKey(SesionCaja, on_delete=models.CASCADE)
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, null=True, blank=True)
-    metodo_pago = models.ForeignKey(MetodoPago, on_delete=models.CASCADE)
+    metodo_pago = models.ForeignKey(MetodoPago, on_delete=models.CASCADE,null=True, blank=True)
     usuario = models.ForeignKey(customUser, on_delete=models.CASCADE)
-    estado = models.ForeignKey(TipoEstado, on_delete=models.CASCADE)
+    estado = models.ForeignKey(TipoEstado, on_delete=models.CASCADE,default=3)
+
+    def save(self, *args, **kwargs):
+        self.iva = round(self.total * 0.19)
+        self.subtotal = self.total - self.iva
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'Venta {self.id} - {self.fecha}'
 
 class DetalleVenta(models.Model):
     venta = models.ForeignKey(Venta, on_delete=models.CASCADE)
-    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
-    cantidad = models.IntegerField()
+    producto = models.ForeignKey(Producto, null=True, blank=True, on_delete=models.CASCADE)
+    promocion = models.ForeignKey(Promocion, null=True, blank=True, on_delete=models.CASCADE)
+    cantidad = models.DecimalField(max_digits=10, decimal_places=2)
     precio_unitario = models.IntegerField()
     total = models.IntegerField()
+
+    def save(self, *args, **kwargs):
+        if self.cantidad < 1:
+            self.total = self.precio_unitario
+        else:
+            self.total = self.cantidad * self.precio_unitario
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'DetalleVenta {self.id} - Venta {self.venta.id}'

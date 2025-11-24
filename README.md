@@ -10,4 +10,4 @@ Desarrollado por:
 
 
 Django, Vite (React) y Sql Server
-Trabajo hibrido con función en web service + trabajo en la nube (Azure)
+Trabajo hibrido con función en web service + trabajo en la nube (Azure).

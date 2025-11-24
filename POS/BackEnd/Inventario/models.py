@@ -1,4 +1,5 @@
 from django.db import models
+from decimal import Decimal
 #from ..venta.models import customUser
 # Create your models here.
 class Region(models.Model):
@@ -44,11 +45,17 @@ class Item(models.Model):
         return self.descripcion
 
 class Producto(models.Model):
+    EQ_POLLO_CHOICES = [
+        (Decimal('0.25'), "Cuarto"),
+        (Decimal('0.50'), "Medio"),
+        (Decimal('1.00'), "Entero"),
+    ]
     descripcion = models.CharField(max_length=100, null=False)
     precio = models.IntegerField(null=False)
     imagen = models.ImageField(upload_to="products/", null=True, blank=True)
     categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE, null=True, blank=True)
     item = models.ForeignKey(Item, on_delete=models.CASCADE, null=True, blank=True)
+    eq_pollo = models.DecimalField(max_digits=10, decimal_places=2,choices=EQ_POLLO_CHOICES, null=True, blank=True) # Equivalencia en pollos para comparación
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
@@ -94,3 +101,11 @@ class PromocionProducto(models.Model):
 
     def __str__(self):
         return f"{self.promocion.descripcion} - {self.producto.descripcion} (x{self.cantidad})"
+    
+class HistorialInventario(models.Model):
+    inventario = models.ForeignKey(Inventario, on_delete=models.CASCADE)
+    fecha_ingresoInventario = models.DateTimeField(auto_now_add=True)
+    cantidad_ingresada = models.DecimalField(max_digits=10, decimal_places=2, null=False)
+
+    def __str__(self):
+        return f"Historial de {self.inventario} - {self.fecha_ingresoInventario}"

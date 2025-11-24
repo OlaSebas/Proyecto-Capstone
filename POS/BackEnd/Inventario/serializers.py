@@ -1,10 +1,9 @@
 from rest_framework import serializers
-from .models import Region, Ciudad, Comuna, Sucursal, Insumo,Categoria, Producto, Inventario,Promocion, PromocionProducto, Item
+from .models import Region, Ciudad, Comuna, Sucursal, Insumo,Categoria, Producto, Inventario,Promocion, PromocionProducto, Item, HistorialInventario
 from django.conf import settings
 
 
 class ProductoSerializer(serializers.ModelSerializer):
-    imagen = serializers.SerializerMethodField()
 
     class Meta:
         model = Producto
@@ -69,10 +68,12 @@ class ComunaSerializer(serializers.ModelSerializer):
 class PromocionProductoSerializer(serializers.ModelSerializer):
     # Mostrar la descripción del producto en lugar de solo su ID
     producto_descripcion = serializers.CharField(source="producto.descripcion", read_only=True)
+    item = serializers.IntegerField(source="producto.item.id", read_only=True)
+    eq_pollo = serializers.DecimalField(source="producto.eq_pollo", max_digits=10, decimal_places=2, read_only=True)
 
     class Meta:
         model = PromocionProducto
-        fields = ["id",'promocion', "producto", "producto_descripcion", "cantidad"]
+        fields = ["id",'promocion', "producto", "producto_descripcion", "cantidad", "item", "eq_pollo"]
 
 
 class PromocionSerializer(serializers.ModelSerializer):
@@ -88,3 +89,7 @@ class CategoriaSerializer(serializers.ModelSerializer):
         model = Categoria
         fields = "__all__"
 
+class HistorialInventarioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HistorialInventario
+        fields = "__all__"

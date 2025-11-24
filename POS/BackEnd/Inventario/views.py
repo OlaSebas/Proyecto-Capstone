@@ -3,8 +3,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.response import Response
 from rest_framework import status, viewsets
-from .models import Inventario, Producto, Sucursal, Comuna, Promocion, PromocionProducto,Insumo,Categoria, Item
-from .serializers import CategoriaSerializer,InventarioSerializer, ProductoSerializer, SucursalSerializer, ComunaSerializer, PromocionSerializer, PromocionProductoSerializer,InsumoSerializer, ItemSerializer
+from django.shortcuts import get_object_or_404
+from decimal import Decimal
+from .models import Inventario, Producto, Sucursal, Comuna, Promocion, PromocionProducto,Insumo,Categoria, Item, HistorialInventario
+from .serializers import CategoriaSerializer,InventarioSerializer, ProductoSerializer, SucursalSerializer, ComunaSerializer, PromocionSerializer, PromocionProductoSerializer,InsumoSerializer, ItemSerializer, HistorialInventarioSerializer
 
 
 
@@ -37,20 +39,30 @@ def inventario_create(request):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['PUT'])
-@authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated])
+@api_view(["PUT"])
 def inventario_update(request, inventario_id):
     try:
         inventario = Inventario.objects.get(id=inventario_id)
     except Inventario.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+        return Response({"error": "Inventario no encontrado"}, status=status.HTTP_404_NOT_FOUND)
 
-    serializer = InventarioSerializer(inventario, data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    cantidad_vendida = request.data.get("cantidad_vendida")
+
+    if cantidad_vendida is None:
+        return Response({"error": "Debe indicar la cantidad vendida"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # 🔹 Resta el stock
+    inventario.stock_actual = Decimal(inventario.stock_actual) - Decimal(cantidad_vendida)
+    if inventario.stock_actual < 0:
+        inventario.stock_actual = 0  # evita stock negativo
+
+    inventario.save()
+
+    return Response({
+        "message": "Stock actualizado correctamente",
+        "inventario_id": inventario.id,
+        "nuevo_stock": float(inventario.stock_actual)
+    }, status=status.HTTP_200_OK)
 
 @api_view(['DELETE'])
 @authentication_classes([TokenAuthentication])
@@ -380,3 +392,41 @@ def item_delete(request, item_id):
 
     item.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+# Vistas de Inventario Historial
+@api_view(['GET', 'POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def historial_inventario_list(request):
+    if request.method == 'GET':
+        historial = HistorialInventario.objects.all()
+        serializer = HistorialInventarioSerializer(historial, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    elif request.method == 'POST':
+        serializer = HistorialInventarioSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET', 'PUT', 'DELETE'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def historial_inventario_detail(request, pk):
+    historial = get_object_or_404(HistorialInventario, pk=pk)
+
+    if request.method == 'GET':
+        serializer = HistorialInventarioSerializer(historial)
+        return Response(serializer.data)
+
+    elif request.method == 'PUT':
+        serializer = HistorialInventarioSerializer(historial, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'DELETE':
+        historial.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

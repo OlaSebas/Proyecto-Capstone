@@ -1,22 +1,37 @@
 from rest_framework import serializers
-from .models import customUser, SesionCaja, Caja, Venta, Cliente
+from .models import customUser, SesionCaja, Caja, Venta, Cliente, DetalleVenta
+from Inventario.models import Producto
 
-class customUserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = customUser
-        fields = ['username', 'email', 'first_name', 'last_name', 'date_joined','is_staff', 'is_active','is_superuser','password']
-    def validate(self, data):
-        password = data.get('password', None)
-        if password is None or password == '':
-            raise serializers.ValidationError(
-                "La contraseña es un campo obligatorio."
-            )
-        return data
 class CajaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Caja
         fields = '__all__'
-    
+
+class customUserSerializer(serializers.ModelSerializer):
+    caja = CajaSerializer(read_only=True)
+    password = serializers.CharField(write_only=True, required=True)
+
+    class Meta:
+        model = customUser
+        fields = ['id','username', 'email', 'first_name', 'last_name', 'date_joined','is_staff', 'is_active','is_superuser','password','caja']
+        extra_kwargs = {'password': {'write_only': True}}
+
+    def create(self, validated_data):
+        password = validated_data.pop("password")
+        user = customUser(**validated_data)
+        user.set_password(password) 
+        user.save()
+        return user
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop("password", None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        if password:
+            instance.set_password(password)
+        instance.save()
+        return instance
+
 class SesionCajaSerializer(serializers.ModelSerializer):
     caja = CajaSerializer(read_only=True)
     class Meta:
@@ -28,9 +43,18 @@ class ClienteSerializer(serializers.ModelSerializer):
         model = Cliente
         fields = '__all__'
 
+class DetalleVentaSerializer(serializers.ModelSerializer):
+    total = serializers.IntegerField(read_only=True)
+    cantidad = serializers.DecimalField(max_digits=10, decimal_places=2)
+    class Meta:
+        model = DetalleVenta
+        fields = '__all__'
+    
 class VentaSerializer(serializers.ModelSerializer):
-    cliente = ClienteSerializer(read_only=True)
     usuario = customUserSerializer(read_only=True)
+    detalles = DetalleVentaSerializer(source='detalleventa_set', many=True, read_only=True) 
+    iva = serializers.IntegerField(read_only=True)
+    subtotal = serializers.IntegerField(read_only=True)
     class Meta:
         model = Venta
         fields = '__all__'

@@ -4,6 +4,7 @@ from .views import inventario_list, inventario_sucursal, inventario_create, inve
 from. views import producto_create, producto_update, producto_delete, promocion_list, promocion_create, promocion_update, promocion_delete
 from .views import promocion_producto_list, promocion_producto_create,promocion_producto_update, promocion_producto_delete
 from .views import insumo_list,insumo_create,insumo_update,insumo_delete,categoria_list, item_create, item_list, item_update, item_delete
+from .views import historial_inventario_detail, historial_inventario_list
 
 urlpatterns = [
     path("", inventario_list, name="inventario_list"),
@@ -38,4 +39,6 @@ urlpatterns = [
     path("items/create/", item_create, name="item_create"),
     path("items/update/<int:item_id>/", item_update, name="item_update"),
     path("items/delete/<int:item_id>/", item_delete, name="item_delete"),
+    path("historial_inventario/", historial_inventario_list, name="historial_inventario_list"),
+    path("historial_inventario/<int:inventario_id>/", historial_inventario_detail, name="historial_inventario_detail"),
 ]

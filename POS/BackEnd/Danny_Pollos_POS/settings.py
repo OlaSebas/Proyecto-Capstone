@@ -14,7 +14,7 @@ from pathlib import Path
 import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+AZURE_URL = "https://dannypollosapp-ggbtgnbrapetc2b6.brazilsouth-01.azurewebsites.net"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -137,7 +137,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 #CAMBIO DE URL PARA PRODUCCION
 #SITE_DOMAIN = "http://127.0.0.1:8000"
-SITE_DOMAIN = "https://dannypollosapp-ggbtgnbrapetc2b6.brazilsouth-01.azurewebsites.net"
+SITE_DOMAIN = AZURE_URL
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -150,10 +150,10 @@ CORS_ALLOWED_ORIGINS = [
     "http://192.168.1.10:5173",
     #URL AZURE,
     "https://happy-river-0d9616c1e.3.azurestaticapps.net",
-    "https://dannypollosapp-ggbtgnbrapetc2b6.brazilsouth-01.azurewebsites.net"
+    AZURE_URL
 ] 
 
 CSRF_TRUSTED_ORIGINS = [
     "https://happy-river-0d9616c1e.3.azurestaticapps.net",
-    "https://dannypollosapp-ggbtgnbrapetc2b6.brazilsouth-01.azurewebsites.net"
+    AZURE_URL
 ]

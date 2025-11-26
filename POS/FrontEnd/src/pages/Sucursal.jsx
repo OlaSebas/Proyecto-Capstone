@@ -32,7 +32,7 @@ export default function InventarioSucursalesPage() {
   };
 
   const irAgregarSucursal = () => {
-    navigate("/formularForm");
+    navigate("/SucursalForm");
   };
 
   // reloj

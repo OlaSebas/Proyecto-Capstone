@@ -16,7 +16,7 @@ function buildPowerBIUrl(base, { filters = [], page, theme, extraParams = {} } =
   return u.toString();
 }
 
-export default function ReporteVentasBI({
+export default function Dashboard({
   embedUrl = "https://app.fabric.microsoft.com/view?r=eyJrIjoiNzU0ZWVlMTMtZTY3ZC00OTZlLWE0NTctM2Y1OGVlM2Y3MDMxIiwidCI6IjUzMGM3NTRkLThlNTItNDkyMi1iY2I5LTRkYTQ4N2Y4ZDQ3NSIsImMiOjR9",
   filters,
   page,

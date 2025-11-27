@@ -198,7 +198,7 @@ export default function UserManagement() {
         >
           ☰
         </button>
-        <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 text-center sm:flex-1">
+        <h2 className="flex-1 px-3 text-center text-3xl font-extrabold text-gray-900">
           Gestión de Usuarios
         </h2>
         <span className="text-gray-600 font-medium text-center sm:text-right">

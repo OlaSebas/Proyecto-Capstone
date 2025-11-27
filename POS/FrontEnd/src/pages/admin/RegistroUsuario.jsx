@@ -188,7 +188,7 @@ export default function UserManagement() {
   );
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-red-100 via-white to-red-200">
       {/* === Header: NO TOCADO (misma barra / mismo botón ☰) === */}
       <header className="flex flex-col gap-3 sm:flex-row sm:gap-0 sm:justify-between sm:items-center bg-white shadow px-4 sm:px-6 py-4">
         <button

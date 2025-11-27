@@ -211,7 +211,8 @@ export default function ReporteVentas() {
             : "";
 
     return (
-        <div className="flex flex-col min-h-screen bg-gray-100">
+        <div className="flex flex-col min-h-screen bg-gradient-to-br from-red-100 via-white to-red-200">
+
             {/* Header */}
             {/* Header responsive */}
             <header className="bg-white shadow">

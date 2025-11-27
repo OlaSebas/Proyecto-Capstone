@@ -24,6 +24,9 @@ import Efectivo from "./pages/metodos/Efectivo";
 import Debito from "./pages/metodos/Debito";
 import Credito from "./pages/metodos/Credito";
 import Transferencia from "./pages/metodos/Transferencia";
+import Dashboard from "./pages/admin/DashBoard";
+
+
 import { View } from "lucide-react";
 
 
@@ -60,6 +63,7 @@ function App() {
           <Route path="/Credito/:id" element={<Credito />} />
           <Route path="/Transferencia/:id" element={<Transferencia />} />
           <Route path="/ReporteVenta" element={<ViewAdminPR><ReporteVenta /></ViewAdminPR>} />
+          <Route path="/Dashboard" element={<ViewAdminPR><Dashboard /></ViewAdminPR>} />
         </Route>
 
         {/* Redirección por defecto */}

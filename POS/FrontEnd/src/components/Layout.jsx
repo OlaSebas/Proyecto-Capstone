@@ -112,6 +112,13 @@ export function Layout() {
               >
                 <UserPlus size={20} /> Registro Usuario
               </Link>
+
+              <Link
+                to="/Dashboard"
+                className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
+              >
+                <UserPlus size={20} /> Dashboard
+              </Link>
             </>
           )}
         </nav>

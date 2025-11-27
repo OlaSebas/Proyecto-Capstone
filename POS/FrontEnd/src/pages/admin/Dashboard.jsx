@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ExternalLink, Expand, Minimize2, RefreshCw } from "lucide-react";
+import { ExternalLink, RefreshCw } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
 
 function buildPowerBIUrl(base, { filters = [], page, theme, extraParams = {} } = {}) {
@@ -29,9 +29,7 @@ export default function Dashboard({
   const [hora, setHora] = useState("");
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
-  const [fullscreen, setFullscreen] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
-  const [autoRefreshMin, setAutoRefreshMin] = useState(0); // 0 = off
 
   // Reloj header
   useEffect(() => {
@@ -48,21 +46,13 @@ export default function Dashboard({
     return () => clearInterval(t);
   }, []);
 
-  // Forzar fullscreen en móviles/tablets
-  useEffect(() => {
-    const apply = () => setFullscreen(window.innerWidth < 1024);
-    apply();
-    window.addEventListener("resize", apply);
-    return () => window.removeEventListener("resize", apply);
-  }, []);
-
   // URL final con cache-buster
   const src = useMemo(() => {
     const base = buildPowerBIUrl(embedUrl, { filters, page, theme, extraParams });
     if (!base) return "";
     const u = new URL(base);
-    u.searchParams.set("_rk", String(reloadKey));     // cambia siempre al refrescar
-    u.searchParams.set("_t", String(Date.now()));     // evita cache agresivo de CDN
+    u.searchParams.set("_rk", String(reloadKey)); // para “Reiniciar”
+    u.searchParams.set("_t", String(Date.now())); // evitar cache agresivo
     return u.toString();
   }, [embedUrl, JSON.stringify(filters), page, theme, JSON.stringify(extraParams), reloadKey]);
 
@@ -80,26 +70,6 @@ export default function Dashboard({
     }, 20000);
     return () => clearTimeout(id);
   }, [src, loaded]);
-
-  // ➊ Refrescar al volver a la pestaña (cambia el _rk)
-  useEffect(() => {
-    const onVisible = () => {
-      if (document.visibilityState === "visible") setReloadKey((k) => k + 1);
-    };
-    document.addEventListener("visibilitychange", onVisible);
-    window.addEventListener("focus", onVisible);
-    return () => {
-      document.removeEventListener("visibilitychange", onVisible);
-      window.removeEventListener("focus", onVisible);
-    };
-  }, []);
-
-  // ➋ Auto-refresh cada X minutos (opcional)
-  useEffect(() => {
-    if (!autoRefreshMin) return;
-    const id = setInterval(() => setReloadKey((k) => k + 1), autoRefreshMin * 60 * 1000);
-    return () => clearInterval(id);
-  }, [autoRefreshMin]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-100 via-white to-red-200 text-neutral-900">
@@ -135,69 +105,47 @@ export default function Dashboard({
               Ventas Sistema POS (BI)
             </h1>
 
-            <div className="flex items-center gap-2">
-              <span className="hidden sm:inline-block min-w-[120px] text-right text-gray-600 font-medium">
-                {hora}
-              </span>
-              <button
-                onClick={() => setFullscreen((v) => !v)}
-                className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-200"
-              >
-                {fullscreen ? <Minimize2 className="h-4 w-4" /> : <Expand className="h-4 w-4" />}
-                {fullscreen ? "Salir" : "Agrandar"}
-              </button>
-              {src ? (
-                <a
-                  href={src}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-200"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  Abrir en Power BI
-                </a>
-              ) : (
-                <button
-                  disabled
-                  className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm font-medium text-gray-400 shadow-sm"
-                >
-                  Abrir en Power BI
-                </button>
-              )}
-            </div>
+            <span className="hidden sm:inline-block min-w-[120px] text-right text-gray-600 font-medium">
+              {hora}
+            </span>
           </div>
         </div>
       </header>
 
-      {/* ACCIONES */}
+      {/* === BARRA DE ACCIONES (en el mismo lugar de los botones antiguos) === */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3">
-        <div className="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div className="text-sm text-gray-700">
             {src ? "Reporte conectado a Power BI" : "No hay URL de Power BI configurada"}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <label className="flex items-center gap-2 text-sm text-gray-700">
-              Auto-actualizar
-              <select
-                className="border border-gray-300 rounded-md px-2 py-1"
-                value={autoRefreshMin}
-                onChange={(e) => setAutoRefreshMin(Number(e.target.value))}
-              >
-                <option value={0}>Off</option>
-                <option value={1}>1 min</option>
-                <option value={5}>5 min</option>
-                <option value={10}>10 min</option>
-              </select>
-            </label>
-
+          <div className="flex flex-col xs:flex-row sm:flex-row gap-2">
             <button
               onClick={() => setReloadKey((k) => k + 1)}
-              className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-200"
+              className="inline-flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-200"
             >
               <RefreshCw className="h-4 w-4" />
-              Reintentar
+              Reiniciar
             </button>
+
+            {src ? (
+              <a
+                href={src}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-200"
+              >
+                <ExternalLink className="h-4 w-4" />
+                Abrir en Power BI
+              </a>
+            ) : (
+              <button
+                disabled
+                className="inline-flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-gray-100 px-4 py-2 text-sm font-medium text-gray-400 shadow-sm"
+              >
+                Abrir en Power BI
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -209,7 +157,7 @@ export default function Dashboard({
             No hay reporte para mostrar.
           </div>
         ) : (
-          <div className={`relative w-full ${fullscreen ? "h-[calc(100vh-9.5rem)]" : "pt-[56.25%]"}`}>
+          <div className="relative w-full pt-[56.25%]">
             {!loaded && (
               <div className="absolute inset-0 z-10 flex items-center justify-center">
                 <div className="rounded-xl border border-gray-200 bg-white/90 backdrop-blur px-6 py-4 shadow">

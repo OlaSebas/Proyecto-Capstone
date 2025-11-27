@@ -8,6 +8,7 @@ import {
   HousePlus,
   PackagePlus,
   Package2,
+  LayoutDashboard, // 👈 icono nuevo para Dashboard
 } from "lucide-react";
 
 export function Layout() {
@@ -38,8 +39,8 @@ export function Layout() {
         // Guarda el valor actual
         setNombre(data.first_name || "");
         setUsuario(data.username || "");
-        setIsStaff(Boolean(data.is_staff)); 
-        localStorage.setItem("is_staff", JSON.stringify(data.is_staff)); 
+        setIsStaff(Boolean(data.is_staff));
+        localStorage.setItem("is_staff", JSON.stringify(data.is_staff));
       } catch (error) {
         console.error("Error al cargar perfil:", error);
       }
@@ -50,7 +51,7 @@ export function Layout() {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
-    localStorage.removeItem("is_staff"); // 👈 Limpieza extra
+    localStorage.removeItem("is_staff");
     window.location.href = "/Login";
   };
 
@@ -117,14 +118,13 @@ export function Layout() {
                 to="/Dashboard"
                 className="flex items-center justify-center gap-3 bg-white text-red-600 py-3 rounded-lg hover:bg-gray-200 transition font-semibold"
               >
-                <UserPlus size={20} /> Dashboard
+                <LayoutDashboard size={20} /> Dashboard
               </Link>
             </>
           )}
         </nav>
 
         <div className="mt-auto">
-          {/* Saludo al usuario logueado */}
           <span className="block mb-3 text-sm opacity-90">
             Hola, Colega <span className="font-semibold">{usuario}</span>
           </span>

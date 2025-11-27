@@ -217,7 +217,6 @@ export default function ReporteVentas() {
             {/* Header responsive */}
             <header className="bg-white shadow">
             <div className="mx-auto max-w-7xl px-4 sm:px-6">
-                {/* Móvil: botón en pastilla + título + hora */}
                 <div className="block md:hidden py-3">
                 <button
                     onClick={() => setSidebarOpen(!sidebarOpen)}

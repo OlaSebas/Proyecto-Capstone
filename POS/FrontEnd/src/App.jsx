@@ -24,10 +24,7 @@ import Efectivo from "./pages/metodos/Efectivo";
 import Debito from "./pages/metodos/Debito";
 import Credito from "./pages/metodos/Credito";
 import Transferencia from "./pages/metodos/Transferencia";
-import Dashboard from "./pages/admin/DashBoard";
-
-
-import { View } from "lucide-react";
+import Dashboard from "./pages/admin/Dashboard";
 
 
 function App() {

@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function InventarioSucursalesPage() {
   const navigate = useNavigate();
-  const { sidebarOpen, setSidebarOpen } =
+  const { setSidebarOpen } =
     useOutletContext?.() ?? { sidebarOpen: false, setSidebarOpen: () => {} };
 
   const [sucursales, setSucursales] = useState([]);
@@ -15,6 +15,7 @@ export default function InventarioSucursalesPage() {
   const [tabActiva, setTabActiva] = useState("inventario");
   const [hora, setHora] = useState("");
   const [mensaje, setMensaje] = useState("");
+  const [filtroComuna, setFiltroComuna] = useState("");
 
   const [nuevo, setNuevo] = useState({
     tipo: "item",
@@ -167,9 +168,14 @@ export default function InventarioSucursalesPage() {
 
   const nombreSucursal =
     sucursales.find((s) => s.id === sucursalSeleccionada)?.descripcion || "";
+  const comunas = Array.from(new Set(sucursales.map((s) => s.Comuna).filter(Boolean))).sort();
+  const sucursalesFiltradas =
+    filtroComuna === ""
+      ? sucursales
+      : sucursales.filter((s) => s.Comuna === filtroComuna);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-100 via-white to-red-200">
+    <div className="min-h-screen bg-gradient-to-br from-gray-200 via-white to-gray-300">
       {/* HEADER */}
       <header className="bg-white shadow">
         <div className="mx-auto max-w-7xl px-3 sm:px-6">
@@ -213,14 +219,6 @@ export default function InventarioSucursalesPage() {
             </h1>
 
             <div className="flex items-center gap-3">
-              {/* botón agregar sucursal (desktop) */}
-              <button
-                onClick={irAgregarSucursal}
-                className="inline-flex items-center gap-2 rounded-lg bg-gray-900 text-white px-3 py-2 font-medium shadow hover:bg-gray-800"
-              >
-                <PlusCircle size={18} />
-                Agregar sucursal
-              </button>
               <span className="min-w-[120px] text-right text-gray-600 font-medium">
                 {hora}
               </span>
@@ -240,8 +238,37 @@ export default function InventarioSucursalesPage() {
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
         {/* CARDS de sucursales */}
+        <div className="mb-4 flex w-full flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="text-sm font-medium text-gray-700" htmlFor="filtro-comuna">
+              Filtrar por comuna:
+            </label>
+            <select
+              id="filtro-comuna"
+              value={filtroComuna}
+              onChange={(e) => setFiltroComuna(e.target.value)}
+              className="w-full sm:w-52 rounded-lg border border-gray-200 bg-white/90 backdrop-blur px-3 py-2 text-sm text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-red-400"
+            >
+              <option value="">Todas</option>
+              {comunas.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* botón agregar sucursal (responsive) */}
+          <button
+            onClick={irAgregarSucursal}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-gray-900 text-white px-4 py-2.5 font-semibold shadow hover:bg-gray-800 transition"
+          >
+            <PlusCircle className="w-5 h-5" />
+            Agregar sucursal
+          </button>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
-          {sucursales.map((sucursal) => (
+          {sucursalesFiltradas.map((sucursal) => (
             <div
               key={sucursal.id}
               onClick={() => toggleSucursal(sucursal.id)}

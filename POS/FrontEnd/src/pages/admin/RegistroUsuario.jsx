@@ -7,6 +7,7 @@ export default function UserManagement() {
 
   const [tab, setTab] = useState("crear");
   const [hora, setHora] = useState("");
+  const [alerta, setAlerta] = useState(null); // { type: 'success' | 'error', text: string }
 
   // Datos del formulario
   const [formData, setFormData] = useState({
@@ -39,6 +40,13 @@ export default function UserManagement() {
     return () => clearInterval(intervalo);
   }, []);
 
+  // Autocerrar alertas
+  useEffect(() => {
+    if (!alerta) return;
+    const t = setTimeout(() => setAlerta(null), 3500);
+    return () => clearTimeout(t);
+  }, [alerta]);
+
   // Manejo de inputs
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -52,7 +60,7 @@ export default function UserManagement() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.password !== vpassword) {
-      alert("Las contraseñas no coinciden");
+      setAlerta({ type: "error", text: "Las contraseñas no coinciden" });
       return;
     }
     try {
@@ -65,10 +73,20 @@ export default function UserManagement() {
         body: JSON.stringify(formData),
       });
 
-      if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
+      const data = await res.json().catch(() => ({}));
 
-      const data = await res.json();
-      alert(data.message || "Usuario creado con éxito");
+      if (!res.ok) {
+        const msg =
+          data.message ||
+          data.detail ||
+          (res.status === 409
+            ? "El usuario ya existe."
+            : "Ocurrió un error al registrar.");
+        setAlerta({ type: "error", text: msg });
+        return;
+      }
+
+      setAlerta({ type: "success", text: data.message || "Usuario creado con éxito" });
 
       // Resetear formulario
       setFormData({
@@ -83,7 +101,7 @@ export default function UserManagement() {
       fetchUsuarios();
     } catch (err) {
       console.error("Error en handleSubmit:", err);
-      alert("Ocurrió un error al registrar.");
+      setAlerta({ type: "error", text: "Ocurrió un error al registrar." });
     }
   };
 
@@ -187,8 +205,22 @@ export default function UserManagement() {
     </div>
   );
 
-  return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-red-100 via-white to-red-200">
+return (
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-200 via-white to-gray-300">
+      {alerta && (
+        <div className="fixed top-4 inset-x-0 flex justify-center z-50 px-4">
+          <div
+            className={`max-w-lg w-full rounded-xl shadow-lg px-4 py-3 text-sm font-medium ${
+              alerta.type === "success"
+                ? "bg-green-50 text-green-800 border border-green-200"
+                : "bg-red-50 text-red-800 border border-red-200"
+            }`}
+          >
+            {alerta.text}
+          </div>
+        </div>
+      )}
+
       {/* === Header: NO TOCADO (misma barra / mismo botón ☰) === */}
       <header className="flex flex-col gap-3 sm:flex-row sm:gap-0 sm:justify-between sm:items-center bg-white shadow px-4 sm:px-6 py-4">
         <button

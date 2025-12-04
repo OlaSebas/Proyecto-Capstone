@@ -72,7 +72,7 @@ export default function Dashboard({
   }, [src, loaded]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-100 via-white to-red-200 text-neutral-900">
+    <div className="min-h-screen bg-gradient-to-br from-gray-200 via-white to-gray-300 text-neutral-900">
       {/* HEADER */}
       <header className="bg-white shadow">
         <div className="mx-auto max-w-7xl px-3 sm:px-6">

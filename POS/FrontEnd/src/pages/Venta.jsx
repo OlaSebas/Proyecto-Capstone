@@ -7,7 +7,7 @@ export default function Ventas() {
   const [cajaAbierta, setCajaAbierta] = useState(false);
   const apiUrl = import.meta.env.VITE_API_URL;
 
-  const { sidebarOpen, setSidebarOpen } =
+  const { setSidebarOpen } =
     useOutletContext?.() ?? { sidebarOpen: false, setSidebarOpen: () => {} };
 
   // Consultar si hay sesión de caja activa
@@ -90,7 +90,7 @@ export default function Ventas() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-100 via-white to-red-200">
+    <div className="min-h-screen bg-gradient-to-br from-gray-200 via-white to-gray-300">
       {/* HEADER (móvil apilado / desktop alineado) */}
       <header className="bg-white shadow">
         <div className="mx-auto max-w-7xl px-3 sm:px-6">
@@ -133,51 +133,52 @@ export default function Ventas() {
 
       {/* CONTENIDO */}
       <main className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
-        {/* Grid de acciones: 1 / 2 / 3 columnas */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {/* Grid de acciones centrada */}
+        <div className="flex flex-wrap justify-center gap-6 sm:gap-8">
           {/* Pedido nuevo */}
           <Link
             to="/producto"
-            className="group rounded-2xl bg-white/90 backdrop-blur border border-gray-200 shadow hover:shadow-lg transition-shadow p-6 sm:p-8 flex flex-col items-center justify-center focus:outline-none focus:ring-2 focus:ring-red-300"
+            className="group w-full sm:w-[320px] md:w-[360px] min-h-[220px] rounded-2xl bg-white/90 backdrop-blur border border-gray-200 shadow hover:shadow-lg transition-shadow p-8 sm:p-10 flex flex-col items-center justify-center focus:outline-none focus:ring-2 focus:ring-red-300"
             aria-label="Pedido nuevo"
           >
-            <div className="rounded-full p-4 bg-gray-100 group-hover:bg-gray-200 transition">
-              <Plus className="w-12 h-12 text-gray-700" />
+            <div className="rounded-full p-4 sm:p-5 bg-gray-100 group-hover:bg-gray-200 transition">
+              <Plus className="w-14 h-14 text-gray-700" />
             </div>
-            <h3 className="mt-4 text-lg font-semibold text-gray-900">Pedido nuevo</h3>
-            <p className="mt-1 text-sm text-gray-600 text-center">
+            <h3 className="mt-5 text-xl font-semibold text-gray-900">Pedido nuevo</h3>
+            <p className="mt-2 text-sm sm:text-base text-gray-600 text-center">
               Crea una venta rápida desde el catálogo.
             </p>
           </Link>
 
-          {/* Pedido delivery */}
+          {/* Pedido delivery (deshabilitado)
           <Link
             to="/PedidosDelivery"
-            className="group rounded-2xl bg-white/90 backdrop-blur border border-gray-200 shadow hover:shadow-lg transition-shadow p-6 sm:p-8 flex flex-col items-center justify-center focus:outline-none focus:ring-2 focus:ring-red-300"
+            className="group w-full sm:w-[320px] md:w-[360px] min-h-[220px] rounded-2xl bg-white/90 backdrop-blur border border-gray-200 shadow hover:shadow-lg transition-shadow p-8 sm:p-10 flex flex-col items-center justify-center focus:outline-none focus:ring-2 focus:ring-red-300"
             aria-label="Pedido delivery"
           >
-            <div className="rounded-full p-4 bg-gray-100 group-hover:bg-gray-200 transition">
-              <List className="w-12 h-12 text-gray-700" />
+            <div className="rounded-full p-4 sm:p-5 bg-gray-100 group-hover:bg-gray-200 transition">
+              <List className="w-14 h-14 text-gray-700" />
             </div>
-            <h3 className="mt-4 text-lg font-semibold text-gray-900">Pedido delivery</h3>
-            <p className="mt-1 text-sm text-gray-600 text-center">
+            <h3 className="mt-5 text-xl font-semibold text-gray-900">Pedido delivery</h3>
+            <p className="mt-2 text-sm sm:text-base text-gray-600 text-center">
               Administra pedidos para despacho.
             </p>
           </Link>
+          */}
 
           {/* Abrir/Cerrar caja */}
           <button
             onClick={cajaAbierta ? cerrarCaja : handleLogout}
-            className="group rounded-2xl bg-white/90 backdrop-blur border border-gray-200 shadow hover:shadow-lg transition-shadow p-6 sm:p-8 flex flex-col items-center justify-center focus:outline-none focus:ring-2 focus:ring-red-300"
+            className="group w-full sm:w-[320px] md:w-[360px] min-h-[220px] rounded-2xl bg-white/90 backdrop-blur border border-gray-200 shadow hover:shadow-lg transition-shadow p-8 sm:p-10 flex flex-col items-center justify-center focus:outline-none focus:ring-2 focus:ring-red-300"
             aria-label={cajaAbierta ? "Cerrar caja" : "Abrir caja"}
           >
-            <div className="rounded-full p-4 bg-gray-100 group-hover:bg-gray-200 transition">
-              <Clock className="w-12 h-12 text-gray-700" />
+            <div className="rounded-full p-4 sm:p-5 bg-gray-100 group-hover:bg-gray-200 transition">
+              <Clock className="w-14 h-14 text-gray-700" />
             </div>
-            <h3 className="mt-4 text-lg font-semibold text-gray-900">
+            <h3 className="mt-5 text-xl font-semibold text-gray-900">
               {cajaAbierta ? "Cerrar caja" : "Abrir caja"}
             </h3>
-            <p className="mt-1 text-sm text-gray-600 text-center">
+            <p className="mt-2 text-sm sm:text-base text-gray-600 text-center">
               {cajaAbierta
                 ? "Finaliza la sesión de caja actual."
                 : "Inicia sesión de caja para comenzar a vender."}

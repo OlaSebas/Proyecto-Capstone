@@ -22,7 +22,7 @@ def login(request):
     serializer = customUserSerializer(instance=user)
     return Response({"token": token.key, "User": serializer.data}, status=status.HTTP_200_OK)
 
-@api_view(['POST'])
+"""@api_view(['POST'])
 def register(request):
     serializer = customUserSerializer(data=request.data)
     if serializer.is_valid():
@@ -32,7 +32,37 @@ def register(request):
         user.save()
         token = Token.objects.create(user=user)
         return Response({'token': token.key, "User": serializer.data,}, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST) 
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)"""
+
+@api_view(['POST'])
+def register(request):
+    username = request.data.get("username")
+    email = request.data.get("email")
+
+    # Responder con estado 409 y mensaje claro si ya existe username o email
+    if username and customUser.objects.filter(username=username).exists():
+        return Response(
+            {"message": "El nombre de usuario ya existe."},
+            status=status.HTTP_409_CONFLICT,
+        )
+    if email and customUser.objects.filter(email=email).exists():
+        return Response(
+            {"message": "El correo ya existe."},
+            status=status.HTTP_409_CONFLICT,
+        )
+
+    serializer = customUserSerializer(data=request.data)
+    
+    if serializer.is_valid():
+        user = serializer.save()  # YA crea el usuario con password encriptado
+        token = Token.objects.create(user=user)
+
+        return Response(
+            {"token": token.key, "User": customUserSerializer(user).data},
+            status=status.HTTP_201_CREATED
+        )
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])

@@ -44,7 +44,7 @@ export default function GestionPromociones() {
   // filtros AGREGAR
   const [busquedaProd, setBusquedaProd] = useState("");
 
-  const { sidebarOpen, setSidebarOpen } =
+  const { setSidebarOpen } =
     useOutletContext?.() ?? { sidebarOpen: false, setSidebarOpen: () => {} };
 
   const apiUrl = import.meta.env.VITE_API_URL_INVENTARIO;
@@ -304,7 +304,7 @@ export default function GestionPromociones() {
 
   // -------- UI --------
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-100 via-white to-red-200">
+    <div className="min-h-screen bg-gradient-to-br from-gray-200 via-white to-gray-300">
       {/* HEADER */}
       <header className="bg-white/90 backdrop-blur sticky top-0 z-20 shadow">
         <div className="mx-auto max-w-7xl px-3 sm:px-6">

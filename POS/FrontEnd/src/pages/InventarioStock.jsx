@@ -111,7 +111,7 @@ export default function InventarioStock() {
     Number(cantidad) <= 5 ? "text-red-600 font-semibold" : "text-gray-900";
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-red-100 via-white to-red-200">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-200 via-white to-gray-300">
       {/* Header */}
       <header className="bg-white shadow sticky top-0 z-20">
         <div className="flex justify-between items-center px-4 md:px-6 py-4">

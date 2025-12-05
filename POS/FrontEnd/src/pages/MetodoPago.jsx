@@ -35,7 +35,7 @@ export default function MetodoPago() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-100 via-white to-red-200">
+    <div className="min-h-screen bg-gradient-to-br from-gray-200 via-white to-gray-300">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
         {/* HEADER (mismo estilo que los otros módulos) */}
         <header className="mb-6">

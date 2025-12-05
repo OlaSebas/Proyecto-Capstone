@@ -21,6 +21,7 @@ export default function ReporteVentas() {
     const [error, setError] = useState(null);
     const [hora, setHora] = useState("");
     const { sidebarOpen, setSidebarOpen } = useOutletContext();
+    const [cargando, setCargando] = useState(true);
 
     const [tablaAbierta, setTablaAbierta] = useState(true);
     const [dashboardLineaAbierto, setDashboardLineaAbierto] = useState(true);
@@ -88,6 +89,7 @@ export default function ReporteVentas() {
 
     useEffect(() => {
         const fetchVentas = async () => {
+            setCargando(true);
             try {
                 const res = await fetch(`${apiUrl}api/venta_list/`, {
                     headers: { Authorization: `Token ${token}` },
@@ -98,6 +100,8 @@ export default function ReporteVentas() {
             } catch (err) {
                 console.error(err);
                 setError("Error cargando ventas");
+            } finally {
+                setCargando(false);
             }
         };
         fetchVentas();
@@ -211,12 +215,12 @@ export default function ReporteVentas() {
             : "";
 
     return (
-        <div className="flex flex-col min-h-screen bg-gray-100">
+        <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-200 via-white to-gray-300">
+
             {/* Header */}
             {/* Header responsive */}
             <header className="bg-white shadow">
             <div className="mx-auto max-w-7xl px-4 sm:px-6">
-                {/* Móvil: botón en pastilla + título + hora */}
                 <div className="block md:hidden py-3">
                 <button
                     onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -256,6 +260,19 @@ export default function ReporteVentas() {
             </header>
 
 
+            {cargando ? (
+                <main className="flex-1 p-6 flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-3 bg-white/80 backdrop-blur rounded-xl border border-gray-200 shadow-lg px-6 py-8">
+                        <div className="relative h-14 w-14">
+                            <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
+                            <div className="absolute inset-0 rounded-full border-4 border-t-red-500 border-b-blue-500 animate-spin"></div>
+                        </div>
+                        <p className="text-gray-700 font-semibold text-sm sm:text-base">
+                            Cargando ventas y dashboards...
+                        </p>
+                    </div>
+                </main>
+            ) : (
             <main className="flex-1 p-6 space-y-6">
                 {/* FILTROS */}
                 <div className="grid md:grid-cols-4 sm:grid-cols-2 gap-4 bg-white p-4 rounded-xl shadow">
@@ -990,6 +1007,7 @@ export default function ReporteVentas() {
 
                 {error && <p className="text-red-500 font-semibold">{error}</p>}
             </main>
+            )}
         </div>
     );
 }

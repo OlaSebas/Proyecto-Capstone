@@ -174,7 +174,7 @@ export default function Productos() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-100 via-white to-red-200">
+    <div className="min-h-screen bg-gradient-to-br from-gray-200 via-white to-gray-300">
       {/* HEADER: móvil apilado / desktop alineado */}
       <header className="bg-white shadow">
         <div className="mx-auto max-w-7xl px-3 sm:px-6">

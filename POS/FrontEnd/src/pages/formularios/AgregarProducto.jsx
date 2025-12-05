@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
-import { CupSoda, Drumstick, Package, Filter, Pencil, Trash2 } from "lucide-react";
+import { CupSoda, Drumstick, Package, Filter, Pencil, Trash2, X } from "lucide-react";
 
 export default function GestionProductos() {
   const [tab, setTab] = useState("agregar");
@@ -23,6 +23,10 @@ export default function GestionProductos() {
   const apiUrl = import.meta.env.VITE_API_URL_INVENTARIO;
   const { setSidebarOpen } =
     useOutletContext?.() ?? { sidebarOpen: false, setSidebarOpen: () => {} };
+
+  // NEW states to preserve original image and manage temp objectURL
+  const [originalPreview, setOriginalPreview] = useState(null);
+  const [tempObjectUrl, setTempObjectUrl] = useState(null);
 
   // ===== helpers =====
   const formatCLP = (v) =>
@@ -89,13 +93,23 @@ export default function GestionProductos() {
 
   // Imagen
   const handleImagenChange = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0] ?? null;
+
+    // revoke previous temp URL if any
+    if (tempObjectUrl) {
+      URL.revokeObjectURL(tempObjectUrl);
+      setTempObjectUrl(null);
+    }
+
     if (file) {
+      const url = URL.createObjectURL(file);
+      setTempObjectUrl(url);
+      setPreview(url);
       setImagen(file);
-      setPreview(URL.createObjectURL(file));
     } else {
+      // if user cleared file input, restore original preview
       setImagen(null);
-      setPreview(null);
+      setPreview(originalPreview);
     }
   };
 
@@ -157,41 +171,72 @@ export default function GestionProductos() {
   // Editar producto
   const abrirModalEditar = (producto) => {
     setModalEditar({ abierto: true, producto });
-    setNombre(producto.descripcion);
-    setPrecio(producto.precio);
-    setPreview(producto.imagen);
+    setNombre(producto.descripcion ?? "");
+    setPrecio(producto.precio ?? "");
+    // set original preview (kept if cancel) and current preview shown
+    const imgUrl = producto.imagen || producto.imagen_url || producto.image || null;
+    setPreview(imgUrl);
+    setOriginalPreview(imgUrl);
     setImagen(null);
   };
+
   const cancelarEditar = () => {
+    // revoke temp object url if set
+    if (tempObjectUrl) {
+      URL.revokeObjectURL(tempObjectUrl);
+      setTempObjectUrl(null);
+    }
+    // restore original preview and reset states
+    setImagen(null);
+    setPreview(originalPreview);
     setModalEditar({ abierto: false, producto: null });
+    // do not clear originalPreview here to keep it if modal reopened; optionally clear:
     setNombre("");
     setPrecio("");
-    setImagen(null);
-    setPreview(null);
   };
+
   const confirmarEditar = async () => {
     const producto = modalEditar.producto;
-    const formData = new FormData();
-    formData.append("descripcion", nombre);
-    formData.append("precio", precio);
-    if (imagen) formData.append("imagen", imagen);
+    if (!producto) return;
+
+    const form = new FormData();
+    form.append("descripcion", nombre);
+    form.append("precio", precio);
+    if (imagen) form.append("imagen", imagen); // only send new image if user selected one
 
     try {
       const res = await fetch(`${apiUrl}productos/update/${producto.id}/`, {
         method: "PUT",
         headers: { Authorization: `Token ${localStorage.getItem("token")}` },
-        body: formData,
+        body: form,
       });
       if (!res.ok) throw new Error("Error al editar producto");
-      const data = await res.json();
-      setProductos((prev) => prev.map((p) => (p.id === producto.id ? data : p)));
-      cancelarEditar();
+      // reload full list to ensure consistency
+      await fetchProductos();
+
+      // cleanup temp URL if used
+      if (tempObjectUrl) {
+        URL.revokeObjectURL(tempObjectUrl);
+        setTempObjectUrl(null);
+      }
+      setImagen(null);
+      setOriginalPreview(null);
+      setModalEditar({ abierto: false, producto: null });
+      setNombre("");
+      setPrecio("");
       setMsg({ type: "success", text: "Producto actualizado." });
     } catch (err) {
       console.error(err);
       setMsg({ type: "error", text: "No se pudo actualizar el producto." });
     }
   };
+
+  // cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (tempObjectUrl) URL.revokeObjectURL(tempObjectUrl);
+    };
+  }, [tempObjectUrl]);
 
   // Filtrado
   const productosFiltrados = productos.filter((p) =>
@@ -506,45 +551,98 @@ export default function GestionProductos() {
             </div>
           )}
 
-          {/* Modal: Editar */}
+          {/* Modal: Editar (ESTILO DeleteConfirmModal adaptado) */}
           {modalEditar.abierto && (
-            <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 px-4">
-              <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-md">
-                <h3 className="text-xl font-bold mb-3 text-gray-900">Editar Producto</h3>
-                <div className="flex flex-col gap-3">
-                  <input
-                    type="text"
-                    value={nombre}
-                    onChange={(e) => setNombre(e.target.value)}
-                    placeholder="Nombre"
-                    className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
-                  />
-                  <input
-                    type="number"
-                    value={precio}
-                    onChange={(e) => setPrecio(e.target.value)}
-                    placeholder="Precio"
-                    className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
-                  />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImagenChange}
-                    className="border rounded-lg px-3 py-2"
-                  />
-                  <div className="flex justify-end gap-3 pt-1">
-                    <button
-                      onClick={cancelarEditar}
-                      className="px-3 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      onClick={confirmarEditar}
-                      className="px-3 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800"
-                    >
-                      Guardar
-                    </button>
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center px-4"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="edit-product-modal-title"
+            >
+              {/* backdrop */}
+              <div
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+                onClick={cancelarEditar}
+              />
+
+              {/* panel */}
+              <div className="relative w-full max-w-lg mx-auto">
+                <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
+                  <div className="p-6">
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center">
+                        <Pencil className="w-6 h-6 text-amber-600" />
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <h3 id="edit-product-modal-title" className="text-lg font-semibold text-gray-900">
+                          Editar Producto
+                        </h3>
+                        <p className="mt-2 text-sm text-gray-600">
+                          Modifica nombre, precio e imagen. Para cancelar se mantendrá la imagen actual.
+                        </p>
+                      </div>
+                    </div>
+
+                    <form onSubmit={(e) => { e.preventDefault(); confirmarEditar(); }} className="mt-6">
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Nombre</label>
+                          <input
+                            type="text"
+                            value={nombre}
+                            onChange={(e) => setNombre(e.target.value)}
+                            placeholder="Nombre del producto"
+                            className="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Precio</label>
+                          <input
+                            type="number"
+                            value={precio}
+                            onChange={(e) => setPrecio(e.target.value)}
+                            placeholder="Precio"
+                            className="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Imagen</label>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImagenChange}
+                            className="mt-1 w-full p-2 border border-gray-300 rounded-lg bg-white"
+                          />
+                          {preview && (
+                            <div className="mt-3">
+                              <img src={preview} alt="Preview" className="w-full h-44 object-cover rounded-lg" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="mt-6 flex justify-end gap-3">
+                        <button
+                          type="button"
+                          onClick={cancelarEditar}
+                          className="inline-flex items-center justify-center px-4 py-2 rounded-md bg-white border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 shadow-sm"
+                        >
+                          Cancelar
+                        </button>
+
+                        <button
+                          type="submit"
+                          className="inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 shadow-sm"
+                        >
+                          Guardar cambios
+                        </button>
+                      </div>
+                    </form>
                   </div>
                 </div>
               </div>

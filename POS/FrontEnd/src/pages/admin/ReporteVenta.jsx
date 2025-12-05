@@ -138,17 +138,86 @@ export default function ReporteVentas() {
     );
 
     const productoMasVendido = useMemo(() => {
-        const contador = {};
-        ventasFiltradasDashboards.forEach((v) =>
-            v.detalles?.forEach((p) => {
-                contador[p.producto] = (contador[p.producto] || 0) + Number(p.cantidad || 0);
-            })
-        );
-        const ordenado = Object.entries(contador).sort((a, b) => b[1] - a[1]);
-        return ordenado[0]
-            ? ("Producto " + ordenado[0][0]) + ` (${ordenado[0][1]} unidades)`
-            : "-";
-    }, [ventasFiltradasDashboards]);
+  // mapa id -> descripcion
+  const productsMap = {};
+  const scanDetalles = (arr = []) => {
+    arr.forEach((v) =>
+      v.detalles?.forEach((d) => {
+        // si detalle trae objeto producto
+        if (d.producto && typeof d.producto === "object") {
+          const id = d.producto.id ?? d.producto.pk ?? null;
+          const desc =
+            d.producto.descripcion ||
+            d.producto.descripcion_corta ||
+            d.producto.nombre ||
+            d.producto.title ||
+            null;
+          if (id) productsMap[String(id)] = productsMap[String(id)] || desc || null;
+        } else {
+          // si trae id plano y alguna descripción
+          const id = d.producto != null && (typeof d.producto === "number" || /^\d+$/.test(String(d.producto)))
+            ? String(d.producto)
+            : null;
+          const desc =
+            d.descripcion ||
+            d.producto_descripcion ||
+            d.producto_nombre ||
+            d.nombre ||
+            null;
+          if (id) productsMap[id] = productsMap[id] || desc || null;
+        }
+      })
+    );
+  };
+
+  // poblar mapa desde todas las ventas y desde las filtradas (por seguridad)
+  scanDetalles(ventas);
+  scanDetalles(ventasFiltradasDashboards);
+
+  // contar por id
+  const contador = {};
+  ventasFiltradasDashboards.forEach((v) =>
+    v.detalles?.forEach((d) => {
+      let idKey = null;
+      if (d.producto && typeof d.producto === "object") {
+        idKey = d.producto.id ?? d.producto.pk ?? null;
+      } else if (d.producto != null && (typeof d.producto === "number" || /^\d+$/.test(String(d.producto)))) {
+        idKey = String(d.producto);
+      }
+
+      // si no hay id, intentar usar alguna descripción como clave única
+      if (!idKey) {
+        const descFallback =
+          d.descripcion ||
+          d.producto_descripcion ||
+          d.producto_nombre ||
+          d.nombre ||
+          null;
+        if (!descFallback || String(descFallback).trim().toLowerCase() === "null") return;
+        idKey = `noid::${String(descFallback).trim()}`;
+        // registrar descripción para claves sin id
+        productsMap[idKey] = productsMap[idKey] || String(descFallback).trim();
+      }
+
+      const qty = Number(d.cantidad || 0);
+      if (!contador[idKey]) contador[idKey] = 0;
+      contador[idKey] += qty;
+    })
+  );
+
+  const ordenado = Object.entries(contador).sort((a, b) => b[1] - a[1]);
+  if (!ordenado.length) return "-";
+
+  const [topIdKey, topQty] = ordenado[0];
+  // si la clave es del tipo noid::desc, mostramos solo la descripción junto a '-'
+  if (topIdKey.startsWith("noid::")) {
+    const desc = productsMap[topIdKey] || topIdKey.replace("noid::", "");
+    return `${desc} (${topQty} unidades)`;
+  }
+
+  const desc = productsMap[String(topIdKey)] || "-";
+  return `${topIdKey} — ${desc} (${topQty} unidades)`;
+}, [ventas, ventasFiltradasDashboards]);
 
     const dataPeriodo = useMemo(() => {
         const agrupado = {};
@@ -279,7 +348,7 @@ export default function ReporteVentas() {
                     <div>
                         <label className="text-sm font-medium text-gray-600">Sucursal</label>
                         <select
-                            className="w-full border p-2 rounded-lg"
+                            className="w-full border p-2 rounded-lg text-base"
                             value={sucursalSeleccionada}
                             onChange={(e) => setSucursalSeleccionada(e.target.value)}
                         >
@@ -295,7 +364,7 @@ export default function ReporteVentas() {
                         <label className="text-sm font-medium text-gray-600">Desde</label>
                         <input
                             type="date"
-                            className="w-full border p-2 rounded-lg"
+                            className="w-full border p-2 rounded-lg text-base"
                             value={fechaInicio}
                             onChange={(e) => setFechaInicio(e.target.value)}
                         />
@@ -304,7 +373,7 @@ export default function ReporteVentas() {
                         <label className="text-sm font-medium text-gray-600">Hasta</label>
                         <input
                             type="date"
-                            className="w-full border p-2 rounded-lg"
+                            className="w-full border p-2 rounded-lg text-base"
                             value={fechaFin}
                             onChange={(e) => setFechaFin(e.target.value)}
                         />
@@ -1012,4 +1081,4 @@ export default function ReporteVentas() {
     );
 }
 
-                
+

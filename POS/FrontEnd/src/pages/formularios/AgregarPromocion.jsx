@@ -779,55 +779,143 @@ export default function GestionPromociones() {
         )}
 
         {modalEditar.abierto && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
-            <div className="bg-white p-5 rounded-xl shadow-xl max-w-md w-full">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900">Editar Promoción</h3>
-                <button onClick={cancelarEditar} className="p-1 rounded hover:bg-gray-100" aria-label="Cerrar">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center px-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="editar-promo-title"
+          >
+            {/* backdrop */}
+            <div
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+              onClick={cancelarEditar}
+            />
 
-              <div className="flex flex-col gap-3">
-                <input
-                  type="text"
-                  value={descripcion}
-                  onChange={(e) => setDescripcion(e.target.value)}
-                  placeholder="Descripción"
-                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400 bg-white"
-                />
-                <input
-                  type="number"
-                  value={precio}
-                  onChange={(e) => setPrecio(e.target.value)}
-                  placeholder="Precio"
-                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400 bg-white"
-                />
-                <input
-                  type="date"
-                  value={fechaInicio}
-                  onChange={(e) => setFechaInicio(e.target.value)}
-                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400 bg-white"
-                />
-                <input
-                  type="date"
-                  value={fechaFin}
-                  onChange={(e) => setFechaFin(e.target.value)}
-                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400 bg-white"
-                />
-                <input type="file" accept="image/*" onChange={handleImagenChange} className="border rounded-lg px-3 py-2 bg-white" />
-                {preview && <img src={preview} alt="Preview" className="w-full h-40 object-cover rounded-lg" />}
-                <div className="flex justify-end gap-3 pt-1">
-                  <button onClick={cancelarEditar} className="px-3 py-2 bg-gray-200 rounded-md hover:bg-gray-300">
-                    Cancelar
-                  </button>
-                  <button 
-                    onClick={confirmarEditar} 
-                    className="px-3 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800 disabled:opacity-60" 
-                    disabled={cargando}
-                  >
-                    {cargando ? "Guardando..." : "Guardar"}
-                  </button>
+            <div className="relative w-full max-w-2xl mx-auto">
+              <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
+                <div className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center">
+                      <Pencil className="w-6 h-6 text-amber-600" />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <h3 id="editar-promo-title" className="text-lg font-semibold text-gray-900">
+                        Editar Promoción
+                      </h3>
+                      <p className="mt-1 text-sm text-gray-600">
+                        Modifica los campos que necesites. Para salir haz clic fuera o en Cerrar.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={cancelarEditar}
+                      className="text-gray-500 hover:text-gray-700 ml-2"
+                      aria-label="Cerrar"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <form onSubmit={(e) => { e.preventDefault(); confirmarEditar(); }} className="mt-6">
+                    {/** loader */}
+                    {cargando ? (
+                      <div className="flex items-center justify-center py-12">
+                        <div className="h-12 w-12 rounded-full border-4 border-gray-200 border-t-amber-500 animate-spin" />
+                      </div>
+                    ) : (
+                      <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="sm:col-span-2">
+                            <label className="block text-sm font-medium text-gray-700">Descripción</label>
+                            <input
+                              type="text"
+                              value={descripcion}
+                              onChange={(e) => setDescripcion(e.target.value)}
+                              placeholder="Descripción"
+                              className="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                              required
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Precio</label>
+                            <input
+                              type="number"
+                              value={precio}
+                              onChange={(e) => setPrecio(e.target.value)}
+                              placeholder="Precio"
+                              className="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                              required
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Fecha inicio</label>
+                            <input
+                              type="date"
+                              value={fechaInicio}
+                              onChange={(e) => setFechaInicio(e.target.value)}
+                              className="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Fecha fin</label>
+                            <input
+                              type="date"
+                              value={fechaFin}
+                              onChange={(e) => setFechaFin(e.target.value)}
+                              className="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                            />
+                          </div>
+
+                          <div className="sm:col-span-2">
+                            <label className="block text-sm font-medium text-gray-700">Imagen</label>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleImagenChange}
+                              className="mt-1 w-full p-2 border border-gray-300 rounded-lg bg-white"
+                            />
+                            {preview && (
+                              <div className="mt-3">
+                                <img src={preview} alt="Preview" className="w-full h-44 object-cover rounded-lg" />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="mt-6 flex justify-end gap-3">
+                          <button
+                            type="button"
+                            onClick={cancelarEditar}
+                            className="inline-flex items-center justify-center px-4 py-2 rounded-md bg-white border border-gray-200 text-sm text-gray-700 hover:bg-gray-50"
+                            disabled={cargando}
+                          >
+                            Cancelar
+                          </button>
+
+                          <button
+                            type="submit"
+                            disabled={cargando}
+                            className={`inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold text-white shadow-sm ${
+                              cargando ? "bg-amber-300 cursor-wait opacity-75" : "bg-amber-600 hover:bg-amber-700"
+                            }`}
+                          >
+                            {cargando ? (
+                              <svg className="w-4 h-4 mr-2 animate-spin" viewBox="0 0 24 24" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25" />
+                                <path d="M22 12a10 10 0 00-10-10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75" />
+                              </svg>
+                            ) : null}
+                            {cargando ? "Guardando..." : "Guardar cambios"}
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </form>
                 </div>
               </div>
             </div>

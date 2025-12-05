@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 import UserDeleteConfirmModal from "../../components/UserDeleteConfirmModal";
+import UserEditModal from "../../components/UserEditModal";
 
 export default function UserManagement() {
   const { sidebarOpen, setSidebarOpen } = useOutletContext();
@@ -29,6 +30,10 @@ export default function UserManagement() {
   // Modal eliminar usuario
   const [deleteModal, setDeleteModal] = useState({ open: false, id: null, username: "" });
   const [deleting, setDeleting] = useState(false);
+
+  // Modal editar usuario (nuevo)
+  const [editModal, setEditModal] = useState({ open: false, user: null });
+  const [editing, setEditing] = useState(false);
 
   // Reloj
   useEffect(() => {
@@ -138,26 +143,53 @@ export default function UserManagement() {
     if (tab === "gestionar") fetchUsuarios();
   }, [tab]);
 
-  // Editar usuario
-  const handleEdit = async (user) => {
-    const nuevoNombre = prompt("Nuevo nombre:", user.first_name);
-    if (!nuevoNombre) return;
+  // reemplazar la función handleEdit para abrir modal en lugar de prompt
+  const handleEdit = (user) => {
+    setEditModal({ open: true, user });
+  };
 
+  // handler que llama al endpoint nuevo update_credentials/ y exige current_password
+  const handleConfirmEdit = async (payload) => {
+    // payload: { id, first_name, last_name, new_password, current_password }
+    setEditing(true);
     try {
-      const res = await fetch(`${apiUrl}api/users/`, {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setAlerta({ type: "error", text: "Token de autenticación no encontrado." });
+        throw new Error("No token");
+      }
+
+      const res = await fetch(`${apiUrl}api/users/update_credentials/`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Token ${localStorage.getItem("token")}`,
+          Authorization: `Token ${token}`,
         },
-        body: JSON.stringify({ id: user.id, first_name: nuevoNombre }),
+        body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error("Error al actualizar usuario");
-      setAlerta({ type: "success", text: "Usuario actualizado" });
-      fetchUsuarios();
+
+      const text = await res.text();
+      let data;
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        data = { raw: text };
+      }
+
+      if (!res.ok) {
+        const serverMsg = data.detail || data.message || data.error || data.raw || `Error ${res.status}`;
+        setAlerta({ type: "error", text: serverMsg });
+        throw new Error(serverMsg);
+      }
+
+      setAlerta({ type: "success", text: data.message || "Usuario actualizado" });
+      await fetchUsuarios();
+      setEditModal({ open: false, user: null });
     } catch (err) {
-      console.error(err);
-      setAlerta({ type: "error", text: "Error al actualizar usuario" });
+      console.error("Error actualizando usuario:", err);
+      if (!alerta) setAlerta({ type: "error", text: err.message || "Error al actualizar usuario" });
+    } finally {
+      setEditing(false);
     }
   };
 
@@ -289,7 +321,7 @@ export default function UserManagement() {
         title="Eliminar usuario"
         description={
           deleteModal.username
-            ? `¿Eliminar el usuario “${deleteModal.username}”? Esta acción no se puede deshacer.`
+            ? `¿Eliminar el usuario "${deleteModal.username}"? Esta acción no se puede deshacer.`
             : "¿Estás seguro que deseas eliminar este usuario?"
         }
         confirmLabel="Eliminar"
@@ -297,6 +329,18 @@ export default function UserManagement() {
         loading={deleting}
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeleteModal({ open: false, id: null, username: "" })}
+      />
+
+      {/* Modal de edición de usuario */}
+      <UserEditModal
+        open={editModal.open}
+        user={editModal.user}
+        title="Editar usuario"
+        confirmLabel="Guardar"
+        cancelLabel="Cancelar"
+        loading={editing}
+        onConfirm={handleConfirmEdit}
+        onCancel={() => setEditModal({ open: false, user: null })}
       />
 
       {/* === Header === */}

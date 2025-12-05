@@ -37,6 +37,7 @@ export default function ReporteVentas() {
 
     const [estadoVentasTabla, setEstadoVentasTabla] = useState(2);
     const [paginaActual, setPaginaActual] = useState(1);
+    const [productosMap, setProductosMap] = useState({});
     const VENTAS_POR_PAGINA = 15;
 
     // Nueva paleta de colores
@@ -107,6 +108,24 @@ export default function ReporteVentas() {
         fetchVentas();
     }, [token, apiUrl]);
 
+    useEffect(() => {
+      const cache = sessionStorage.getItem("productosCache");
+      if (!cache) return;
+        
+      try {
+        const arr = JSON.parse(cache) || [];
+        const map = {};
+        arr.forEach((p) => {
+          if (p && p.id != null) {
+            map[String(p.id)] = p; // guardamos el producto completo
+          }
+        });
+        setProductosMap(map);
+      } catch (e) {
+        console.error("Error parseando productosCache:", e);
+      }
+    }, []);
+
     const ventasFiltradasTabla = useMemo(() => {
         return ventas.filter((v) => {
             if (estadoVentasTabla !== 0 && v.estado !== estadoVentasTabla) return false;
@@ -158,7 +177,9 @@ export default function ReporteVentas() {
           const id = d.producto != null && (typeof d.producto === "number" || /^\d+$/.test(String(d.producto)))
             ? String(d.producto)
             : null;
+            const cachedDesc = id && productosMap[id] ? productosMap[id].descripcion : null;
           const desc =
+          cachedDesc ||
             d.descripcion ||
             d.producto_descripcion ||
             d.producto_nombre ||

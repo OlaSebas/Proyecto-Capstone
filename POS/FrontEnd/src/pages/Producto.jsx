@@ -16,20 +16,22 @@ export default function Productos() {
   const [busqueda, setBusqueda] = useState("");
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
   const [mostrarPromociones, setMostrarPromociones] = useState(false);
-  const [mostrarExtras, setMostrarExtras] = useState(false); // ⚠️ NUEVO
+  const [mostrarExtras, setMostrarExtras] = useState(false);
+  const [cargando, setCargando] = useState(true);
 
   const { sidebarOpen, setSidebarOpen } =
     useOutletContext?.() ?? { sidebarOpen: false, setSidebarOpen: () => {} };
 
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL;
+  const token = localStorage.getItem("token");
 
   // Obtener productos
   useEffect(() => {
     const fetchProductos = async () => {
       try {
         const res = await fetch(`${apiUrl}inventario/productos/`, {
-          headers: { Authorization: `Token ${localStorage.getItem("token")}` },
+          headers: { Authorization: `Token ${token}` },
         });
         const data = await res.json();
         setProductos(Array.isArray(data) ? data : []);
@@ -38,14 +40,14 @@ export default function Productos() {
       }
     };
     fetchProductos();
-  }, [apiUrl]);
+  }, [apiUrl, token]);
 
   // Obtener promociones
   useEffect(() => {
     const fetchPromociones = async () => {
       try {
         const res = await fetch(`${apiUrl}inventario/promociones/`, {
-          headers: { Authorization: `Token ${localStorage.getItem("token")}` },
+          headers: { Authorization: `Token ${token}` },
         });
         const data = await res.json();
         setPromociones(Array.isArray(data) ? data : []);
@@ -54,23 +56,26 @@ export default function Productos() {
       }
     };
     fetchPromociones();
-  }, [apiUrl]);
+  }, [apiUrl, token]);
 
   // Obtener categorías
   useEffect(() => {
     const fetchCategorias = async () => {
+      setCargando(true);
       try {
         const res = await fetch(`${apiUrl}inventario/categorias/`, {
-          headers: { Authorization: `Token ${localStorage.getItem("token")}` },
+          headers: { Authorization: `Token ${token}` },
         });
         const data = await res.json();
         setCategorias(Array.isArray(data) ? data : []);
       } catch {
         setCategorias([]);
+      } finally {
+        setCargando(false);
       }
     };
     fetchCategorias();
-  }, [apiUrl]);
+  }, [apiUrl, token]);
 
   // Reloj
   useEffect(() => {
@@ -170,7 +175,7 @@ export default function Productos() {
     Bebestibles: <CupSoda className="w-5 h-5" />,
     Comida: <Drumstick className="w-5 h-5" />,
     Otros: <Package className="w-5 h-5" />,
-    Extras: <PlusCircle className="w-5 h-5" />, // por si tu API trae la categoría con este nombre
+    Extras: <PlusCircle className="w-5 h-5" />,
   };
 
   return (
@@ -212,154 +217,171 @@ export default function Productos() {
         </div>
       </header>
 
-      {/* CONTENIDO */}
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
-        {/* Filtros tipo chips */}
-        <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-5">
-          {(categorias || []).slice(0, 3).map((cat) => (
-            <motion.button
-              key={cat.id}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => {
-                setCategoriaSeleccionada(categoriaSeleccionada === cat.id ? null : cat.id);
-                setMostrarPromociones(false);
-                setMostrarExtras(false); // si elijo categoría, apago extras
-              }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all shadow-sm border ${
-                categoriaSeleccionada === cat.id
-                  ? "bg-red-600 text-white border-red-700 shadow-md"
-                  : "bg-white text-gray-700 hover:bg-gray-100 border-gray-300"
-              }`}
-            >
-              {iconosCategorias[cat.descripcion] ?? <Package className="w-5 h-5" />}
-              {cat.descripcion}
-            </motion.button>
-          ))}
-
-          {/* Chip EXTRAS - NUEVO */}
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => {
-              const next = !mostrarExtras;
-              setMostrarExtras(next);
-              if (next) {
-                setCategoriaSeleccionada(null);
-                setMostrarPromociones(false);
-              }
-            }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all shadow-sm border ${
-              mostrarExtras
-                ? "bg-red-600 text-white border-red-700 shadow-md"
-                : "bg-white text-gray-700 hover:bg-gray-100 border-gray-300"
-            }`}
-          >
-            <PlusCircle className="w-5 h-5" />
-            Extras
-          </motion.button>
-
-          {/* Chip PROMOCIONES */}
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => {
-              const next = !mostrarPromociones;
-              setMostrarPromociones(next);
-              if (next) {
-                setCategoriaSeleccionada(null);
-                setMostrarExtras(false);
-              }
-            }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all shadow-sm border ${
-              mostrarPromociones
-                ? "bg-red-600 text-white border-red-700 shadow-md"
-                : "bg-white text-gray-700 hover:bg-gray-100 border-gray-300"
-            }`}
-          >
-            <Tag className="w-5 h-5" />
-            Promociones
-          </motion.button>
-        </div>
-
-        {/* Buscador (fondo blanco) */}
-        <div className="mb-6 w-full max-w-4xl mx-auto px-1">
-          <input
-            type="text"
-            placeholder="Buscar producto..."
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            className="w-full px-4 py-3 text-lg sm:text-xl border border-gray-300 rounded-lg shadow-md bg-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
-          />
-        </div>
-
-        {/* Grillas */}
-        {!mostrarPromociones ? (
-          productosFiltrados.length === 0 ? (
-            <p className="text-gray-500 text-center">No se encontraron productos.</p>
-          ) : (
-            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 max-w-6xl w-full">
-              {productosFiltrados.map((producto) => (
-                <div
-                  key={producto.id}
-                  onClick={() => setProductoSeleccionado(producto)}
-                  className="bg-white/90 border border-gray-200 rounded-xl p-4 shadow hover:shadow-lg transition cursor-pointer h-64 flex flex-col"
-                >
-                  <div className="flex-1 flex items-center">
-                    <img
-                      src={producto.imagen}
-                      alt={producto.nombre}
-                      className="w-full h-32 object-contain"
-                    />
-                  </div>
-                  <p className="mt-2 font-medium text-gray-800 text-center line-clamp-2">
-                    {producto.descripcion || producto.nombre}
-                  </p>
-                  <p className="text-gray-900 font-extrabold text-center mt-1">
-                    ${producto.precio?.toLocaleString?.("es-CL") ?? producto.precio ?? "0"}
-                  </p>
-                </div>
-              ))}
+      {/* LOADING CONTROLLER */}
+      {cargando ? (
+        <main className="flex-1 p-6 flex items-center justify-center min-h-screen">
+          <div className="flex flex-col items-center gap-3 bg-white/80 backdrop-blur rounded-xl border border-gray-200 shadow-lg px-6 py-8">
+            <div className="relative h-14 w-14">
+              <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-t-red-500 border-b-blue-500 animate-spin"></div>
             </div>
-          )
-        ) : promocionesFiltradas.length === 0 ? (
-          <p className="text-gray-500 text-center">No se encontraron promociones.</p>
-        ) : (
-          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 max-w-6xl w-full">
-            {promocionesFiltradas.map((promo) => (
-              <div
-                key={promo.id}
-                onClick={() => setProductoSeleccionado(promo)}
-                className="bg-white/90 border border-gray-200 rounded-xl p-4 shadow hover:shadow-lg transition cursor-pointer h-64 flex flex-col"
-              >
-                <div className="flex-1 flex items-center">
-                  <img
-                    src={promo.imagen}
-                    alt={promo.nombre}
-                    className="w-full h-32 object-contain"
-                  />
-                </div>
-                <p className="mt-2 font-medium text-gray-800 text-center line-clamp-2">
-                  {promo.descripcion || promo.nombre}
-                </p>
-                <p className="text-gray-900 font-extrabold text-center mt-1">
-                  ${promo.precio?.toLocaleString?.("es-CL") ?? promo.precio ?? "0"}
-                </p>
-              </div>
-            ))}
+            <p className="text-gray-700 font-semibold text-sm sm:text-base">
+              Cargando productos, promociones y categorías...
+            </p>
           </div>
-        )}
+        </main>
+      ) : (
+        <>
+          {/* CONTENIDO */}
+          <main className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
+            {/* Filtros tipo chips */}
+            <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-5">
+              {(categorias || []).slice(0, 3).map((cat) => (
+                <motion.button
+                  key={cat.id}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => {
+                    setCategoriaSeleccionada(categoriaSeleccionada === cat.id ? null : cat.id);
+                    setMostrarPromociones(false);
+                    setMostrarExtras(false);
+                  }}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all shadow-sm border ${
+                    categoriaSeleccionada === cat.id
+                      ? "bg-red-600 text-white border-red-700 shadow-md"
+                      : "bg-white text-gray-700 hover:bg-gray-100 border-gray-300"
+                  }`}
+                >
+                  {iconosCategorias[cat.descripcion] ?? <Package className="w-5 h-5" />}
+                  {cat.descripcion}
+                </motion.button>
+              ))}
 
-        {/* Volver */}
-        <div className="mt-8 w-full flex justify-center">
-          <button
-            onClick={() => window.history.back()}
-            className="px-6 py-2 bg-gray-900 text-white rounded hover:bg-gray-800"
-          >
-            Volver
-          </button>
-        </div>
-      </main>
+              {/* Chip EXTRAS */}
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => {
+                  const next = !mostrarExtras;
+                  setMostrarExtras(next);
+                  if (next) {
+                    setCategoriaSeleccionada(null);
+                    setMostrarPromociones(false);
+                  }
+                }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all shadow-sm border ${
+                  mostrarExtras
+                    ? "bg-red-600 text-white border-red-700 shadow-md"
+                    : "bg-white text-gray-700 hover:bg-gray-100 border-gray-300"
+                }`}
+              >
+                <PlusCircle className="w-5 h-5" />
+                Extras
+              </motion.button>
+
+              {/* Chip PROMOCIONES */}
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => {
+                  const next = !mostrarPromociones;
+                  setMostrarPromociones(next);
+                  if (next) {
+                    setCategoriaSeleccionada(null);
+                    setMostrarExtras(false);
+                  }
+                }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all shadow-sm border ${
+                  mostrarPromociones
+                    ? "bg-red-600 text-white border-red-700 shadow-md"
+                    : "bg-white text-gray-700 hover:bg-gray-100 border-gray-300"
+                }`}
+              >
+                <Tag className="w-5 h-5" />
+                Promociones
+              </motion.button>
+            </div>
+
+            {/* Buscador (fondo blanco) */}
+            <div className="mb-6 w-full max-w-4xl mx-auto px-1">
+              <input
+                type="text"
+                placeholder="Buscar producto..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                className="w-full px-4 py-3 text-lg sm:text-xl border border-gray-300 rounded-lg shadow-md bg-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
+              />
+            </div>
+
+            {/* Grillas */}
+            {!mostrarPromociones ? (
+              productosFiltrados.length === 0 ? (
+                <p className="text-gray-500 text-center">No se encontraron productos.</p>
+              ) : (
+                <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 max-w-6xl w-full">
+                  {productosFiltrados.map((producto) => (
+                    <div
+                      key={producto.id}
+                      onClick={() => setProductoSeleccionado(producto)}
+                      className="bg-white/90 border border-gray-200 rounded-xl p-4 shadow hover:shadow-lg transition cursor-pointer h-64 flex flex-col"
+                    >
+                      <div className="flex-1 flex items-center">
+                        <img
+                          src={producto.imagen}
+                          alt={producto.nombre}
+                          className="w-full h-32 object-contain"
+                        />
+                      </div>
+                      <p className="mt-2 font-medium text-gray-800 text-center line-clamp-2">
+                        {producto.descripcion || producto.nombre}
+                      </p>
+                      <p className="text-gray-900 font-extrabold text-center mt-1">
+                        ${producto.precio?.toLocaleString?.("es-CL") ?? producto.precio ?? "0"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : promocionesFiltradas.length === 0 ? (
+              <p className="text-gray-500 text-center">No se encontraron promociones.</p>
+            ) : (
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 max-w-6xl w-full">
+                {promocionesFiltradas.map((promo) => (
+                  <div
+                    key={promo.id}
+                    onClick={() => setProductoSeleccionado(promo)}
+                    className="bg-white/90 border border-gray-200 rounded-xl p-4 shadow hover:shadow-lg transition cursor-pointer h-64 flex flex-col"
+                  >
+                    <div className="flex-1 flex items-center">
+                      <img
+                        src={promo.imagen}
+                        alt={promo.nombre}
+                        className="w-full h-32 object-contain"
+                      />
+                    </div>
+                    <p className="mt-2 font-medium text-gray-800 text-center line-clamp-2">
+                      {promo.descripcion || promo.nombre}
+                    </p>
+                    <p className="text-gray-900 font-extrabold text-center mt-1">
+                      ${promo.precio?.toLocaleString?.("es-CL") ?? promo.precio ?? "0"}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Volver */}
+            <div className="mt-8 w-full flex justify-center">
+              <button
+                onClick={() => window.history.back()}
+                className="px-6 py-2 bg-gray-900 text-white rounded hover:bg-gray-800"
+              >
+                Volver
+              </button>
+            </div>
+          </main>
+        </>
+      )}
 
       {/* Modal PreCarrito y edición */}
       {productoSeleccionado && (

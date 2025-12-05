@@ -13,6 +13,7 @@ export default function GestionProductos() {
   const [productos, setProductos] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
+  const [cargando, setCargando] = useState(true);
 
   const [modalEliminar, setModalEliminar] = useState({ abierto: false, productoId: null });
   const [modalEditar, setModalEditar] = useState({ abierto: false, producto: null });
@@ -74,8 +75,16 @@ export default function GestionProductos() {
   };
 
   useEffect(() => {
-    fetchProductos();
-    fetchCategorias();
+    const cargarDatos = async () => {
+      setCargando(true);
+      try {
+        await fetchProductos();
+        await fetchCategorias();
+      } finally {
+        setCargando(false);
+      }
+    };
+    cargarDatos();
   }, []);
 
   // Imagen
@@ -225,309 +234,324 @@ export default function GestionProductos() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
-        {/* Mensajes inline */}
-        {msg.text && (
-          <div
-            className={`mb-6 rounded-lg border px-4 py-3 text-sm ${
-              msg.type === "success"
-                ? "bg-green-50 border-green-200 text-green-800"
-                : "bg-red-50 border-red-200 text-red-800"
-            }`}
-          >
-            {msg.text}
+      {/* LOADING CONTROLLER */}
+      {cargando ? (
+        <main className="flex-1 p-6 flex items-center justify-center min-h-screen">
+          <div className="flex flex-col items-center gap-3 bg-white/80 backdrop-blur rounded-xl border border-gray-200 shadow-lg px-6 py-8">
+            <div className="relative h-14 w-14">
+              <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-t-red-500 border-b-blue-500 animate-spin"></div>
+            </div>
+            <p className="text-gray-700 font-semibold text-sm sm:text-base">
+              Cargando productos y categorías...
+            </p>
           </div>
-        )}
-
-        {/* Tabs */}
-        <div className="flex justify-center gap-3 sm:gap-4 mb-6">
-          {["agregar", "administrar"].map((t) => (
-            <button
-              key={t}
-              className={`px-4 sm:px-5 py-2 rounded-full font-medium transition-all shadow-sm border ${
-                tab === t
-                  ? "bg-red-600 text-white border-red-700 shadow-md"
-                  : "bg-white text-gray-700 hover:bg-gray-100 border-gray-300"
+        </main>
+      ) : (
+        <main className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
+          {/* Mensajes inline */}
+          {msg.text && (
+            <div
+              className={`mb-6 rounded-lg border px-4 py-3 text-sm ${
+                msg.type === "success"
+                  ? "bg-green-50 border-green-200 text-green-800"
+                  : "bg-red-50 border-red-200 text-red-800"
               }`}
-              onClick={() => setTab(t)}
             >
-              {t === "agregar" ? "Agregar Producto" : "Administrar / Editar"}
-            </button>
-          ))}
-        </div>
-
-        {/* Contenido principal */}
-        <div className="w-full bg-white/90 backdrop-blur shadow-lg rounded-xl p-5 sm:p-6 border border-gray-200">
-          {/* ===== Agregar (se mantiene como tenías) ===== */}
-          {tab === "agregar" && (
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="flex flex-col items-center">
-                <label
-                  htmlFor="imagen"
-                  className="w-44 h-44 sm:w-48 sm:h-48 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer hover:bg-gray-50 overflow-hidden transition-all"
-                >
-                  {preview ? (
-                    <img src={preview} alt="Preview" className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-gray-400 text-5xl select-none">+</span>
-                  )}
-                </label>
-                <input id="imagen" type="file" accept="image/*" className="hidden" onChange={handleImagenChange} />
-                <p className="text-xs text-gray-500 mt-2">PNG/JPG hasta ~2MB</p>
-              </div>
-
-              <div className="flex flex-col gap-4">
-                <input
-                  type="text"
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
-                  placeholder="Nombre del producto"
-                  className="border rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-red-400"
-                />
-                <input
-                  type="number"
-                  value={precio}
-                  onChange={(e) => setPrecio(e.target.value)}
-                  placeholder="Precio"
-                  className="border rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-red-400"
-                />
-                <button
-                  type="submit"
-                  className="px-6 py-2 rounded-lg bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold shadow hover:shadow-md"
-                >
-                  Agregar
-                </button>
-              </div>
-            </form>
+              {msg.text}
+            </div>
           )}
 
-          {/* ===== Administrar (mejorado) ===== */}
-          {tab === "administrar" && (
-            <div>
-              {/* Filtro categorías */}
-              <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-5">
-                <button
-                  onClick={() => setCategoriaSeleccionada(null)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full border shadow-sm transition-all ${
-                    !categoriaSeleccionada
-                      ? "bg-red-600 text-white border-red-700 shadow-md"
-                      : "bg-white hover:bg-gray-50 text-gray-800 border-gray-300"
-                  }`}
-                >
-                  <Filter size={18} />
-                  Todos
-                </button>
+          {/* Tabs */}
+          <div className="flex justify-center gap-3 sm:gap-4 mb-6">
+            {["agregar", "administrar"].map((t) => (
+              <button
+                key={t}
+                className={`px-4 sm:px-5 py-2 rounded-full font-medium transition-all shadow-sm border ${
+                  tab === t
+                    ? "bg-red-600 text-white border-red-700 shadow-md"
+                    : "bg-white text-gray-700 hover:bg-gray-100 border-gray-300"
+                }`}
+                onClick={() => setTab(t)}
+              >
+                {t === "agregar" ? "Agregar Producto" : "Administrar / Editar"}
+              </button>
+            ))}
+          </div>
 
-                {categorias.map((cat) => {
-                  const icon =
-                    cat.descripcion?.toLowerCase().includes("bebida") ||
-                    cat.descripcion?.toLowerCase().includes("bebestible") ? (
-                      <CupSoda size={18} />
-                    ) : cat.descripcion?.toLowerCase().includes("comida") ? (
-                      <Drumstick size={18} />
+          {/* Contenido principal */}
+          <div className="w-full bg-white/90 backdrop-blur shadow-lg rounded-xl p-5 sm:p-6 border border-gray-200">
+            {/* ===== Agregar (se mantiene como tenías) ===== */}
+            {tab === "agregar" && (
+              <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="flex flex-col items-center">
+                  <label
+                    htmlFor="imagen"
+                    className="w-44 h-44 sm:w-48 sm:h-48 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer hover:bg-gray-50 overflow-hidden transition-all"
+                  >
+                    {preview ? (
+                      <img src={preview} alt="Preview" className="w-full h-full object-cover" />
                     ) : (
-                      <Package size={18} />
-                    );
+                      <span className="text-gray-400 text-5xl select-none">+</span>
+                    )}
+                  </label>
+                  <input id="imagen" type="file" accept="image/*" className="hidden" onChange={handleImagenChange} />
+                  <p className="text-xs text-gray-500 mt-2">PNG/JPG hasta ~2MB</p>
+                </div>
 
-                  return (
-                    <button
-                      key={cat.id}
-                      onClick={() =>
-                        setCategoriaSeleccionada(categoriaSeleccionada === cat.id ? null : cat.id)
-                      }
-                      className={`flex items-center gap-2 px-4 py-2 rounded-full border shadow-sm transition-all ${
-                        categoriaSeleccionada === cat.id
-                          ? "bg-red-600 text-white border-red-700 shadow-md scale-[1.02]"
-                          : "bg-white hover:bg-gray-50 text-gray-800 border-gray-300"
-                      }`}
-                    >
-                      {icon}
-                      {cat.descripcion}
-                    </button>
-                  );
-                })}
-              </div>
+                <div className="flex flex-col gap-4">
+                  <input
+                    type="text"
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    placeholder="Nombre del producto"
+                    className="border rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-red-400"
+                  />
+                  <input
+                    type="number"
+                    value={precio}
+                    onChange={(e) => setPrecio(e.target.value)}
+                    placeholder="Precio"
+                    className="border rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-red-400"
+                  />
+                  <button
+                    type="submit"
+                    className="px-6 py-2 rounded-lg bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold shadow hover:shadow-md"
+                  >
+                    Agregar
+                  </button>
+                </div>
+              </form>
+            )}
 
-              {/* Tabla → Cards responsive (estilo mejorado) */}
-              {productosFiltrados.length > 0 ? (
-                <>
-                  {/* Tabla (sm+) */}
-                  <div className="hidden sm:block">
-                    <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
-                      <table className="w-full text-left text-gray-800">
-                        <thead className="bg-gray-100 sticky top-0 z-10">
-                          <tr>
-                            <th className="px-4 py-3 font-semibold">Imagen</th>
-                            <th className="px-4 py-3 font-semibold">Nombre</th>
-                            <th className="px-4 py-3 font-semibold">Precio</th>
-                            <th className="px-4 py-3 text-center font-semibold">Acciones</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {productosFiltrados.map((p, i) => (
-                            <tr
-                              key={p.id}
-                              className={`${i % 2 ? "bg-white" : "bg-gray-50"} hover:bg-gray-100 transition`}
-                            >
-                              <td className="px-4 py-3 w-20">
-                                <img
-                                  src={p.imagen || ""}
-                                  onError={(e) => (e.currentTarget.src = "")}
-                                  alt={p.descripcion}
-                                  className="w-16 h-16 object-cover rounded border border-gray-200"
-                                />
-                              </td>
-                              <td className="px-4 py-3">
-                                <span className="font-medium text-gray-900">{p.descripcion}</span>
-                              </td>
-                              <td className="px-4 py-3">
-                                <span className="text-gray-900 font-semibold">
-                                  {formatCLP(p.precio)}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3">
-                                <div className="flex justify-center gap-2">
-                                  <button
-                                    onClick={() => abrirModalEditar(p)}
-                                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-900 text-white rounded-md hover:bg-gray-800"
-                                  >
-                                    <Pencil size={16} />
-                                    Editar
-                                  </button>
-                                  <button
-                                    onClick={() => abrirModalEliminar(p.id)}
-                                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700"
-                                  >
-                                    <Trash2 size={16} />
-                                    Eliminar
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
+            {/* ===== Administrar (mejorado con loading) ===== */}
+            {tab === "administrar" && (
+              <div>
+                {/* Filtro categorías */}
+                <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-5">
+                  <button
+                    onClick={() => setCategoriaSeleccionada(null)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full border shadow-sm transition-all ${
+                      !categoriaSeleccionada
+                        ? "bg-red-600 text-white border-red-700 shadow-md"
+                        : "bg-white hover:bg-gray-50 text-gray-800 border-gray-300"
+                    }`}
+                  >
+                    <Filter size={18} />
+                    Todos
+                  </button>
 
-                  {/* Cards (móvil) */}
-                  <ul className="sm:hidden grid grid-cols-1 gap-3">
-                    {productosFiltrados.map((p) => (
-                      <li
-                        key={p.id}
-                        className="bg-white/95 border border-gray-200 rounded-xl p-4 shadow-sm"
+                  {categorias.map((cat) => {
+                    const icon =
+                      cat.descripcion?.toLowerCase().includes("bebida") ||
+                      cat.descripcion?.toLowerCase().includes("bebestible") ? (
+                        <CupSoda size={18} />
+                      ) : cat.descripcion?.toLowerCase().includes("comida") ? (
+                        <Drumstick size={18} />
+                      ) : (
+                        <Package size={18} />
+                      );
+
+                    return (
+                      <button
+                        key={cat.id}
+                        onClick={() =>
+                          setCategoriaSeleccionada(categoriaSeleccionada === cat.id ? null : cat.id)
+                        }
+                        className={`flex items-center gap-2 px-4 py-2 rounded-full border shadow-sm transition-all ${
+                          categoriaSeleccionada === cat.id
+                            ? "bg-red-600 text-white border-red-700 shadow-md scale-[1.02]"
+                            : "bg-white hover:bg-gray-50 text-gray-800 border-gray-300"
+                        }`}
                       >
-                        <div className="flex gap-3">
-                          <img
-                            src={p.imagen || ""}
-                            onError={(e) => (e.currentTarget.src = "")}
-                            alt={p.descripcion}
-                            className="w-16 h-16 object-cover rounded border border-gray-200"
-                          />
-                          <div className="flex-1">
-                            <p className="font-semibold text-gray-900">{p.descripcion}</p>
-                            <p className="text-gray-900 font-medium mt-0.5">
-                              {formatCLP(p.precio)}
-                            </p>
-                            <div className="mt-3 grid grid-cols-2 gap-2">
-                              <button
-                                onClick={() => abrirModalEditar(p)}
-                                className="px-3 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800"
+                        {icon}
+                        {cat.descripcion}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Tabla → Cards responsive (estilo mejorado) */}
+                {productosFiltrados.length > 0 ? (
+                  <>
+                    {/* Tabla (sm+) */}
+                    <div className="hidden sm:block">
+                      <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+                        <table className="w-full text-left text-gray-800">
+                          <thead className="bg-gray-100 sticky top-0 z-10">
+                            <tr>
+                              <th className="px-4 py-3 font-semibold">Imagen</th>
+                              <th className="px-4 py-3 font-semibold">Nombre</th>
+                              <th className="px-4 py-3 font-semibold">Precio</th>
+                              <th className="px-4 py-3 text-center font-semibold">Acciones</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {productosFiltrados.map((p, i) => (
+                              <tr
+                                key={p.id}
+                                className={`${i % 2 ? "bg-white" : "bg-gray-50"} hover:bg-gray-100 transition`}
                               >
-                                Editar
-                              </button>
-                              <button
-                                onClick={() => abrirModalEliminar(p.id)}
-                                className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-                              >
-                                Eliminar
-                              </button>
+                                <td className="px-4 py-3 w-20">
+                                  <img
+                                    src={p.imagen || ""}
+                                    onError={(e) => (e.currentTarget.src = "")}
+                                    alt={p.descripcion}
+                                    className="w-16 h-16 object-cover rounded border border-gray-200"
+                                  />
+                                </td>
+                                <td className="px-4 py-3">
+                                  <span className="font-medium text-gray-900">{p.descripcion}</span>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <span className="text-gray-900 font-semibold">
+                                    {formatCLP(p.precio)}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <div className="flex justify-center gap-2">
+                                    <button
+                                      onClick={() => abrirModalEditar(p)}
+                                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-900 text-white rounded-md hover:bg-gray-800"
+                                    >
+                                      <Pencil size={16} />
+                                      Editar
+                                    </button>
+                                    <button
+                                      onClick={() => abrirModalEliminar(p.id)}
+                                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700"
+                                    >
+                                      <Trash2 size={16} />
+                                      Eliminar
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* Cards (móvil) */}
+                    <ul className="sm:hidden grid grid-cols-1 gap-3">
+                      {productosFiltrados.map((p) => (
+                        <li
+                          key={p.id}
+                          className="bg-white/95 border border-gray-200 rounded-xl p-4 shadow-sm"
+                        >
+                          <div className="flex gap-3">
+                            <img
+                              src={p.imagen || ""}
+                              onError={(e) => (e.currentTarget.src = "")}
+                              alt={p.descripcion}
+                              className="w-16 h-16 object-cover rounded border border-gray-200"
+                            />
+                            <div className="flex-1">
+                              <p className="font-semibold text-gray-900">{p.descripcion}</p>
+                              <p className="text-gray-900 font-medium mt-0.5">
+                                {formatCLP(p.precio)}
+                              </p>
+                              <div className="mt-3 grid grid-cols-2 gap-2">
+                                <button
+                                  onClick={() => abrirModalEditar(p)}
+                                  className="px-3 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800"
+                                >
+                                  Editar
+                                </button>
+                                <button
+                                  onClick={() => abrirModalEliminar(p.id)}
+                                  className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                                >
+                                  Eliminar
+                                </button>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-10 text-center">
-                  <Package className="w-10 h-10 text-gray-400" />
-                  <p className="mt-2 text-gray-600">No hay productos disponibles</p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Modal: Eliminar */}
-        {modalEliminar.abierto && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 px-4">
-            <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-md">
-              <h3 className="text-xl font-bold mb-2 text-gray-900">Confirmar Eliminación</h3>
-              <p className="text-gray-600">¿Estás seguro de eliminar este producto?</p>
-              <div className="mt-4 flex justify-end gap-3">
-                <button
-                  onClick={cancelarEliminar}
-                  className="px-4 py-2 rounded-md bg-gray-200 text-gray-800 hover:bg-gray-300"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={confirmarEliminar}
-                  className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700"
-                >
-                  Eliminar
-                </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-10 text-center">
+                    <Package className="w-10 h-10 text-gray-400" />
+                    <p className="mt-2 text-gray-600">No hay productos disponibles</p>
+                  </div>
+                )}
               </div>
-            </div>
+            )}
           </div>
-        )}
 
-        {/* Modal: Editar */}
-        {modalEditar.abierto && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 px-4">
-            <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-md">
-              <h3 className="text-xl font-bold mb-3 text-gray-900">Editar Producto</h3>
-              <div className="flex flex-col gap-3">
-                <input
-                  type="text"
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
-                  placeholder="Nombre"
-                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
-                />
-                <input
-                  type="number"
-                  value={precio}
-                  onChange={(e) => setPrecio(e.target.value)}
-                  placeholder="Precio"
-                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
-                />
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImagenChange}
-                  className="border rounded-lg px-3 py-2"
-                />
-                <div className="flex justify-end gap-3 pt-1">
+          {/* Modal: Eliminar */}
+          {modalEliminar.abierto && (
+            <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 px-4">
+              <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-md">
+                <h3 className="text-xl font-bold mb-2 text-gray-900">Confirmar Eliminación</h3>
+                <p className="text-gray-600">¿Estás seguro de eliminar este producto?</p>
+                <div className="mt-4 flex justify-end gap-3">
                   <button
-                    onClick={cancelarEditar}
-                    className="px-3 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
+                    onClick={cancelarEliminar}
+                    className="px-4 py-2 rounded-md bg-gray-200 text-gray-800 hover:bg-gray-300"
                   >
                     Cancelar
                   </button>
                   <button
-                    onClick={confirmarEditar}
-                    className="px-3 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800"
+                    onClick={confirmarEliminar}
+                    className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700"
                   >
-                    Guardar
+                    Eliminar
                   </button>
                 </div>
               </div>
             </div>
-          </div>
-        )}
-      </main>
+          )}
+
+          {/* Modal: Editar */}
+          {modalEditar.abierto && (
+            <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 px-4">
+              <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-md">
+                <h3 className="text-xl font-bold mb-3 text-gray-900">Editar Producto</h3>
+                <div className="flex flex-col gap-3">
+                  <input
+                    type="text"
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    placeholder="Nombre"
+                    className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
+                  />
+                  <input
+                    type="number"
+                    value={precio}
+                    onChange={(e) => setPrecio(e.target.value)}
+                    placeholder="Precio"
+                    className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
+                  />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImagenChange}
+                    className="border rounded-lg px-3 py-2"
+                  />
+                  <div className="flex justify-end gap-3 pt-1">
+                    <button
+                      onClick={cancelarEditar}
+                      className="px-3 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={confirmarEditar}
+                      className="px-3 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800"
+                    >
+                      Guardar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </main>
+      )}
     </div>
   );
 }

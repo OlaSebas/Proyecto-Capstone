@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
+import UserDeleteConfirmModal from "../../components/UserDeleteConfirmModal";
+import UserEditModal from "../../components/UserEditModal";
 
 export default function UserManagement() {
   const { sidebarOpen, setSidebarOpen } = useOutletContext();
@@ -8,6 +10,7 @@ export default function UserManagement() {
   const [tab, setTab] = useState("crear");
   const [hora, setHora] = useState("");
   const [alerta, setAlerta] = useState(null); // { type: 'success' | 'error', text: string }
+  const [cargando, setCargando] = useState(true);
 
   // Datos del formulario
   const [formData, setFormData] = useState({
@@ -24,6 +27,14 @@ export default function UserManagement() {
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Modal eliminar usuario
+  const [deleteModal, setDeleteModal] = useState({ open: false, id: null, username: "" });
+  const [deleting, setDeleting] = useState(false);
+
+  // Modal editar usuario (nuevo)
+  const [editModal, setEditModal] = useState({ open: false, user: null });
+  const [editing, setEditing] = useState(false);
+
   // Reloj
   useEffect(() => {
     const actualizarHora = () => {
@@ -38,6 +49,11 @@ export default function UserManagement() {
     actualizarHora();
     const intervalo = setInterval(actualizarHora, 1000);
     return () => clearInterval(intervalo);
+  }, []);
+
+  // Inicializar cargando
+  useEffect(() => {
+    setCargando(false);
   }, []);
 
   // Autocerrar alertas
@@ -107,6 +123,7 @@ export default function UserManagement() {
 
   // Obtener usuarios
   const fetchUsuarios = async () => {
+    setLoading(true);
     try {
       const res = await fetch(`${apiUrl}api/users/`, {
         headers: { Authorization: `Token ${localStorage.getItem("token")}` },
@@ -116,7 +133,7 @@ export default function UserManagement() {
       setUsuarios(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
-      alert("Error cargando usuarios");
+      setAlerta({ type: "error", text: "Error cargando usuarios" });
     } finally {
       setLoading(false);
     }
@@ -126,33 +143,70 @@ export default function UserManagement() {
     if (tab === "gestionar") fetchUsuarios();
   }, [tab]);
 
-  // Editar usuario
-  const handleEdit = async (user) => {
-    const nuevoNombre = prompt("Nuevo nombre:", user.first_name);
-    if (!nuevoNombre) return;
+  // reemplazar la función handleEdit para abrir modal en lugar de prompt
+  const handleEdit = (user) => {
+    setEditModal({ open: true, user });
+  };
 
+  // handler que llama al endpoint nuevo update_credentials/ y exige current_password
+  const handleConfirmEdit = async (payload) => {
+    // payload: { id, first_name, last_name, new_password, current_password }
+    setEditing(true);
     try {
-      const res = await fetch(`${apiUrl}api/users/`, {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setAlerta({ type: "error", text: "Token de autenticación no encontrado." });
+        throw new Error("No token");
+      }
+
+      const res = await fetch(`${apiUrl}api/users/update_credentials/`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Token ${localStorage.getItem("token")}`,
+          Authorization: `Token ${token}`,
         },
-        body: JSON.stringify({ id: user.id, first_name: nuevoNombre }),
+        body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error("Error al actualizar usuario");
-      alert("Usuario actualizado");
-      fetchUsuarios();
+
+      const text = await res.text();
+      let data;
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        data = { raw: text };
+      }
+
+      if (!res.ok) {
+        const serverMsg = data.detail || data.message || data.error || data.raw || `Error ${res.status}`;
+        setAlerta({ type: "error", text: serverMsg });
+        throw new Error(serverMsg);
+      }
+
+      setAlerta({ type: "success", text: data.message || "Usuario actualizado" });
+      await fetchUsuarios();
+      setEditModal({ open: false, user: null });
     } catch (err) {
-      console.error(err);
-      alert("Error al actualizar usuario");
+      console.error("Error actualizando usuario:", err);
+      if (!alerta) setAlerta({ type: "error", text: err.message || "Error al actualizar usuario" });
+    } finally {
+      setEditing(false);
     }
   };
 
-  // Eliminar usuario
-  const handleDelete = async (id) => {
-    if (!confirm("¿Seguro que deseas eliminar este usuario?")) return;
+  // Abrir modal para eliminar usuario (reemplaza confirm)
+  const handleDelete = (id) => {
+    const u = usuarios.find((x) => x.id === id);
+    setDeleteModal({ open: true, id, username: u ? u.username : "" });
+  };
 
+  // Confirmar eliminación desde modal
+  const handleConfirmDelete = async () => {
+    const id = deleteModal.id;
+    if (!id) {
+      setDeleteModal({ open: false, id: null, username: "" });
+      return;
+    }
+    setDeleting(true);
     try {
       const res = await fetch(`${apiUrl}api/users/`, {
         method: "DELETE",
@@ -164,11 +218,14 @@ export default function UserManagement() {
       });
 
       if (!res.ok) throw new Error("Error eliminando usuario");
-      alert("Usuario eliminado");
-      fetchUsuarios();
+      setAlerta({ type: "success", text: "Usuario eliminado" });
+      await fetchUsuarios();
     } catch (err) {
       console.error(err);
-      alert("Error al eliminar usuario");
+      setAlerta({ type: "error", text: "Error al eliminar usuario" });
+    } finally {
+      setDeleting(false);
+      setDeleteModal({ open: false, id: null, username: "" });
     }
   };
 
@@ -205,7 +262,44 @@ export default function UserManagement() {
     </div>
   );
 
-return (
+  // LOADING CONTROLLER
+  if (cargando) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-200 via-white to-gray-300">
+        {/* Header */}
+        <header className="flex flex-col gap-3 sm:flex-row sm:gap-0 sm:justify-between sm:items-center bg-white shadow px-4 sm:px-6 py-4">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="px-3 py-2 bg-gray-200 rounded hover:bg-gray-300"
+            aria-label="Abrir/Cerrar barra lateral"
+          >
+            ☰
+          </button>
+          <h2 className="flex-1 px-3 text-center text-3xl font-extrabold text-gray-900">
+            Gestión de Usuarios
+          </h2>
+          <span className="text-gray-600 font-medium text-center sm:text-right">
+            {hora}
+          </span>
+        </header>
+
+        {/* Loading Spinner */}
+        <main className="flex-1 p-6 flex items-center justify-center min-h-screen">
+          <div className="flex flex-col items-center gap-3 bg-white/80 backdrop-blur rounded-xl border border-gray-200 shadow-lg px-6 py-8">
+            <div className="relative h-14 w-14">
+              <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-t-red-500 border-b-blue-500 animate-spin"></div>
+            </div>
+            <p className="text-gray-700 font-semibold text-sm sm:text-base">
+              Cargando gestión de usuarios...
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-200 via-white to-gray-300">
       {alerta && (
         <div className="fixed top-4 inset-x-0 flex justify-center z-50 px-4">
@@ -221,7 +315,35 @@ return (
         </div>
       )}
 
-      {/* === Header: NO TOCADO (misma barra / mismo botón ☰) === */}
+      {/* Modal de confirmación para eliminar usuario */}
+      <UserDeleteConfirmModal
+        open={deleteModal.open}
+        title="Eliminar usuario"
+        description={
+          deleteModal.username
+            ? `¿Eliminar el usuario "${deleteModal.username}"? Esta acción no se puede deshacer.`
+            : "¿Estás seguro que deseas eliminar este usuario?"
+        }
+        confirmLabel="Eliminar"
+        cancelLabel="Cancelar"
+        loading={deleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteModal({ open: false, id: null, username: "" })}
+      />
+
+      {/* Modal de edición de usuario */}
+      <UserEditModal
+        open={editModal.open}
+        user={editModal.user}
+        title="Editar usuario"
+        confirmLabel="Guardar"
+        cancelLabel="Cancelar"
+        loading={editing}
+        onConfirm={handleConfirmEdit}
+        onCancel={() => setEditModal({ open: false, user: null })}
+      />
+
+      {/* === Header === */}
       <header className="flex flex-col gap-3 sm:flex-row sm:gap-0 sm:justify-between sm:items-center bg-white shadow px-4 sm:px-6 py-4">
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -332,7 +454,15 @@ return (
           <div className="relative bg-white shadow-lg rounded-lg p-4 sm:p-6 max-w-6xl mx-auto">
             <CornerTabs />
             {loading ? (
-              <p className="text-center mt-4 md:mt-10">Cargando usuarios...</p>
+              <div className="flex items-center justify-center mt-8">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="relative h-10 w-10">
+                    <div className="absolute inset-0 rounded-full border-3 border-gray-200"></div>
+                    <div className="absolute inset-0 rounded-full border-3 border-t-red-500 border-b-blue-500 animate-spin"></div>
+                  </div>
+                  <p className="text-gray-600 text-sm">Cargando usuarios...</p>
+                </div>
+              </div>
             ) : (
               <>
                 {/* Tabla (sm y +) */}

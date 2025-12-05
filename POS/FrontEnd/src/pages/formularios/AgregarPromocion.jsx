@@ -34,7 +34,7 @@ export default function GestionPromociones() {
   // UI
   const [hora, setHora] = useState("");
   const [msg, setMsg] = useState({ type: "", text: "" });
-  const [cargando, setCargando] = useState(false);
+  const [cargando, setCargando] = useState(true);
 
   // filtros/orden ADMINISTRAR
   const [busquedaPromo, setBusquedaPromo] = useState("");
@@ -66,14 +66,21 @@ export default function GestionPromociones() {
 
   // carga inicial
   useEffect(() => {
-    setFechaInicio(new Date().toISOString().split("T")[0]);
-    fetchPromociones();
-    fetchProductos();
+    const cargarDatos = async () => {
+      setCargando(true);
+      try {
+        setFechaInicio(new Date().toISOString().split("T")[0]);
+        await fetchPromociones();
+        await fetchProductos();
+      } finally {
+        setCargando(false);
+      }
+    };
+    cargarDatos();
   }, []);
 
   const fetchPromociones = async () => {
     try {
-      setCargando(true);
       const res = await fetch(`${apiUrl}promociones/`, {
         headers: { Authorization: `Token ${localStorage.getItem("token")}` },
       });
@@ -83,8 +90,6 @@ export default function GestionPromociones() {
     } catch {
       setPromociones([]);
       setMsg({ type: "error", text: "No se pudieron cargar las promociones." });
-    } finally {
-      setCargando(false);
     }
   };
 
@@ -301,6 +306,64 @@ export default function GestionPromociones() {
 
   const OrdenIcon = ({ active }) =>
     active ? <SortAsc className="w-4 h-4" /> : <SortDesc className="w-4 h-4" />;
+
+  // LOADING CONTROLLER
+  if (cargando) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-200 via-white to-gray-300">
+        {/* HEADER */}
+        <header className="bg-white/90 backdrop-blur sticky top-0 z-20 shadow">
+          <div className="mx-auto max-w-7xl px-3 sm:px-6">
+            {/* móvil */}
+            <div className="block md:hidden py-3">
+              <button
+                onClick={() => setSidebarOpen((v) => !v)}
+                aria-label="Abrir/Cerrar barra lateral"
+                className="w-full h-10 inline-flex items-center justify-center rounded-md border border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200"
+              >
+                ☰
+              </button>
+              <div className="mt-3 text-center">
+                <h1 className="text-2xl font-extrabold text-gray-900">
+                  Gestión de Promociones
+                </h1>
+                <p className="mt-1 text-gray-600 font-medium">{hora}</p>
+              </div>
+            </div>
+            {/* desktop */}
+            <div className="hidden md:flex items-center justify-between py-4">
+              <button
+                onClick={() => setSidebarOpen((v) => !v)}
+                aria-label="Abrir/Cerrar barra lateral"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200"
+              >
+                ☰
+              </button>
+              <h1 className="flex-1 px-3 text-center text-3xl font-extrabold text-gray-900">
+                Gestión de Promociones
+              </h1>
+              <span className="min-w-[120px] text-right text-gray-600 font-medium">
+                {hora}
+              </span>
+            </div>
+          </div>
+        </header>
+
+        {/* Loading Spinner */}
+        <main className="flex-1 p-6 flex items-center justify-center min-h-screen">
+          <div className="flex flex-col items-center gap-3 bg-white/80 backdrop-blur rounded-xl border border-gray-200 shadow-lg px-6 py-8">
+            <div className="relative h-14 w-14">
+              <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-t-red-500 border-b-blue-500 animate-spin"></div>
+            </div>
+            <p className="text-gray-700 font-semibold text-sm sm:text-base">
+              Cargando promociones y productos...
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   // -------- UI --------
   return (
@@ -536,7 +599,7 @@ export default function GestionPromociones() {
               </motion.div>
             )}
 
-            {/* -------- ADMINISTRAR -------- */}
+            {/* -------- ADMINISTRAR (CON LOADING) -------- */}
             {tab === "administrar" && (
               <motion.div
                 key="administrar"
@@ -593,7 +656,7 @@ export default function GestionPromociones() {
                   </div>
                 </div>
 
-                {/* Tabla (sm+) */}
+                {/* Tabla (sm+) con mini-loading */}
                 <div className="hidden sm:block overflow-x-auto rounded-lg border border-gray-200">
                   <table className="w-full text-left text-gray-900">
                     <thead className="bg-gray-100">
@@ -606,13 +669,9 @@ export default function GestionPromociones() {
                       </tr>
                     </thead>
                     <tbody>
-                      {cargando ? (
-                        <tr>
-                          <td colSpan={5} className="px-4 py-6 text-center text-gray-500">Cargando…</td>
-                        </tr>
-                      ) : promosFiltradasOrdenadas.length ? (
+                      {promosFiltradasOrdenadas.length ? (
                         promosFiltradasOrdenadas.map((p) => (
-                          <tr key={p.id} className="border-t">
+                          <tr key={p.id} className="border-t hover:bg-gray-50 transition">
                             <td className="px-4 py-3 w-20">
                               <img src={p.imagen} alt={p.descripcion} className="w-12 h-12 object-cover rounded" />
                             </td>
@@ -622,7 +681,7 @@ export default function GestionPromociones() {
                                 ${p.precio?.toLocaleString?.() ?? p.precio}
                               </span>
                             </td>
-                            <td className="px-4 py-3">
+                            <td className="px-4 py-3 text-sm">
                               {p.fecha_inicio} — {p.fecha_fin || "Indefinida"}
                             </td>
                             <td className="px-4 py-3">
@@ -645,7 +704,9 @@ export default function GestionPromociones() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={5} className="px-4 py-6 text-center text-gray-500">No hay promociones</td>
+                          <td colSpan={5} className="px-4 py-6 text-center text-gray-500">
+                            No hay promociones
+                          </td>
                         </tr>
                       )}
                     </tbody>
@@ -654,9 +715,7 @@ export default function GestionPromociones() {
 
                 {/* Cards (móvil) */}
                 <ul className="sm:hidden grid grid-cols-1 gap-3">
-                  {cargando ? (
-                    <li className="p-6 text-center text-gray-500 bg-white/90 rounded-xl border">Cargando…</li>
-                  ) : promosFiltradasOrdenadas.length ? (
+                  {promosFiltradasOrdenadas.length ? (
                     promosFiltradasOrdenadas.map((p) => (
                       <li key={p.id} className="bg-white/90 border border-gray-200 rounded-xl p-4 shadow-sm">
                         <div className="flex gap-3">
@@ -720,51 +779,136 @@ export default function GestionPromociones() {
         )}
 
         {modalEditar.abierto && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
-            <div className="bg-white p-5 rounded-xl shadow-xl max-w-md w-full">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900">Editar Promoción</h3>
-                <button onClick={cancelarEditar} className="p-1 rounded hover:bg-gray-100" aria-label="Cerrar">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center px-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="editar-promo-title"
+          >
+            {/* backdrop */}
+            <div
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+              onClick={cancelarEditar}
+            />
 
-              <div className="flex flex-col gap-3">
-                <input
-                  type="text"
-                  value={descripcion}
-                  onChange={(e) => setDescripcion(e.target.value)}
-                  placeholder="Descripción"
-                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400 bg-white"
-                />
-                <input
-                  type="number"
-                  value={precio}
-                  onChange={(e) => setPrecio(e.target.value)}
-                  placeholder="Precio"
-                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400 bg-white"
-                />
-                <input
-                  type="date"
-                  value={fechaInicio}
-                  onChange={(e) => setFechaInicio(e.target.value)}
-                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400 bg-white"
-                />
-                <input
-                  type="date"
-                  value={fechaFin}
-                  onChange={(e) => setFechaFin(e.target.value)}
-                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400 bg-white"
-                />
-                <input type="file" accept="image/*" onChange={handleImagenChange} className="border rounded-lg px-3 py-2 bg-white" />
-                {preview && <img src={preview} alt="Preview" className="w-full h-40 object-cover rounded-lg" />}
-                <div className="flex justify-end gap-3 pt-1">
-                  <button onClick={cancelarEditar} className="px-3 py-2 bg-gray-200 rounded-md hover:bg-gray-300">
-                    Cancelar
-                  </button>
-                  <button onClick={confirmarEditar} className="px-3 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800" disabled={cargando}>
-                    {cargando ? "Guardando..." : "Guardar"}
-                  </button>
+            {/* panel */}
+            <div className="relative w-full max-w-full sm:max-w-2xl mx-auto">
+              <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
+                <div className="p-4 sm:p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center">
+                      <Pencil className="w-6 h-6 text-amber-600" />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <h3 id="editar-promo-title" className="text-lg sm:text-xl font-semibold text-gray-900">
+                        Editar Promoción
+                      </h3>
+                      <p className="mt-1 text-sm sm:text-base text-gray-600">
+                        Modifica los campos que necesites. Para salir haz clic fuera o en Cerrar.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={cancelarEditar}
+                      className="text-gray-500 hover:text-gray-700 ml-2"
+                      aria-label="Cerrar"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <form onSubmit={(e) => { e.preventDefault(); confirmarEditar(); }} className="mt-4 sm:mt-6">
+                    {/** loader */}
+                    {cargando ? (
+                      <div className="flex items-center justify-center py-12">
+                        <div className="h-12 w-12 rounded-full border-4 border-gray-200 border-t-amber-500 animate-spin" />
+                      </div>
+                    ) : (
+                      <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                          <div className="sm:col-span-2">
+                            <label className="block text-sm font-medium text-gray-700">Descripción</label>
+                            <input
+                              type="text"
+                              value={descripcion}
+                              onChange={(e) => setDescripcion(e.target.value)}
+                              placeholder="Descripción"
+                              className="mt-1 w-full p-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                              required
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Precio</label>
+                            <input
+                              type="number"
+                              value={precio}
+                              onChange={(e) => setPrecio(e.target.value)}
+                              placeholder="Precio"
+                              className="mt-1 w-full p-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                              required
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Fecha inicio</label>
+                            <input
+                              type="date"
+                              value={fechaInicio}
+                              onChange={(e) => setFechaInicio(e.target.value)}
+                              className="mt-1 w-full p-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Fecha fin</label>
+                            <input
+                              type="date"
+                              value={fechaFin}
+                              onChange={(e) => setFechaFin(e.target.value)}
+                              className="mt-1 w-full p-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                            />
+                          </div>
+
+                          <div className="sm:col-span-2">
+                            <label className="block text-sm font-medium text-gray-700">Imagen</label>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleImagenChange}
+                              className="mt-1 w-full p-2 text-base border border-gray-300 rounded-lg bg-white"
+                            />
+                            {preview && (
+                              <div className="mt-3">
+                                <img src={preview} alt="Preview" className="w-full h-auto max-h-56 object-cover rounded-lg" />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row sm:justify-end gap-3">
+                          <button
+                            type="button"
+                            onClick={cancelarEditar}
+                            className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 rounded-md bg-white border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 shadow-sm"
+                            disabled={cargando}
+                          >
+                            Cancelar
+                          </button>
+
+                          <button
+                            type="submit"
+                            disabled={cargando}
+                            className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 shadow-sm"
+                          >
+                            {cargando ? "Guardando..." : "Guardar cambios"}
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </form>
                 </div>
               </div>
             </div>

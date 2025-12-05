@@ -3,6 +3,7 @@ import axios from "axios";
 import { PlusCircle, Trash2, Edit2, XCircle, Pencil } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import DeleteConfirmModal from "../components/DeleteConfirmModal"; // <-- agregado
 
 export default function InventarioSucursalesPage() {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ export default function InventarioSucursalesPage() {
   const [hora, setHora] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [filtroComuna, setFiltroComuna] = useState("");
+  const [cargando, setCargando] = useState(true);
 
   const [nuevo, setNuevo] = useState({
     tipo: "item",
@@ -27,6 +29,10 @@ export default function InventarioSucursalesPage() {
 
   const token = localStorage.getItem("token");
   const apiUrl = import.meta.env.VITE_API_URL_INVENTARIO;
+
+  // Estado para el modal de eliminación
+  const [deleteModal, setDeleteModal] = useState({ open: false, id: null, descripcion: "" });
+  const [deleting, setDeleting] = useState(false);
 
   const editarSucursal = (sucursal) => {
     navigate(`/sucursalEdit/${sucursal.id}`);
@@ -53,12 +59,22 @@ export default function InventarioSucursalesPage() {
 
   // cargar sucursales
   useEffect(() => {
-    fetch(`${apiUrl}sucursales/`, {
-      headers: { Authorization: `Token ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => setSucursales(Array.isArray(data) ? data : []))
-      .catch(() => setSucursales([]));
+    const cargarDatos = async () => {
+      setCargando(true);
+      try {
+        const res = await fetch(`${apiUrl}sucursales/`, {
+          headers: { Authorization: `Token ${token}` },
+        });
+        const data = await res.json();
+        setSucursales(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error(err);
+        setSucursales([]);
+      } finally {
+        setCargando(false);
+      }
+    };
+    cargarDatos();
   }, [apiUrl, token]);
 
   // cargar inventario por sucursal
@@ -174,6 +190,63 @@ export default function InventarioSucursalesPage() {
       ? sucursales
       : sucursales.filter((s) => s.Comuna === filtroComuna);
 
+  // eliminar sucursal (ahora sin confirm — usado por el modal)
+  const eliminarSucursal = async (id) => {
+    try {
+      // Intentar endpoint REST estándar primero
+      let attempted = false;
+      try {
+        await axios.delete(`${apiUrl}sucursales/${id}/`, {
+          headers: { Authorization: `Token ${token}` },
+        });
+        attempted = true;
+      } catch (err) {
+        // si falla, intentar posible ruta alternativa (con /delete/)
+      }
+
+      if (!attempted) {
+        await axios.delete(`${apiUrl}sucursales/delete/${id}/`, {
+          headers: { Authorization: `Token ${token}` },
+        });
+      }
+
+      setSucursales((prev) => prev.filter((s) => s.id !== id));
+      // si estaba seleccionada, limpiarla
+      if (sucursalSeleccionada === id) {
+        setSucursalSeleccionada(null);
+        setInventario([]);
+      }
+      setMensaje("Sucursal eliminada correctamente.");
+    } catch (err2) {
+      console.error("Error eliminando sucursal:", err2);
+      setMensaje("Error al eliminar la sucursal.");
+      throw err2;
+    }
+  };
+
+  // Abrir modal de confirmación (reemplaza window.confirm)
+  const openDeleteModal = (id, descripcion) => {
+    setDeleteModal({ open: true, id, descripcion });
+  };
+
+  // Confirmar eliminación desde modal
+  const handleConfirmDelete = async () => {
+    const id = deleteModal.id;
+    if (!id) {
+      setDeleteModal({ open: false, id: null, descripcion: "" });
+      return;
+    }
+    setDeleting(true);
+    try {
+      await eliminarSucursal(id);
+    } catch {
+      // eliminarSucursal ya maneja mensaje; aquí solo cerramos modal
+    } finally {
+      setDeleting(false);
+      setDeleteModal({ open: false, id: null, descripcion: "" });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-200 via-white to-gray-300">
       {/* HEADER */}
@@ -227,256 +300,292 @@ export default function InventarioSucursalesPage() {
         </div>
       </header>
 
-      {/* mensaje inline */}
-      {mensaje && (
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 pt-4">
-          <div className="rounded-lg border px-4 py-3 text-sm bg-yellow-50 border-yellow-200 text-yellow-900">
-            {mensaje}
+      {/* DeleteConfirmModal reemplaza el alert/confirm nativo */}
+      <DeleteConfirmModal
+        open={deleteModal.open}
+        title="Eliminar sucursal"
+        description={
+          deleteModal.descripcion
+            ? `¿Eliminar “${deleteModal.descripcion}”? Esta acción no se puede deshacer.`
+            : "¿Estás seguro de eliminar esta sucursal?"
+        }
+        confirmLabel="Eliminar"
+        cancelLabel="Cancelar"
+        loading={deleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteModal({ open: false, id: null, descripcion: "" })}
+      />
+
+      {/* LOADING CONTROLLER */}
+      {cargando ? (
+        <main className="flex-1 p-6 flex items-center justify-center min-h-screen">
+          <div className="flex flex-col items-center gap-3 bg-white/80 backdrop-blur rounded-xl border border-gray-200 shadow-lg px-6 py-8">
+            <div className="relative h-14 w-14">
+              <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-t-red-500 border-b-blue-500 animate-spin"></div>
+            </div>
+            <p className="text-gray-700 font-semibold text-sm sm:text-base">
+              Cargando sucursales e inventario...
+            </p>
           </div>
-        </div>
-      )}
-
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
-        {/* CARDS de sucursales */}
-        <div className="mb-4 flex w-full flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <label className="text-sm font-medium text-gray-700" htmlFor="filtro-comuna">
-              Filtrar por comuna:
-            </label>
-            <select
-              id="filtro-comuna"
-              value={filtroComuna}
-              onChange={(e) => setFiltroComuna(e.target.value)}
-              className="w-full sm:w-52 rounded-lg border border-gray-200 bg-white/90 backdrop-blur px-3 py-2 text-sm text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-red-400"
-            >
-              <option value="">Todas</option>
-              {comunas.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* botón agregar sucursal (responsive) */}
-          <button
-            onClick={irAgregarSucursal}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-gray-900 text-white px-4 py-2.5 font-semibold shadow hover:bg-gray-800 transition"
-          >
-            <PlusCircle className="w-5 h-5" />
-            Agregar sucursal
-          </button>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
-          {sucursalesFiltradas.map((sucursal) => (
-            <div
-              key={sucursal.id}
-              onClick={() => toggleSucursal(sucursal.id)}
-              className={`bg-white/90 backdrop-blur border rounded-xl p-5 shadow-sm hover:shadow-md transition cursor-pointer ${
-                sucursalSeleccionada === sucursal.id ? "ring-2 ring-red-500" : "border-gray-200"
-              }`}
-            >
-              <p className="font-semibold text-gray-900 text-lg">
-                {sucursal.descripcion}
-              </p>
-              <p className="text-gray-600 mb-4">
-                Comuna: <span className="font-medium">{sucursal.Comuna}</span>
-              </p>
-
-              <div className="flex flex-wrap justify-center gap-2">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    editarSucursal(sucursal);
-                  }}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-900 text-white rounded-md hover:bg-gray-800"
-                >
-                  <Pencil size={16} />
-                  Editar
-                </button>
-
-                <button
-                  onClick={(e) => e.stopPropagation()}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700"
-                >
-                  <Trash2 size={16} />
-                  Eliminar
-                </button>
+        </main>
+      ) : (
+        <>
+          {/* mensaje inline */}
+          {mensaje && (
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 pt-4">
+              <div className="rounded-lg border px-4 py-3 text-sm bg-yellow-50 border-yellow-200 text-yellow-900">
+                {mensaje}
               </div>
             </div>
-          ))}
-        </div>
+          )}
 
-        {/* PANEL inventario */}
-        {sucursalSeleccionada && (
-          <div className="w-full bg-white/90 backdrop-blur shadow-lg rounded-xl border border-gray-200 overflow-hidden">
-            <div className="px-4 sm:px-6 py-4 bg-red-50 border-b border-red-200">
-              <h3 className="text-lg sm:text-xl font-semibold text-red-800 text-center">
-                Inventario {nombreSucursal ? `– ${nombreSucursal}` : ""}
-              </h3>
+          <main className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
+            {/* CARDS de sucursales */}
+            <div className="mb-4 flex w-full flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="text-sm font-medium text-gray-700" htmlFor="filtro-comuna">
+                  Filtrar por comuna:
+                </label>
+                <select
+                  id="filtro-comuna"
+                  value={filtroComuna}
+                  onChange={(e) => setFiltroComuna(e.target.value)}
+                  className="w-full sm:w-52 rounded-lg border border-gray-200 bg-white/90 backdrop-blur px-3 py-2 text-sm text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-red-400"
+                >
+                  <option value="">Todas</option>
+                  {comunas.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* botón agregar sucursal (responsive) */}
+              <button
+                onClick={irAgregarSucursal}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-gray-900 text-white px-4 py-2.5 font-semibold shadow hover:bg-gray-800 transition"
+              >
+                <PlusCircle className="w-5 h-5" />
+                Agregar sucursal
+              </button>
             </div>
-
-            {/* tabs */}
-            <div className="flex flex-wrap justify-center gap-2 sm:gap-3 px-4 sm:px-6 pt-4">
-              {["inventario", "formulario"].map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setTabActiva(t)}
-                  className={`px-4 py-2 rounded-full border text-sm font-medium transition shadow-sm ${
-                    tabActiva === t
-                      ? "bg-red-600 text-white border-red-700 shadow"
-                      : "bg-white text-gray-700 hover:bg-gray-100 border-gray-300"
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
+              {sucursalesFiltradas.map((sucursal) => (
+                <div
+                  key={sucursal.id}
+                  onClick={() => toggleSucursal(sucursal.id)}
+                  className={`bg-white/90 backdrop-blur border rounded-xl p-5 shadow-sm hover:shadow-md transition cursor-pointer ${
+                    sucursalSeleccionada === sucursal.id ? "ring-2 ring-red-500" : "border-gray-200"
                   }`}
                 >
-                  {t === "inventario"
-                    ? "Inventario"
-                    : editando
-                    ? "Editar Registro"
-                    : "Agregar Inventario"}
-                </button>
+                  <p className="font-semibold text-gray-900 text-lg">
+                    {sucursal.descripcion}
+                  </p>
+                  <p className="text-gray-600 mb-4">
+                    Comuna: <span className="font-medium">{sucursal.Comuna}</span>
+                  </p>
+
+                  <div className="flex flex-wrap justify-center gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        editarSucursal(sucursal);
+                      }}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-900 text-white rounded-md hover:bg-gray-800"
+                    >
+                      <Pencil size={16} />
+                      Editar
+                    </button>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openDeleteModal(sucursal.id, sucursal.descripcion); // <-- usa modal
+                      }}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700"
+                    >
+                      <Trash2 size={16} />
+                      Eliminar
+                    </button>
+                  </div>
+                </div>
               ))}
             </div>
 
-            <div className="p-4 sm:p-6">
-              {tabActiva === "inventario" && (
-                <div className="overflow-x-auto rounded-lg border border-gray-200">
-                  <table className="w-full text-left text-gray-800">
-                    <thead className="bg-gray-100 sticky top-0 z-10">
-                      <tr>
-                        <th className="px-4 sm:px-6 py-3">ID</th>
-                        <th className="px-4 sm:px-6 py-3">Tipo</th>
-                        <th className="px-4 sm:px-6 py-3">Descripción</th>
-                        <th className="px-4 sm:px-6 py-3">Stock</th>
-                        <th className="px-4 sm:px-6 py-3">Unidad</th>
-                        <th className="px-4 sm:px-6 py-3">Fecha</th>
-                        <th className="px-4 sm:px-6 py-3 text-center">Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {inventario.length === 0 ? (
-                        <tr>
-                          <td colSpan={7} className="px-6 py-6 text-center text-gray-500">
-                            No hay inventario disponible
-                          </td>
-                        </tr>
-                      ) : (
-                        inventario.map((inv, i) => (
-                          <tr
-                            key={inv.id}
-                            className={`${i % 2 ? "bg-white" : "bg-gray-50"} hover:bg-gray-100 transition`}
-                          >
-                            <td className="px-4 sm:px-6 py-3">{inv.id}</td>
-                            <td className="px-4 sm:px-6 py-3 capitalize">{inv.tipo}</td>
-                            <td className="px-4 sm:px-6 py-3">{inv.descripcion}</td>
-                            <td className="px-4 sm:px-6 py-3">{inv.stock_actual}</td>
-                            <td className="px-4 sm:px-6 py-3">{inv.unidad}</td>
-                            <td className="px-4 sm:px-6 py-3">{inv.fecha_ingreso}</td>
-                            <td className="px-4 sm:px-6 py-3">
-                              <div className="flex justify-center gap-2">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    editarRegistro(inv);
-                                  }}
-                                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-900 text-white rounded-md hover:bg-gray-800 text-sm"
-                                >
-                                  <Edit2 size={16} />
-                                  Editar
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    eliminarInventario(inv.id);
-                                  }}
-                                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm"
-                                >
-                                  <Trash2 size={16} />
-                                  Eliminar
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+            {/* PANEL inventario */}
+            {sucursalSeleccionada && (
+              <div className="w-full bg-white/90 backdrop-blur shadow-lg rounded-xl border border-gray-200 overflow-hidden">
+                <div className="px-4 sm:px-6 py-4 bg-red-50 border-b border-red-200">
+                  <h3 className="text-lg sm:text-xl font-semibold text-red-800 text-center">
+                    Inventario {nombreSucursal ? `– ${nombreSucursal}` : ""}
+                  </h3>
                 </div>
-              )}
 
-              {tabActiva === "formulario" && (
-                <form onSubmit={guardarInventario} className="mt-2 space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-1 text-gray-700">Tipo</label>
-                      <select
-                        value={nuevo.tipo}
-                        onChange={(e) => setNuevo({ ...nuevo, tipo: e.target.value })}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
-                      >
-                        <option value="item">Item</option>
-                        <option value="insumo">Insumo</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-1 text-gray-700">Descripción</label>
-                      <input
-                        type="text"
-                        value={nuevo.descripcion}
-                        onChange={(e) => setNuevo({ ...nuevo, descripcion: e.target.value })}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
-                        placeholder="Nombre"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-1 text-gray-700">Stock actual</label>
-                      <input
-                        type="number"
-                        value={nuevo.stock_actual}
-                        onChange={(e) => setNuevo({ ...nuevo, stock_actual: e.target.value })}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-1 text-gray-700">Fecha de ingreso</label>
-                      <input
-                        type="date"
-                        value={nuevo.fecha_ingreso}
-                        onChange={(e) => setNuevo({ ...nuevo, fecha_ingreso: e.target.value })}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
+                {/* tabs */}
+                <div className="flex flex-wrap justify-center gap-2 sm:gap-3 px-4 sm:px-6 pt-4">
+                  {["inventario", "formulario"].map((t) => (
                     <button
-                      type="submit"
-                      className="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+                      key={t}
+                      onClick={() => setTabActiva(t)}
+                      className={`px-4 py-2 rounded-full border text-sm font-medium transition shadow-sm ${
+                        tabActiva === t
+                          ? "bg-red-600 text-white border-red-700 shadow"
+                          : "bg-white text-gray-700 hover:bg-gray-100 border-gray-300"
+                      }`}
                     >
-                      <PlusCircle size={18} /> {editando ? "Guardar" : "Agregar"}
+                      {t === "inventario"
+                        ? "Inventario"
+                        : editando
+                        ? "Editar Registro"
+                        : "Agregar Inventario"}
                     </button>
+                  ))}
+                </div>
 
-                    {editando && (
-                      <button
-                        type="button"
-                        onClick={cancelarEdicion}
-                        className="inline-flex items-center gap-2 bg-gray-300 text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-400"
-                      >
-                        <XCircle size={18} /> Cancelar
-                      </button>
-                    )}
-                  </div>
-                </form>
-              )}
-            </div>
-          </div>
-        )}
-      </main>
+                <div className="p-4 sm:p-6">
+                  {tabActiva === "inventario" && (
+                    <div className="overflow-x-auto rounded-lg border border-gray-200">
+                      <table className="w-full text-left text-gray-800">
+                        <thead className="bg-gray-100 sticky top-0 z-10">
+                          <tr>
+                            <th className="px-4 sm:px-6 py-3">ID</th>
+                            <th className="px-4 sm:px-6 py-3">Tipo</th>
+                            <th className="px-4 sm:px-6 py-3">Descripción</th>
+                            <th className="px-4 sm:px-6 py-3">Stock</th>
+                            <th className="px-4 sm:px-6 py-3">Unidad</th>
+                            <th className="px-4 sm:px-6 py-3">Fecha</th>
+                            <th className="px-4 sm:px-6 py-3 text-center">Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {inventario.length === 0 ? (
+                            <tr>
+                              <td colSpan={7} className="px-6 py-6 text-center text-gray-500">
+                                No hay inventario disponible
+                              </td>
+                            </tr>
+                          ) : (
+                            inventario.map((inv, i) => (
+                              <tr
+                                key={inv.id}
+                                className={`${i % 2 ? "bg-white" : "bg-gray-50"} hover:bg-gray-100 transition`}
+                              >
+                                <td className="px-4 sm:px-6 py-3">{inv.id}</td>
+                                <td className="px-4 sm:px-6 py-3 capitalize">{inv.tipo}</td>
+                                <td className="px-4 sm:px-6 py-3">{inv.descripcion}</td>
+                                <td className="px-4 sm:px-6 py-3">{inv.stock_actual}</td>
+                                <td className="px-4 sm:px-6 py-3">{inv.unidad}</td>
+                                <td className="px-4 sm:px-6 py-3">{inv.fecha_ingreso}</td>
+                                <td className="px-4 sm:px-6 py-3">
+                                  <div className="flex justify-center gap-2">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        editarRegistro(inv);
+                                      }}
+                                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-900 text-white rounded-md hover:bg-gray-800 text-sm"
+                                    >
+                                      <Edit2 size={16} />
+                                      Editar
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        eliminarInventario(inv.id);
+                                      }}
+                                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm"
+                                    >
+                                      <Trash2 size={16} />
+                                      Eliminar
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {tabActiva === "formulario" && (
+                    <form onSubmit={guardarInventario} className="mt-2 space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-1 text-gray-700">Tipo</label>
+                          <select
+                            value={nuevo.tipo}
+                            onChange={(e) => setNuevo({ ...nuevo, tipo: e.target.value })}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
+                          >
+                            <option value="item">Item</option>
+                            <option value="insumo">Insumo</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-1 text-gray-700">Descripción</label>
+                          <input
+                            type="text"
+                            value={nuevo.descripcion}
+                            onChange={(e) => setNuevo({ ...nuevo, descripcion: e.target.value })}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
+                            placeholder="Nombre"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-1 text-gray-700">Stock actual</label>
+                          <input
+                            type="number"
+                            value={nuevo.stock_actual}
+                            onChange={(e) => setNuevo({ ...nuevo, stock_actual: e.target.value })}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-1 text-gray-700">Fecha de ingreso</label>
+                          <input
+                            type="date"
+                            value={nuevo.fecha_ingreso}
+                            onChange={(e) => setNuevo({ ...nuevo, fecha_ingreso: e.target.value })}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="submit"
+                          className="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+                        >
+                          <PlusCircle size={18} /> {editando ? "Guardar" : "Agregar"}
+                        </button>
+
+                        {editando && (
+                          <button
+                            type="button"
+                            onClick={cancelarEdicion}
+                            className="inline-flex items-center gap-2 bg-gray-300 text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-400"
+                          >
+                            <XCircle size={18} /> Cancelar
+                          </button>
+                        )}
+                      </div>
+                    </form>
+                  )}
+                </div>
+              </div>
+            )}
+          </main>
+        </>
+      )}
     </div>
   );
 }

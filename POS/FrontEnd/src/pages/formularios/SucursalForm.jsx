@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useOutletContext, useNavigate } from "react-router-dom";
 
 export default function SucursalForm() {
   const { sidebarOpen, setSidebarOpen } = useOutletContext();
+  const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL_INVENTARIO;
 
   const [comunas, setComunas] = useState([]);
@@ -92,44 +93,44 @@ export default function SucursalForm() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
       <header className="bg-white shadow">
-            <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            {/* Móvil */}
-            <div className="block md:hidden py-3">
-                <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                aria-label="Abrir/Cerrar barra lateral"
-                className="w-full h-10 inline-flex items-center justify-center rounded-md border border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200"
-                >
-                ☰
-                </button>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          {/* Móvil */}
+          <div className="block md:hidden py-3">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              aria-label="Abrir/Cerrar barra lateral"
+              className="w-full h-10 inline-flex items-center justify-center rounded-md border border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200"
+            >
+              ☰
+            </button>
 
-                <h2 className="mt-3 text-center text-2xl font-extrabold text-gray-900">
-                Formulario de Sucursal
-                </h2>
-                <span className="mt-1 block text-center text-gray-600 font-medium">
-                {hora}
-                </span>
-            </div>
+            <h2 className="mt-3 text-center text-2xl font-extrabold text-gray-900">
+              Formulario de Sucursal
+            </h2>
+            <span className="mt-1 block text-center text-gray-600 font-medium">
+              {hora}
+            </span>
+          </div>
 
-            {/* Desktop/Tablet */}
-            <div className="hidden md:flex items-center justify-between py-4">
-                <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                aria-label="Abrir/Cerrar barra lateral"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200"
-                >
-                ☰
-                </button>
+          {/* Desktop/Tablet */}
+          <div className="hidden md:flex items-center justify-between py-4">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              aria-label="Abrir/Cerrar barra lateral"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200"
+            >
+              ☰
+            </button>
 
-                <h2 className="flex-1 px-3 text-center text-3xl font-extrabold text-gray-900">
-                Formulario de Sucursal
-                </h2>
+            <h2 className="flex-1 px-3 text-center text-3xl font-extrabold text-gray-900">
+              Formulario de Sucursal
+            </h2>
 
-                <span className="min-w-[120px] text-right text-gray-600 font-medium">
-                {hora}
-                </span>
-            </div>
-            </div>
+            <span className="min-w-[120px] text-right text-gray-600 font-medium">
+              {hora}
+            </span>
+          </div>
+        </div>
       </header>
 
       {/* Formulario */}
@@ -179,12 +180,23 @@ export default function SucursalForm() {
             </select>
           </div>
 
-          <button
-            type="submit"
-            className="w-full mt-6 bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition"
-          >
-            Crear Sucursal
-          </button>
+          {/* Botones: Cancelar + Crear */}
+          <div className="flex flex-col sm:flex-row gap-3 mt-6">
+            <button
+              type="button"
+              onClick={() => navigate("/sucursal")}
+              className="w-full sm:flex-1 px-4 py-3 bg-gray-300 text-gray-900 rounded-lg hover:bg-gray-400 transition font-semibold"
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="submit"
+              className="w-full sm:flex-1 mt-0 sm:mt-0 bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition font-semibold"
+            >
+              Crear Sucursal
+            </button>
+          </div>
         </form>
       </main>
     </div>

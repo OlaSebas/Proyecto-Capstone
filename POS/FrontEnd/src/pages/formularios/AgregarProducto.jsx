@@ -566,26 +566,26 @@ export default function GestionProductos() {
               />
 
               {/* panel */}
-              <div className="relative w-full max-w-lg mx-auto">
+              <div className="relative w-full max-w-full sm:max-w-lg mx-auto">
                 <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
-                  <div className="p-6">
+                  <div className="p-4 sm:p-6">
                     <div className="flex items-start gap-4">
                       <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center">
                         <Pencil className="w-6 h-6 text-amber-600" />
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <h3 id="edit-product-modal-title" className="text-lg font-semibold text-gray-900">
+                        <h3 id="edit-product-modal-title" className="text-lg sm:text-xl font-semibold text-gray-900">
                           Editar Producto
                         </h3>
-                        <p className="mt-2 text-sm text-gray-600">
+                        <p className="mt-1 text-sm sm:text-base text-gray-600">
                           Modifica nombre, precio e imagen. Para cancelar se mantendrá la imagen actual.
                         </p>
                       </div>
                     </div>
 
-                    <form onSubmit={(e) => { e.preventDefault(); confirmarEditar(); }} className="mt-6">
-                      <div className="space-y-4">
+                    <form onSubmit={(e) => { e.preventDefault(); confirmarEditar(); }} className="mt-4 sm:mt-6">
+                      <div className="space-y-3">
                         <div>
                           <label className="block text-sm font-medium text-gray-700">Nombre</label>
                           <input
@@ -593,7 +593,7 @@ export default function GestionProductos() {
                             value={nombre}
                             onChange={(e) => setNombre(e.target.value)}
                             placeholder="Nombre del producto"
-                            className="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                            className="mt-1 w-full p-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
                             required
                           />
                         </div>
@@ -605,7 +605,7 @@ export default function GestionProductos() {
                             value={precio}
                             onChange={(e) => setPrecio(e.target.value)}
                             placeholder="Precio"
-                            className="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                            className="mt-1 w-full p-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
                             required
                           />
                         </div>
@@ -616,28 +616,28 @@ export default function GestionProductos() {
                             type="file"
                             accept="image/*"
                             onChange={handleImagenChange}
-                            className="mt-1 w-full p-2 border border-gray-300 rounded-lg bg-white"
+                            className="mt-1 w-full p-2 text-base border border-gray-300 rounded-lg bg-white"
                           />
                           {preview && (
                             <div className="mt-3">
-                              <img src={preview} alt="Preview" className="w-full h-44 object-cover rounded-lg" />
+                              <img src={preview} alt="Preview" className="w-full h-auto max-h-56 object-cover rounded-lg" />
                             </div>
                           )}
                         </div>
                       </div>
 
-                      <div className="mt-6 flex justify-end gap-3">
+                      <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row sm:justify-end gap-3">
                         <button
                           type="button"
                           onClick={cancelarEditar}
-                          className="inline-flex items-center justify-center px-4 py-2 rounded-md bg-white border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 shadow-sm"
+                          className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 rounded-md bg-white border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 shadow-sm"
                         >
                           Cancelar
                         </button>
 
                         <button
                           type="submit"
-                          className="inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 shadow-sm"
+                          className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 shadow-sm"
                         >
                           Guardar cambios
                         </button>

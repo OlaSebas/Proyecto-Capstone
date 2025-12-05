@@ -791,19 +791,20 @@ export default function GestionPromociones() {
               onClick={cancelarEditar}
             />
 
-            <div className="relative w-full max-w-2xl mx-auto">
+            {/* panel */}
+            <div className="relative w-full max-w-full sm:max-w-2xl mx-auto">
               <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
-                <div className="p-6">
+                <div className="p-4 sm:p-6">
                   <div className="flex items-start gap-4">
                     <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center">
                       <Pencil className="w-6 h-6 text-amber-600" />
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <h3 id="editar-promo-title" className="text-lg font-semibold text-gray-900">
+                      <h3 id="editar-promo-title" className="text-lg sm:text-xl font-semibold text-gray-900">
                         Editar Promoción
                       </h3>
-                      <p className="mt-1 text-sm text-gray-600">
+                      <p className="mt-1 text-sm sm:text-base text-gray-600">
                         Modifica los campos que necesites. Para salir haz clic fuera o en Cerrar.
                       </p>
                     </div>
@@ -818,7 +819,7 @@ export default function GestionPromociones() {
                     </button>
                   </div>
 
-                  <form onSubmit={(e) => { e.preventDefault(); confirmarEditar(); }} className="mt-6">
+                  <form onSubmit={(e) => { e.preventDefault(); confirmarEditar(); }} className="mt-4 sm:mt-6">
                     {/** loader */}
                     {cargando ? (
                       <div className="flex items-center justify-center py-12">
@@ -826,7 +827,7 @@ export default function GestionPromociones() {
                       </div>
                     ) : (
                       <>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                           <div className="sm:col-span-2">
                             <label className="block text-sm font-medium text-gray-700">Descripción</label>
                             <input
@@ -834,7 +835,7 @@ export default function GestionPromociones() {
                               value={descripcion}
                               onChange={(e) => setDescripcion(e.target.value)}
                               placeholder="Descripción"
-                              className="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                              className="mt-1 w-full p-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
                               required
                             />
                           </div>
@@ -846,7 +847,7 @@ export default function GestionPromociones() {
                               value={precio}
                               onChange={(e) => setPrecio(e.target.value)}
                               placeholder="Precio"
-                              className="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                              className="mt-1 w-full p-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
                               required
                             />
                           </div>
@@ -857,7 +858,7 @@ export default function GestionPromociones() {
                               type="date"
                               value={fechaInicio}
                               onChange={(e) => setFechaInicio(e.target.value)}
-                              className="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                              className="mt-1 w-full p-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
                             />
                           </div>
 
@@ -867,7 +868,7 @@ export default function GestionPromociones() {
                               type="date"
                               value={fechaFin}
                               onChange={(e) => setFechaFin(e.target.value)}
-                              className="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                              className="mt-1 w-full p-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
                             />
                           </div>
 
@@ -877,21 +878,21 @@ export default function GestionPromociones() {
                               type="file"
                               accept="image/*"
                               onChange={handleImagenChange}
-                              className="mt-1 w-full p-2 border border-gray-300 rounded-lg bg-white"
+                              className="mt-1 w-full p-2 text-base border border-gray-300 rounded-lg bg-white"
                             />
                             {preview && (
                               <div className="mt-3">
-                                <img src={preview} alt="Preview" className="w-full h-44 object-cover rounded-lg" />
+                                <img src={preview} alt="Preview" className="w-full h-auto max-h-56 object-cover rounded-lg" />
                               </div>
                             )}
                           </div>
                         </div>
 
-                        <div className="mt-6 flex justify-end gap-3">
+                        <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row sm:justify-end gap-3">
                           <button
                             type="button"
                             onClick={cancelarEditar}
-                            className="inline-flex items-center justify-center px-4 py-2 rounded-md bg-white border border-gray-200 text-sm text-gray-700 hover:bg-gray-50"
+                            className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 rounded-md bg-white border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 shadow-sm"
                             disabled={cargando}
                           >
                             Cancelar
@@ -900,16 +901,8 @@ export default function GestionPromociones() {
                           <button
                             type="submit"
                             disabled={cargando}
-                            className={`inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold text-white shadow-sm ${
-                              cargando ? "bg-amber-300 cursor-wait opacity-75" : "bg-amber-600 hover:bg-amber-700"
-                            }`}
+                            className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 shadow-sm"
                           >
-                            {cargando ? (
-                              <svg className="w-4 h-4 mr-2 animate-spin" viewBox="0 0 24 24" aria-hidden="true">
-                                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25" />
-                                <path d="M22 12a10 10 0 00-10-10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75" />
-                              </svg>
-                            ) : null}
                             {cargando ? "Guardando..." : "Guardar cambios"}
                           </button>
                         </div>

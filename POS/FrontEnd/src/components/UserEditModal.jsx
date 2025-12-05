@@ -100,7 +100,7 @@ export default function UserEditModal({
                   type="text"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-gray-700"
+                  className="w-full mt-1 p-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-gray-700"
                   placeholder="Nombre"
                 />
               </div>
@@ -111,7 +111,7 @@ export default function UserEditModal({
                   type="text"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-gray-700"
+                  className="w-full mt-1 p-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-gray-700"
                   placeholder="Apellido"
                 />
               </div>
@@ -122,7 +122,7 @@ export default function UserEditModal({
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-gray-700"
+                  className="w-full mt-1 p-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-gray-700"
                   placeholder="Nueva contraseña"
                 />
               </div>
@@ -133,7 +133,7 @@ export default function UserEditModal({
                   type="password"
                   value={newPasswordConfirm}
                   onChange={(e) => setNewPasswordConfirm(e.target.value)}
-                  className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-gray-700"
+                  className="w-full mt-1 p-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-gray-700"
                   placeholder="Repetir nueva contraseña"
                 />
               </div>
@@ -144,7 +144,7 @@ export default function UserEditModal({
                   type="password"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-gray-700"
+                  className="w-full mt-1 p-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 bg-white text-gray-700"
                   placeholder="Contraseña actual"
                   required
                 />

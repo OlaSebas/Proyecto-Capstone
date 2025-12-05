@@ -28,6 +28,9 @@ export default function GestionProductos() {
   const [originalPreview, setOriginalPreview] = useState(null);
   const [tempObjectUrl, setTempObjectUrl] = useState(null);
 
+  // Nuevo estado: categoría para el formulario "Agregar"
+  const [newCategoria, setNewCategoria] = useState("");
+
   // ===== helpers =====
   const formatCLP = (v) =>
     new Intl.NumberFormat("es-CL", {
@@ -113,20 +116,64 @@ export default function GestionProductos() {
     }
   };
 
+  // convierte cualquier imagen a PNG (mantiene proporciones/size original)
+  const convertToPng = (file) =>
+    new Promise((resolve, reject) => {
+      try {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = img.naturalWidth || img.width;
+          canvas.height = img.naturalHeight || img.height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0);
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) return reject(new Error("No se pudo convertir a PNG"));
+              const pngFile = new File(
+                [blob],
+                file.name.replace(/\.[^.]+$/, "") + ".png",
+                { type: "image/png" }
+              );
+              resolve(pngFile);
+            },
+            "image/png",
+            0.92
+          );
+        };
+        img.onerror = (e) => reject(e);
+        img.src = URL.createObjectURL(file);
+      } catch (err) {
+        reject(err);
+      }
+    });
+
   // Agregar producto
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMsg({ type: "", text: "" });
 
-    if (!nombre || !precio || !imagen) {
-      setMsg({ type: "error", text: "Completa nombre, precio e imagen." });
+    if (!nombre || !precio || !imagen || !newCategoria) {
+      setMsg({ type: "error", text: "Completa nombre, precio, imagen y categoría." });
       return;
     }
 
     const formData = new FormData();
     formData.append("descripcion", nombre);
     formData.append("precio", precio);
+    // siempre adjuntar el archivo original
     formData.append("imagen", imagen);
+    // adjuntar id de categoría
+    formData.append("categoria", String(newCategoria));
+
+    // intentar convertir y adjuntar PNG adicional (campo imagen_png)
+    try {
+      const pngFile = await convertToPng(imagen);
+      formData.append("imagen_png", pngFile);
+    } catch (err) {
+      console.warn("No se pudo generar PNG, se enviará solo el archivo original:", err);
+      // no abortamos; backend recibirá el archivo original
+    }
 
     try {
       const res = await fetch(`${apiUrl}productos/create/`, {
@@ -141,6 +188,7 @@ export default function GestionProductos() {
       setPrecio("");
       setImagen(null);
       setPreview(null);
+      setNewCategoria("");
       setMsg({ type: "success", text: "Producto agregado con éxito." });
     } catch (err) {
       console.error(err);
@@ -359,6 +407,22 @@ export default function GestionProductos() {
                     placeholder="Precio"
                     className="border rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-red-400"
                   />
+
+                  {/* Select categoría (solo en Agregar) */}
+                  <select
+                    value={newCategoria}
+                    onChange={(e) => setNewCategoria(e.target.value)}
+                    className="border rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-red-400 bg-white"
+                    required
+                  >
+                    <option value="">Selecciona categoría</option>
+                    {categorias.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.descripcion}
+                      </option>
+                    ))}
+                  </select>
+
                   <button
                     type="submit"
                     className="px-6 py-2 rounded-lg bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold shadow hover:shadow-md"

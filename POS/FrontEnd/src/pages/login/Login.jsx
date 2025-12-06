@@ -178,12 +178,14 @@ export default function Login() {
         </form>
 
         {/* Footer */}
+        {/*  
         <p className="text-center text-gray-500 mt-4 text-sm">
           ¿Olvidaste tu contraseña?{" "}
           <span className="text-orange-500 font-semibold cursor-pointer hover:underline">
             Recuperar
           </span>
         </p>
+        */}
       </div>
     </div>
   );

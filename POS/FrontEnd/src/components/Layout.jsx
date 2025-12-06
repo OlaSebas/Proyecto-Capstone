@@ -39,10 +39,22 @@ export function Layout() {
     fetchPerfil();
   }, [apiUrl]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("is_staff");
-    window.location.href = "/Login";
+  const handleLogout = async() => {
+    try {
+      const response = await fetch(`${apiUrl}api/logout/`, {
+        method: "POST",
+        headers: { Authorization: `Token ${localStorage.getItem("token")}` },
+      });
+      if (!response.ok) throw new Error("Error al obtener el perfil");
+      const data = await response.json();
+      localStorage.removeItem("token");
+      localStorage.removeItem("is_staff");
+      window.location.href = "/Login";
+    }
+    catch {
+      
+    }
+    
   };
 
   return (

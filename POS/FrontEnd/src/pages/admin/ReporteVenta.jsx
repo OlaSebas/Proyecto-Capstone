@@ -522,7 +522,8 @@ export default function ReporteVentas() {
                             stroke="#2563EB"
                             strokeWidth={3}
                             dot={{ r: 4 }}
-                            />
+                            isAnimationActive={false}
+                                                        />
                         </LineChart>
                         </ResponsiveContainer>
                     )}
@@ -739,6 +740,7 @@ export default function ReporteVentas() {
                                 dataKey={s.descripcion}
                                 stroke={COLORS[i % COLORS.length]}
                                 strokeWidth={2.5}
+                            isAnimationActive={false}
                             />
                             ))}
                         </LineChart>
@@ -926,7 +928,7 @@ export default function ReporteVentas() {
                             dataKey="total"
                             stroke="#16A34A"
                             strokeWidth={3}
-                            />
+                                                        />
                         </LineChart>
                         </ResponsiveContainer>
                     )}

@@ -40,7 +40,7 @@ export default function PagoEfectivo() {
       year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit",
     });
     setFecha(fechaStr);
-    setNroBoleta(`B-${Math.floor(100000 + Math.random() * 900000)}`);
+    setNroBoleta(`#${id || ""}`);
 
     const carritoLocal = JSON.parse(localStorage.getItem("carrito") || "[]");
     setProductos(carritoLocal);
@@ -183,7 +183,7 @@ export default function PagoEfectivo() {
 
   // ================== UI ==================
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-100 via-white to-red-200">
+    <div className="min-h-screen bg-gradient-to-br from-gray-200 via-white to-gray-400">
       {/* HEADER (igual estilo) */}
       <header className="bg-white shadow">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">

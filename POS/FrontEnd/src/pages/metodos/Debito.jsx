@@ -1,17 +1,16 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { CreditCard, ArrowLeft, CheckCircle2, AlertTriangle } from "lucide-react";
 
 export default function PagoDebito() {
   const apiUrl = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
-  const { sidebarOpen, setSidebarOpen } =
+  const { id } = useParams();
+  const { setSidebarOpen } =
     useOutletContext?.() ?? { sidebarOpen: false, setSidebarOpen: () => {} };
 
   const [productos, setProductos] = useState([]);
   const [total, setTotal] = useState(0);
-  const [nombreTitular, setNombreTitular] = useState("");
-  const [numeroTarjeta, setNumeroTarjeta] = useState("");
   const [fecha, setFecha] = useState("");
   const [nroBoleta, setNroBoleta] = useState("");
   const [pagoExitoso, setPagoExitoso] = useState(false);
@@ -46,7 +45,7 @@ export default function PagoDebito() {
       minute: "2-digit",
     });
     setFecha(fechaStr);
-    setNroBoleta(`B-${Math.floor(100000 + Math.random() * 900000)}`);
+    setNroBoleta(`#${id || ""}`);
 
     const carritoLocal = JSON.parse(localStorage.getItem("carrito")) || [];
     setProductos(carritoLocal);
@@ -173,7 +172,7 @@ export default function PagoDebito() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-100 via-white to-red-200">
+    <div className="min-h-screen bg-gradient-to-br from-gray-200 via-white to-gray-400">
       {/* HEADER que abre/cierra el sidebar */}
       <header className="bg-white shadow">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
@@ -348,7 +347,7 @@ export default function PagoDebito() {
 
               {/* Volver (idéntico estilo a los otros) */}
               <button
-                onClick={() => navigate("/Carrito")}
+                onClick={() => navigate(`/MetodoPago/${id}`)}
                 className="mt-4 w-full flex items-center justify-center gap-2 bg-gray-200 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-300 transition-all duration-200"
               >
                 <ArrowLeft size={18} />

@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { CreditCard, CheckCircle2, AlertTriangle, ArrowLeft } from "lucide-react";
 
 export default function PagoCredito() {
   const apiUrl = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
+  const { id } = useParams();
 
   // Soporte si no existe OutletContext
   const outlet = (typeof useOutletContext === "function" ? useOutletContext() : null) || {};
@@ -13,9 +14,6 @@ export default function PagoCredito() {
 
   const [productos, setProductos] = useState([]);
   const [totalBase, setTotalBase] = useState(0);
-  const [totalFinal, setTotalFinal] = useState(0);
-  const [cuotas, setCuotas] = useState(1);
-  const [montoCuota, setMontoCuota] = useState(0);
 
   const [fecha, setFecha] = useState("");
   const [nroBoleta, setNroBoleta] = useState("");
@@ -34,26 +32,13 @@ export default function PagoCredito() {
       minute: "2-digit",
     });
     setFecha(fechaStr);
-    setNroBoleta(`B-${Math.floor(100000 + Math.random() * 900000)}`);
+    setNroBoleta(`#${id || ""}`);
 
     const carritoLocal = JSON.parse(localStorage.getItem("carrito") || "[]");
     setProductos(carritoLocal);
     const subtotal = carritoLocal.reduce((sum, it) => sum + (it.total || 0), 0);
     setTotalBase(subtotal);
-    setTotalFinal(subtotal);
   }, []);
-
-  // Recalcular cuotas
-  useEffect(() => {
-    let recargo = 0;
-    if (cuotas === 3) recargo = 0.05;
-    if (cuotas === 6) recargo = 0.1;
-    if (cuotas === 12) recargo = 0.2;
-
-    const nuevoTotal = totalBase + totalBase * recargo;
-    setTotalFinal(nuevoTotal);
-    setMontoCuota(Math.round((nuevoTotal || 0) / (cuotas || 1)));
-  }, [cuotas, totalBase]);
 
   // Restar inventario
   const restarInventario = async (carrito) => {
@@ -146,12 +131,12 @@ export default function PagoCredito() {
 
     setTimeout(() => {
       setPagoExitoso(false);
-      navigate("/");
+      navigate("/Ventas");
     }, 2000);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-100 via-white to-red-200">
+    <div className="min-h-screen bg-gradient-to-br from-gray-200 via-white to-gray-400">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
         {/* HEADER */}
         <header className="mb-6">
@@ -277,32 +262,12 @@ export default function PagoCredito() {
           {/* DERECHA: sticky, mismo orden que Débito */}
           <section className="md:sticky md:top-6 md:self-start">
             <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200 p-5">
-              {/* Select cuotas */}
-              <div className="mb-4">
-                <label className="block mb-1 text-gray-700 font-medium">Seleccionar cuotas:</label>
-                <select
-                  value={cuotas}
-                  onChange={(e) => setCuotas(Number(e.target.value))}
-                  className="w-full border border-gray-300 rounded-lg p-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent transition"
-                >
-                  <option value={1}>1 cuota (sin recargo)</option>
-                  <option value={3}>3 cuotas (+5%)</option>
-                  <option value={6}>6 cuotas (+10%)</option>
-                  <option value={12}>12 cuotas (+20%)</option>
-                </select>
-              </div>
-
-              {/* Monto por cuota / total con recargo */}
-              <div className="bg-gray-100 p-3 rounded-lg mb-5 text-center text-gray-700">
-                <p>
-                  Cada cuota:{" "}
-                  <span className="font-extrabold text-red-600">
-                    ${montoCuota.toLocaleString("es-CL")}
-                  </span>
-                </p>
-                <p className="text-sm text-gray-500">
-                  Total con recargo: ${totalFinal.toLocaleString("es-CL")}
-                </p>
+              {/* Total crédito */}
+              <div className="mb-5 flex items-center justify-between">
+                <span className="font-semibold text-gray-700">Total a pagar:</span>
+                <span className="text-2xl font-extrabold text-gray-900">
+                  ${totalBase.toLocaleString("es-CL")}
+                </span>
               </div>
 
               {/* Error */}
@@ -330,7 +295,7 @@ export default function PagoCredito() {
 
               {/* Volver */}
               <button
-                onClick={() => navigate("/Carrito")}
+                onClick={() => navigate(`/MetodoPago/${id}`)}
                 className="mt-3 w-full flex items-center justify-center gap-2 bg-gray-200 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-300 transition-all duration-200"
               >
                 <ArrowLeft size={18} />

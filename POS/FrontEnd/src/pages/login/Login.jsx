@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import logo from "../../img/logo.png";
 
 export default function Login() {
@@ -7,9 +7,32 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [backendStatus, setBackendStatus] = useState("checking"); // checking | online | offline
 
   // nuevo estado para mostrar/ocultar contraseña
   const [showPassword, setShowPassword] = useState(false);
+
+  // Comprobar disponibilidad de backend (responder 2xx/4xx cuenta como online)
+  useEffect(() => {
+    let cancelado = false;
+    const checkBackend = async () => {
+      try {
+        const res = await fetch(`${apiUrl}api/login/`, { method: "GET" });
+        if (cancelado) return;
+        if (res.ok || (res.status >= 400 && res.status < 500)) {
+          setBackendStatus("online");
+        } else {
+          setBackendStatus("offline");
+        }
+      } catch {
+        if (!cancelado) setBackendStatus("offline");
+      }
+    };
+    checkBackend();
+    return () => {
+      cancelado = true;
+    };
+  }, [apiUrl]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -102,9 +125,34 @@ export default function Login() {
   };
 
   return (
-    <div className="h-screen w-screen flex items-center justify-center bg-gradient-to-r from-amber-400 via-orange-500 to-red-500">
+    <div className="h-screen w-screen flex flex-col items-center justify-center bg-gradient-to-r from-amber-400 via-orange-500 to-red-500 px-4">
       {/* Contenedor principal */}
-      <div className="w-full sm:w-11/12 md:w-2/3 lg:w-1/2 xl:w-1/3 bg-white rounded-2xl shadow-2xl p-8 sm:p-12 mx-4 flex flex-col justify-center">
+      <div className="relative w-full sm:w-11/12 md:w-2/3 lg:w-1/2 xl:w-1/3 bg-white rounded-2xl shadow-2xl p-8 sm:p-12 mx-4 flex flex-col justify-center">
+        {/* Indicador de estado backend dentro del card */}
+        <div className="absolute right-4 top-4">
+          <span
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold shadow-sm border ${
+              backendStatus === "online"
+                ? "bg-green-50 text-green-700 border-green-200"
+                : backendStatus === "checking"
+                ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                : "bg-red-50 text-red-700 border-red-200"
+            }`}
+          >
+            <span
+              className={`h-2.5 w-2.5 rounded-full ${
+                backendStatus === "online"
+                  ? "bg-green-500 animate-pulse"
+                  : backendStatus === "checking"
+                  ? "bg-yellow-400 animate-ping"
+                  : "bg-red-500"
+              }`}
+            />
+            {backendStatus === "online" && "Servidor: Activo"}
+            {backendStatus === "checking" && "Servidor: Comprobando..."}
+            {backendStatus === "offline" && "Servidor: Inactivo"}
+          </span>
+        </div>
         {/* Logo */}
         <div className="flex justify-center mb-6">
           <img

@@ -46,13 +46,12 @@ export function Layout() {
         headers: { Authorization: `Token ${localStorage.getItem("token")}` },
       });
       if (!response.ok) throw new Error("Error al obtener el perfil");
-      const data = await response.json();
       localStorage.removeItem("token");
       localStorage.removeItem("is_staff");
       window.location.href = "/Login";
     }
-    catch {
-      
+    catch (error) {
+      console.error("Error during logout:", error);
     }
     
   };

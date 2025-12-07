@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import {
   Banknote,
   ArrowLeft,
@@ -10,7 +10,8 @@ import {
 
 export default function PagoTransferencia() {
   const navigate = useNavigate();
-  const { sidebarOpen, setSidebarOpen } =
+  const { id } = useParams();
+  const { setSidebarOpen } =
     useOutletContext?.() ?? { sidebarOpen: false, setSidebarOpen: () => {} };
 
   const [productos, setProductos] = useState([]);
@@ -24,7 +25,7 @@ export default function PagoTransferencia() {
 
   const apiUrl = import.meta.env.VITE_API_URL;
 
-  const [form, setForm] = useState({
+  const [form] = useState({
     nombre: "",
     rut: "",
     dv: "",
@@ -66,7 +67,7 @@ export default function PagoTransferencia() {
       minute: "2-digit",
     });
     setFecha(fechaStr);
-    setNroBoleta(`B-${Math.floor(100000 + Math.random() * 900000)}`);
+    setNroBoleta(`#${id || ""}`);
 
     const carritoLocal = JSON.parse(localStorage.getItem("carrito")) || [];
     setProductos(carritoLocal);
@@ -76,29 +77,6 @@ export default function PagoTransferencia() {
     );
     setTotal(subtotal);
   }, []);
-
-  const handleChange = (e) => {
-    let { name, value } = e.target;
-
-    if (name === "rut") value = value.replace(/\D/g, "").slice(0, 8);
-    if (name === "dv")
-      value = value.toUpperCase().replace(/[^0-9K]/g, "").slice(0, 1);
-
-    setForm({ ...form, [name]: value });
-  };
-
-  const formatearRUT = (rut, dv) => {
-    if (!rut) return "";
-    let rev = rut.split("").reverse().join("");
-    let f =
-      rev
-        .match(/.{1,3}/g)
-        ?.join(".")
-        .split("")
-        .reverse()
-        .join("") || rut;
-    return dv ? `${f}-${dv}` : f;
-  };
 
   const validarRUT = (rut, dv) => {
     if (!rut || !dv) return false;
@@ -252,7 +230,7 @@ export default function PagoTransferencia() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-100 via-white to-red-200">
+    <div className="min-h-screen bg-gradient-to-br from-gray-200 via-white to-gray-400">
       {/* HEADER que abre/cierra el sidebar */}
       <header className="bg-white shadow">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
@@ -479,7 +457,7 @@ export default function PagoTransferencia() {
               </div>
 
               <button
-                onClick={() => navigate("/Carrito")}
+                onClick={() => navigate(`/MetodoPago/${id}`)}
                 className="mt-4 w-full flex items-center justify-center gap-2 bg-gray-200 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-300 transition-all duration-200"
               >
                 <ArrowLeft size={18} />

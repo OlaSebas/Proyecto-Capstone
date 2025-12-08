@@ -7,8 +7,10 @@ import DeleteConfirmModal from "../components/DeleteConfirmModal";
 
 export default function InventarioSucursalesPage() {
   const navigate = useNavigate();
-  const { setSidebarOpen } =
-    useOutletContext?.() ?? { sidebarOpen: false, setSidebarOpen: () => {} };
+  const { setSidebarOpen } = useOutletContext?.() ?? {
+    sidebarOpen: false,
+    setSidebarOpen: () => {},
+  };
 
   const [sucursales, setSucursales] = useState([]);
   const [sucursalSeleccionada, setSucursalSeleccionada] = useState(null);
@@ -19,8 +21,14 @@ export default function InventarioSucursalesPage() {
   const [filtroComuna, setFiltroComuna] = useState("");
   const [cargando, setCargando] = useState(true);
 
+  // nuevas listas de referencias
+  const [items, setItems] = useState([]);
+  const [insumos, setInsumos] = useState([]);
+  const [cargandoReferencias, setCargandoReferencias] = useState(true);
+
   const [nuevo, setNuevo] = useState({
     tipo: "item",
+    referenciaId: null, // id de item o insumo
     descripcion: "",
     stock_actual: "",
     fecha_ingreso: new Date().toISOString().split("T")[0],
@@ -30,7 +38,11 @@ export default function InventarioSucursalesPage() {
   const token = localStorage.getItem("token");
   const apiUrl = import.meta.env.VITE_API_URL_INVENTARIO;
 
-  const [deleteModal, setDeleteModal] = useState({ open: false, id: null, descripcion: "" });
+  const [deleteModal, setDeleteModal] = useState({
+    open: false,
+    id: null,
+    descripcion: "",
+  });
   const [deleting, setDeleting] = useState(false);
 
   const editarSucursal = (sucursal) => {
@@ -76,6 +88,53 @@ export default function InventarioSucursalesPage() {
     cargarDatos();
   }, [apiUrl, token]);
 
+  // cargar items e insumos (usando sessionStorage si existe)
+  useEffect(() => {
+    const storedItems = sessionStorage.getItem("items");
+    const storedInsumos = sessionStorage.getItem("insumos");
+
+    if (storedItems && storedInsumos) {
+      setItems(JSON.parse(storedItems));
+      setInsumos(JSON.parse(storedInsumos));
+      setCargandoReferencias(false);
+      return;
+    }
+
+    const cargarReferencias = async () => {
+      setCargandoReferencias(true);
+      try {
+        const [resItems, resInsumos] = await Promise.all([
+          fetch(`${apiUrl}items/`, {
+            headers: { Authorization: `Token ${token}` },
+          }),
+          fetch(`${apiUrl}insumos/`, {
+            headers: { Authorization: `Token ${token}` },
+          }),
+        ]);
+
+        const dataItems = await resItems.json();
+        const dataInsumos = await resInsumos.json();
+
+        const itemsArray = Array.isArray(dataItems) ? dataItems : [];
+        const insumosArray = Array.isArray(dataInsumos) ? dataInsumos : [];
+
+        setItems(itemsArray);
+        setInsumos(insumosArray);
+
+        sessionStorage.setItem("items", JSON.stringify(itemsArray));
+        sessionStorage.setItem("insumos", JSON.stringify(insumosArray));
+      } catch (err) {
+        console.error("Error cargando items/insumos", err);
+        setItems([]);
+        setInsumos([]);
+      } finally {
+        setCargandoReferencias(false);
+      }
+    };
+
+    cargarReferencias();
+  }, [apiUrl, token]);
+
   // cargar inventario por sucursal
   const toggleSucursal = async (sucursalId) => {
     if (sucursalSeleccionada === sucursalId) {
@@ -83,29 +142,48 @@ export default function InventarioSucursalesPage() {
       setInventario([]);
       return;
     }
+
     setSucursalSeleccionada(sucursalId);
+
     try {
       const res = await fetch(`${apiUrl}${sucursalId}/`, {
         headers: { Authorization: `Token ${token}` },
       });
       const data = await res.json();
+
       const invNormalizado = Array.isArray(data)
-        ? data.map((item) => ({
-            id: item.id,
-            tipo: item.item ? "item" : "insumo",
-            descripcion:
-              item.item?.descripcion ||
-              item.insumo?.descripcion ||
-              item.descripcion ||
-              "",
-            stock_actual: item.stock_actual,
-            unidad: item.item?.unidad_medida || item.insumo?.unidad_medida || "-",
-            fecha_ingreso:
-              item.fecha_modificacion ?? item.updated_at ?? item.fecha_ingreso ?? "-",
-          }))
+        ? data.map((it) => {
+            const referenciaId = it.item || it.insumo || null;
+            const tipo = it.item ? "item" : "insumo";
+
+            let unidad = "-";
+            if (tipo === "item") {
+              const prod = items.find((x) => x.id === it.item);
+              unidad = prod?.unidad_medida || "-";
+            } else {
+              const ins = insumos.find((x) => x.id === it.insumo);
+              unidad = ins?.unidad_medida || "-";
+            }
+
+            return {
+              id: it.id,
+              tipo,
+              referenciaId,
+              descripcion: it.item_descripcion || it.insumo_descripcion || "",
+              stock_actual: it.stock_actual,
+              unidad,
+              fecha_ingreso:
+                it.fecha_modificacion ??
+                it.updated_at ??
+                it.fecha_ingreso ??
+                "-",
+            };
+          })
         : [];
+
       setInventario(invNormalizado);
-    } catch {
+    } catch (err) {
+      console.error(err);
       setInventario([]);
     }
   };
@@ -113,13 +191,36 @@ export default function InventarioSucursalesPage() {
   // guardar (crear/editar)
   const guardarInventario = async (e) => {
     e.preventDefault();
-    if (!nuevo.descripcion || !nuevo.stock_actual || !sucursalSeleccionada || !nuevo.fecha_ingreso) {
+
+    if (!nuevo.stock_actual || !sucursalSeleccionada || !nuevo.fecha_ingreso) {
       setMensaje("Completa todos los campos obligatorios.");
       return;
     }
+
+    if (!nuevo.referenciaId) {
+      setMensaje(
+        "Debes seleccionar el producto/insumo (falta referenciaId para item/insumo)."
+      );
+      return;
+    }
+
+    const payload = {
+      stock_actual: Number(nuevo.stock_actual),
+      sucursal: sucursalSeleccionada,
+      fecha_ingreso: nuevo.fecha_ingreso,
+    };
+
+    if (nuevo.tipo === "item") {
+      payload.item = nuevo.referenciaId;
+      payload.insumo = null;
+    } else {
+      payload.insumo = nuevo.referenciaId;
+      payload.item = null;
+    }
+
+    const cfg = { headers: { Authorization: `Token ${token}` } };
+
     try {
-      const payload = { ...nuevo, sucursal: sucursalSeleccionada };
-      const cfg = { headers: { Authorization: `Token ${token}` } };
       if (editando) {
         await axios.put(`${apiUrl}update/${editando}/`, payload, cfg);
         setMensaje("Inventario actualizado");
@@ -128,15 +229,19 @@ export default function InventarioSucursalesPage() {
         await axios.post(`${apiUrl}create/`, payload, cfg);
         setMensaje("Inventario agregado");
       }
+
       await toggleSucursal(sucursalSeleccionada);
+
       setNuevo({
         tipo: "item",
+        referenciaId: null,
         descripcion: "",
         stock_actual: "",
         fecha_ingreso: new Date().toISOString().split("T")[0],
       });
       setTabActiva("inventario");
-    } catch {
+    } catch (err) {
+      console.error(err);
       setMensaje("Error al guardar inventario");
     }
   };
@@ -154,9 +259,11 @@ export default function InventarioSucursalesPage() {
     }
   };
 
+  // editar registro
   const editarRegistro = (registro) => {
     setNuevo({
       tipo: registro.tipo,
+      referenciaId: registro.referenciaId || null,
       descripcion: registro.descripcion,
       stock_actual: registro.stock_actual,
       fecha_ingreso:
@@ -172,6 +279,7 @@ export default function InventarioSucursalesPage() {
   const cancelarEdicion = () => {
     setNuevo({
       tipo: "item",
+      referenciaId: null,
       descripcion: "",
       stock_actual: "",
       fecha_ingreso: new Date().toISOString().split("T")[0],
@@ -183,7 +291,9 @@ export default function InventarioSucursalesPage() {
 
   const nombreSucursal =
     sucursales.find((s) => s.id === sucursalSeleccionada)?.descripcion || "";
-  const comunas = Array.from(new Set(sucursales.map((s) => s.Comuna).filter(Boolean))).sort();
+  const comunas = Array.from(
+    new Set(sucursales.map((s) => s.Comuna).filter(Boolean))
+  ).sort();
   const sucursalesFiltradas =
     filtroComuna === ""
       ? sucursales
@@ -241,6 +351,9 @@ export default function InventarioSucursalesPage() {
     }
   };
 
+  // lista para el dropdown dependiente
+  const opcionesDescripcion = nuevo.tipo === "item" ? items : insumos;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-200 via-white to-gray-300">
       {/* HEADER */}
@@ -294,7 +407,7 @@ export default function InventarioSucursalesPage() {
         </div>
       </header>
 
-      {/* DeleteConfirmModal reemplaza el alert/confirm nativo */}
+      {/* DeleteConfirmModal */}
       <DeleteConfirmModal
         open={deleteModal.open}
         title="Eliminar sucursal"
@@ -307,7 +420,9 @@ export default function InventarioSucursalesPage() {
         cancelLabel="Cancelar"
         loading={deleting}
         onConfirm={handleConfirmDelete}
-        onCancel={() => setDeleteModal({ open: false, id: null, descripcion: "" })}
+        onCancel={() =>
+          setDeleteModal({ open: false, id: null, descripcion: "" })
+        }
       />
 
       {/* LOADING CONTROLLER */}
@@ -325,7 +440,6 @@ export default function InventarioSucursalesPage() {
         </main>
       ) : (
         <>
-          {/* mensaje inline */}
           {mensaje && (
             <div className="mx-auto max-w-7xl px-4 sm:px-6 pt-4">
               <div className="rounded-lg border px-4 py-3 text-sm bg-yellow-50 border-yellow-200 text-yellow-900">
@@ -336,9 +450,12 @@ export default function InventarioSucursalesPage() {
 
           <main className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
             {/* CARDS de sucursales */}
-            <div className="mb-4 flex w-full flex-wrap items-center justify-between gap-3">
+            <div className="mb-4 flex w-full flex-wrap items-center justify_between gap-3">
               <div className="flex flex-wrap items-center gap-2">
-                <label className="text-sm font-medium text-gray-700" htmlFor="filtro-comuna">
+                <label
+                  className="text-sm font-medium text-gray-700"
+                  htmlFor="filtro-comuna"
+                >
                   Filtrar por comuna:
                 </label>
                 <select
@@ -356,7 +473,6 @@ export default function InventarioSucursalesPage() {
                 </select>
               </div>
 
-              {/* botón agregar sucursal (responsive) */}
               <button
                 onClick={irAgregarSucursal}
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-gray-900 text-white px-4 py-2.5 font-semibold shadow hover:bg-gray-800 transition"
@@ -365,20 +481,24 @@ export default function InventarioSucursalesPage() {
                 Agregar sucursal
               </button>
             </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
               {sucursalesFiltradas.map((sucursal) => (
                 <div
                   key={sucursal.id}
                   onClick={() => toggleSucursal(sucursal.id)}
                   className={`bg-white/90 backdrop-blur border rounded-xl p-5 shadow-sm hover:shadow-md transition cursor-pointer ${
-                    sucursalSeleccionada === sucursal.id ? "ring-2 ring-red-500" : "border-gray-200"
+                    sucursalSeleccionada === sucursal.id
+                      ? "ring-2 ring-red-500"
+                      : "border-gray-200"
                   }`}
                 >
                   <p className="font-semibold text-gray-900 text-lg">
                     {sucursal.descripcion}
                   </p>
                   <p className="text-gray-600 mb-4">
-                    Comuna: <span className="font-medium">{sucursal.Comuna}</span>
+                    Comuna:{" "}
+                    <span className="font-medium">{sucursal.Comuna}</span>
                   </p>
 
                   <div className="flex flex-wrap justify-center gap-2">
@@ -450,13 +570,18 @@ export default function InventarioSucursalesPage() {
                             <th className="px-4 sm:px-6 py-3">Stock</th>
                             <th className="px-4 sm:px-6 py-3">Unidad</th>
                             <th className="px-4 sm:px-6 py-3">Fecha</th>
-                            <th className="px-4 sm:px-6 py-3 text-center">Acciones</th>
+                            <th className="px-4 sm:px-6 py-3 text-center">
+                              Acciones
+                            </th>
                           </tr>
                         </thead>
                         <tbody>
                           {inventario.length === 0 ? (
                             <tr>
-                              <td colSpan={7} className="px-6 py-6 text-center text-gray-500">
+                              <td
+                                colSpan={7}
+                                className="px-6 py-6 text-center text-gray-500"
+                              >
                                 No hay inventario disponible
                               </td>
                             </tr>
@@ -464,16 +589,26 @@ export default function InventarioSucursalesPage() {
                             inventario.map((inv, i) => (
                               <tr
                                 key={inv.id}
-                                className={`${i % 2 ? "bg-white" : "bg-gray-50"} hover:bg-gray-100 transition`}
+                                className={`${
+                                  i % 2 ? "bg-white" : "bg-gray-50"
+                                } hover:bg-gray-100 transition`}
                               >
                                 <td className="px-4 sm:px-6 py-3">{inv.id}</td>
                                 <td className="px-4 sm:px-6 py-3 capitalize">
                                   {inv.tipo === "item" ? "Producto" : "Insumo"}
                                 </td>
-                                <td className="px-4 sm:px-6 py-3">{inv.descripcion}</td>
-                                <td className="px-4 sm:px-6 py-3">{inv.stock_actual}</td>
-                                <td className="px-4 sm:px-6 py-3">{inv.unidad}</td>
-                                <td className="px-4 sm:px-6 py-3">{inv.fecha_ingreso}</td>
+                                <td className="px-4 sm:px-6 py-3">
+                                  {inv.descripcion}
+                                </td>
+                                <td className="px-4 sm:px-6 py-3">
+                                  {inv.stock_actual}
+                                </td>
+                                <td className="px-4 sm:px-6 py-3">
+                                  {inv.unidad}
+                                </td>
+                                <td className="px-4 sm:px-6 py-3">
+                                  {inv.fecha_ingreso}
+                                </td>
                                 <td className="px-4 sm:px-6 py-3">
                                   <div className="flex justify-center gap-2">
                                     <button
@@ -507,13 +642,26 @@ export default function InventarioSucursalesPage() {
                   )}
 
                   {tabActiva === "formulario" && (
-                    <form onSubmit={guardarInventario} className="mt-2 space-y-4">
+                    <form
+                      onSubmit={guardarInventario}
+                      className="mt-2 space-y-4"
+                    >
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* Tipo */}
                         <div>
-                          <label className="block text-sm font-medium mb-1 text-gray-700">Tipo</label>
+                          <label className="block text-sm font-medium mb-1 text-gray-700">
+                            Tipo
+                          </label>
                           <select
                             value={nuevo.tipo}
-                            onChange={(e) => setNuevo({ ...nuevo, tipo: e.target.value })}
+                            onChange={(e) =>
+                              setNuevo({
+                                ...nuevo,
+                                tipo: e.target.value,
+                                referenciaId: null,
+                                descripcion: "",
+                              })
+                            }
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
                           >
                             <option value="item">Producto</option>
@@ -521,35 +669,91 @@ export default function InventarioSucursalesPage() {
                           </select>
                         </div>
 
+                        {/* Descripción dependiente de Tipo */}
                         <div>
-                          <label className="block text-sm font-medium mb-1 text-gray-700">Descripción</label>
-                          <input
-                            type="text"
-                            value={nuevo.descripcion}
-                            onChange={(e) => setNuevo({ ...nuevo, descripcion: e.target.value })}
+                          <label className="block text-sm font-medium mb-1 text-gray-700">
+                            Descripción
+                          </label>
+                          <select
+                            disabled={cargandoReferencias}
+                            value={nuevo.referenciaId || ""}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (!value) {
+                                setNuevo({
+                                  ...nuevo,
+                                  referenciaId: null,
+                                  descripcion: "",
+                                });
+                                return;
+                              }
+                              const id = Number(value);
+                              if (nuevo.tipo === "item") {
+                                const sel = items.find((it) => it.id === id);
+                                setNuevo({
+                                  ...nuevo,
+                                  referenciaId: id,
+                                  descripcion: sel?.descripcion || "",
+                                });
+                              } else {
+                                const sel = insumos.find(
+                                  (ins) => ins.id === id
+                                );
+                                setNuevo({
+                                  ...nuevo,
+                                  referenciaId: id,
+                                  descripcion: sel?.descripcion || "",
+                                });
+                              }
+                            }}
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
-                            placeholder="Nombre"
-                            required
-                          />
+                          >
+                            <option value="">
+                              {cargandoReferencias
+                                ? "Cargando..."
+                                : "Seleccione una opción"}
+                            </option>
+                            {opcionesDescripcion.map((ref) => (
+                              <option key={ref.id} value={ref.id}>
+                                {ref.descripcion}
+                              </option>
+                            ))}
+                          </select>
                         </div>
 
+                        {/* Stock actual */}
                         <div>
-                          <label className="block text-sm font-medium mb-1 text-gray-700">Stock actual</label>
+                          <label className="block text-sm font-medium mb-1 text-gray-700">
+                            Stock actual
+                          </label>
                           <input
                             type="number"
                             value={nuevo.stock_actual}
-                            onChange={(e) => setNuevo({ ...nuevo, stock_actual: e.target.value })}
+                            onChange={(e) =>
+                              setNuevo({
+                                ...nuevo,
+                                stock_actual: e.target.value,
+                              })
+                            }
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
                             required
                           />
                         </div>
 
+                        {/* Fecha */}
                         <div>
-                          <label className="block text-sm font-medium mb-1 text-gray-700">Fecha de ingreso</label>
+                          <label className="block text-sm font-medium mb-1 text-gray-700">
+                            Fecha de ingreso
+                          </label>
                           <input
                             type="date"
                             value={nuevo.fecha_ingreso}
-                            onChange={(e) => setNuevo({ ...nuevo, fecha_ingreso: e.target.value })}
+                            onChange={(e) =>
+                              setNuevo({
+                                ...nuevo,
+                                fecha_ingreso: e.target.value,
+                              })
+                            }
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
                             required
                           />
@@ -561,7 +765,8 @@ export default function InventarioSucursalesPage() {
                           type="submit"
                           className="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
                         >
-                          <PlusCircle size={18} /> {editando ? "Guardar" : "Agregar"}
+                          <PlusCircle size={18} />{" "}
+                          {editando ? "Guardar" : "Agregar"}
                         </button>
 
                         {editando && (

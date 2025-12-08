@@ -26,12 +26,23 @@ class ItemSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 class InventarioSerializer(serializers.ModelSerializer):
-    item = ItemSerializer(read_only=True)
-    insumo = InsumoSerializer(read_only=True)
+    # Para escribir: usamos los IDs (FK normales)
+    item = serializers.PrimaryKeyRelatedField(
+        queryset=Item.objects.all(),
+        required=False,
+        allow_null=True
+    )
+    insumo = serializers.PrimaryKeyRelatedField(
+        queryset=Insumo.objects.all(),
+        required=False,
+        allow_null=True
+    )
+
+    # Para leer: mostramos descripciones
     item_descripcion = serializers.CharField(source='item.descripcion', read_only=True)
     insumo_descripcion = serializers.CharField(source='insumo.descripcion', read_only=True)
     sucursal_nombre = serializers.CharField(source='sucursal.descripcion', read_only=True)
-    
+
     class Meta:
         model = Inventario
         fields = [
@@ -45,10 +56,11 @@ class InventarioSerializer(serializers.ModelSerializer):
         item = data.get('item')
         insumo = data.get('insumo')
 
+        # Exactamente uno de los dos
         if (item and insumo) or (not item and not insumo):
             raise serializers.ValidationError(
                 "Debe seleccionar exactamente un item o un insumo, no ambos ni ninguno."
-            ) 
+            )
         return data
     
 class SucursalSerializer(serializers.ModelSerializer):

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import customUser, SesionCaja, Caja, Venta, Cliente, DetalleVenta
+from .models import customUser, SesionCaja, Caja, Venta, Cliente, DetalleVenta, MetodoPago
 from Inventario.models import Producto
 
 class CajaSerializer(serializers.ModelSerializer):
@@ -49,10 +49,16 @@ class DetalleVentaSerializer(serializers.ModelSerializer):
     class Meta:
         model = DetalleVenta
         fields = '__all__'
-    
+
+class MetodoPagoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MetodoPago
+        fields = '__all__'
+
 class VentaSerializer(serializers.ModelSerializer):
     usuario = customUserSerializer(read_only=True)
     detalles = DetalleVentaSerializer(source='detalleventa_set', many=True, read_only=True) 
+    metodo_pago = MetodoPagoSerializer(read_only=True)
     iva = serializers.IntegerField(read_only=True)
     subtotal = serializers.IntegerField(read_only=True)
     class Meta:

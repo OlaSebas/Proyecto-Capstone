@@ -475,10 +475,10 @@ export default function ReporteVentas() {
                 </div>
 
                 {dashboardLineaAbierto && (
-                    <div className="mt-4" style={{ width: "100%", height: 300 }}>
+                    <div className="mt-4" style={{ width: "100%", height: 300, minHeight: 300 }}>
                     {/* === GRÁFICO DE LÍNEA === */}
                     {tipoDashboardLinea === "linea" && (
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height={300}>
                         <LineChart data={dataPeriodo}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="periodo" />
@@ -640,11 +640,11 @@ export default function ReporteVentas() {
                 </div>
 
                 {dashboardVendedorAbierto && (
-                    <div className="mt-4" style={{ width: "100%", height: 300 }}>
+                    <div className="mt-4" style={{ width: "100%", height: 300, minHeight: 300 }}>
 
                     {/* === GRÁFICO DE BARRA === */}
                     {tipoDashboardVendedor === "barra" && (
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height={300}>
                         <BarChart data={dataApilada}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="vendedor" />
@@ -696,7 +696,7 @@ export default function ReporteVentas() {
 
                     {/* === GRÁFICO DE LÍNEA === */}
                     {tipoDashboardVendedor === "linea" && (
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height={300}>
                         <LineChart data={dataApilada}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="vendedor" />
@@ -749,7 +749,7 @@ export default function ReporteVentas() {
 
                     {/* === GRÁFICO DE PASTEL === */}
                     {tipoDashboardVendedor === "pastel" && (
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height={300}>
                         <PieChart>
                             <Pie
                             data={dataApilada.map((v) => ({
@@ -840,10 +840,10 @@ export default function ReporteVentas() {
                 </div>
 
                 {dashboardSucursalAbierto && (
-                    <div className="mt-4" style={{ width: "100%", height: 300 }}>
+                    <div className="mt-4" style={{ width: "100%", height: 300, minHeight: 300 }}>
                     {/* === GRÁFICO DE PASTEL === */}
                     {tipoDashboardSucursal === "pastel" && (
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height={300}>
                         <PieChart>
                             <Pie
                             data={dataPorSucursal}
@@ -891,7 +891,7 @@ export default function ReporteVentas() {
 
                     {/* === GRÁFICO DE LÍNEA === */}
                     {tipoDashboardSucursal === "linea" && (
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height={300}>
                         <LineChart data={dataPorSucursal}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="sucursal" />
@@ -934,7 +934,7 @@ export default function ReporteVentas() {
                     )}
                     {/* === GRÁFICO DE BARRA === */}
                     {tipoDashboardSucursal === "barra" && (
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height={300}>
                         <BarChart data={dataPorSucursal}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="sucursal" />
@@ -1033,6 +1033,7 @@ export default function ReporteVentas() {
                             <th className="px-4 py-3">Sucursal</th>
                             <th className="px-4 py-3">Fecha</th>
                             <th className="px-4 py-3 text-right">Total</th>
+                            <th className="px-4 py-3 text-center">Método de Pago</th>
                             <th className="px-4 py-3 text-center">Estado</th>
                             </tr>
                         </thead>
@@ -1040,7 +1041,7 @@ export default function ReporteVentas() {
                             {ventasPagina.length === 0 ? (
                             <tr>
                                 <td
-                                colSpan={6}
+                                colSpan={7}
                                 className="text-center text-gray-500 py-6 italic"
                                 >
                                 No hay ventas registradas.
@@ -1070,6 +1071,23 @@ export default function ReporteVentas() {
                                 </td>
                                 <td className="px-4 py-3 text-right font-semibold text-gray-800">
                                     ${v.total?.toLocaleString("es-CL")}
+                                </td>
+                                <td className="px-4 py-3 text-center">
+                                    <span
+                                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                        v.metodo_pago?.nombre?.toLowerCase() === "efectivo"
+                                        ? "bg-green-100 text-green-800"
+                                        : v.metodo_pago?.nombre?.toLowerCase() === "tarjeta"
+                                        ? "bg-blue-100 text-blue-800"
+                                        : v.metodo_pago?.nombre?.toLowerCase() === "transferencia"
+                                        ? "bg-purple-100 text-purple-800"
+                                        : v.metodo_pago?.nombre?.toLowerCase() === "cheque"
+                                        ? "bg-orange-100 text-orange-800"
+                                        : "bg-gray-100 text-gray-800"
+                                    }`}
+                                    >
+                                    {v.metodo_pago?.nombre || "Sin registrar"}
+                                    </span>
                                 </td>
                                 <td className="px-4 py-3 text-center">
                                     <span

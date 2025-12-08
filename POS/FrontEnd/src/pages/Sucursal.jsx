@@ -3,7 +3,7 @@ import axios from "axios";
 import { PlusCircle, Trash2, Edit2, XCircle, Pencil } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
-import DeleteConfirmModal from "../components/DeleteConfirmModal"; // <-- agregado
+import DeleteConfirmModal from "../components/DeleteConfirmModal";
 
 export default function InventarioSucursalesPage() {
   const navigate = useNavigate();
@@ -30,7 +30,6 @@ export default function InventarioSucursalesPage() {
   const token = localStorage.getItem("token");
   const apiUrl = import.meta.env.VITE_API_URL_INVENTARIO;
 
-  // Estado para el modal de eliminación
   const [deleteModal, setDeleteModal] = useState({ open: false, id: null, descripcion: "" });
   const [deleting, setDeleting] = useState(false);
 
@@ -190,10 +189,8 @@ export default function InventarioSucursalesPage() {
       ? sucursales
       : sucursales.filter((s) => s.Comuna === filtroComuna);
 
-  // eliminar sucursal (ahora sin confirm — usado por el modal)
   const eliminarSucursal = async (id) => {
     try {
-      // Intentar endpoint REST estándar primero
       let attempted = false;
       try {
         await axios.delete(`${apiUrl}sucursales/${id}/`, {
@@ -201,7 +198,7 @@ export default function InventarioSucursalesPage() {
         });
         attempted = true;
       } catch (err) {
-        // si falla, intentar posible ruta alternativa (con /delete/)
+        // intentar ruta alternativa
       }
 
       if (!attempted) {
@@ -211,7 +208,6 @@ export default function InventarioSucursalesPage() {
       }
 
       setSucursales((prev) => prev.filter((s) => s.id !== id));
-      // si estaba seleccionada, limpiarla
       if (sucursalSeleccionada === id) {
         setSucursalSeleccionada(null);
         setInventario([]);
@@ -224,12 +220,10 @@ export default function InventarioSucursalesPage() {
     }
   };
 
-  // Abrir modal de confirmación (reemplaza window.confirm)
   const openDeleteModal = (id, descripcion) => {
     setDeleteModal({ open: true, id, descripcion });
   };
 
-  // Confirmar eliminación desde modal
   const handleConfirmDelete = async () => {
     const id = deleteModal.id;
     if (!id) {
@@ -240,7 +234,7 @@ export default function InventarioSucursalesPage() {
     try {
       await eliminarSucursal(id);
     } catch {
-      // eliminarSucursal ya maneja mensaje; aquí solo cerramos modal
+      // eliminarSucursal ya maneja mensaje
     } finally {
       setDeleting(false);
       setDeleteModal({ open: false, id: null, descripcion: "" });
@@ -306,7 +300,7 @@ export default function InventarioSucursalesPage() {
         title="Eliminar sucursal"
         description={
           deleteModal.descripcion
-            ? `¿Eliminar “${deleteModal.descripcion}”? Esta acción no se puede deshacer.`
+            ? `¿Eliminar "${deleteModal.descripcion}"? Esta acción no se puede deshacer.`
             : "¿Estás seguro de eliminar esta sucursal?"
         }
         confirmLabel="Eliminar"
@@ -402,7 +396,7 @@ export default function InventarioSucursalesPage() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        openDeleteModal(sucursal.id, sucursal.descripcion); // <-- usa modal
+                        openDeleteModal(sucursal.id, sucursal.descripcion);
                       }}
                       className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700"
                     >
@@ -473,7 +467,9 @@ export default function InventarioSucursalesPage() {
                                 className={`${i % 2 ? "bg-white" : "bg-gray-50"} hover:bg-gray-100 transition`}
                               >
                                 <td className="px-4 sm:px-6 py-3">{inv.id}</td>
-                                <td className="px-4 sm:px-6 py-3 capitalize">{inv.tipo}</td>
+                                <td className="px-4 sm:px-6 py-3 capitalize">
+                                  {inv.tipo === "item" ? "Producto" : "Insumo"}
+                                </td>
                                 <td className="px-4 sm:px-6 py-3">{inv.descripcion}</td>
                                 <td className="px-4 sm:px-6 py-3">{inv.stock_actual}</td>
                                 <td className="px-4 sm:px-6 py-3">{inv.unidad}</td>
@@ -520,7 +516,7 @@ export default function InventarioSucursalesPage() {
                             onChange={(e) => setNuevo({ ...nuevo, tipo: e.target.value })}
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
                           >
-                            <option value="item">Item</option>
+                            <option value="item">Producto</option>
                             <option value="insumo">Insumo</option>
                           </select>
                         </div>

@@ -157,14 +157,46 @@ def profile(request):
 def users(request):
     if request.method == 'GET':
         try:
-            users = customUser.objects.filter(is_staff=False)
+            if request.user.is_superuser:
+                # Superuser ve TODOS los usuarios (incluyendo otros superusers)
+                users = customUser.objects.all()
+            elif request.user.is_staff:
+                # Admin solo ve usuarios normales
+                users = customUser.objects.filter(is_staff=False, is_superuser=False)
+            else:
+                # Usuario normal no puede acceder
+                return Response(
+                    {"error": "No tienes permiso para acceder a esta lista."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
             serializer = customUserSerializer(users, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except customUser.DoesNotExist:
             return Response({"error": "No se encontró."}, status=status.HTTP_404_NOT_FOUND)
+    
     elif request.method == 'PUT':
         try:
             user = get_object_or_404(customUser, pk=request.data.get('id'))
+            
+            # Verificar permisos para editar
+            if request.user.is_superuser:
+                # Superuser puede editar a TODOS (sin restricciones)
+                pass
+            elif request.user.is_staff:
+                # Admin solo puede editar usuarios normales
+                if user.is_staff or user.is_superuser:
+                    return Response(
+                        {"error": "No tienes permiso para editar a este usuario."},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+            else:
+                # Usuario normal no puede editar
+                return Response(
+                    {"error": "No tienes permiso para editar usuarios."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
             serializer = customUserSerializer(user, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
@@ -172,9 +204,29 @@ def users(request):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except customUser.DoesNotExist:
             return Response({"error": "No se encontró."}, status=status.HTTP_404_NOT_FOUND)
+    
     elif request.method == 'DELETE':
         try:
             user = get_object_or_404(customUser, pk=request.data.get('id'))
+            
+            # Verificar permisos para eliminar
+            if request.user.is_superuser:
+                # Superuser puede eliminar a TODOS (sin restricciones)
+                pass
+            elif request.user.is_staff:
+                # Admin solo puede eliminar usuarios normales
+                if user.is_staff or user.is_superuser:
+                    return Response(
+                        {"error": "No tienes permiso para eliminar a este usuario."},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+            else:
+                # Usuario normal no puede eliminar
+                return Response(
+                    {"error": "No tienes permiso para eliminar usuarios."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
             user.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except customUser.DoesNotExist:

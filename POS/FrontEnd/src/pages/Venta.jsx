@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { Plus, List, Clock } from "lucide-react";
 import { useOutletContext, Link } from "react-router-dom";
+import CerrarCajaModal from "../components/CerrarCajaModal";
 
 export default function Ventas() {
   const [hora, setHora] = useState("");
   const [cajaAbierta, setCajaAbierta] = useState(false);
+  const [modalCerrarCaja, setModalCerrarCaja] = useState(false);
+  const [cerrando, setCerrando] = useState(false);
   const apiUrl = import.meta.env.VITE_API_URL;
 
   const { setSidebarOpen } =
@@ -12,19 +15,43 @@ export default function Ventas() {
 
   // Consultar si hay sesión de caja activa
   useEffect(() => {
-    fetch(`${apiUrl}api/sesion_activa/`, {
-      headers: { Authorization: `Token ${localStorage.getItem("token")}` },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setCajaAbierta(
-          data?.sesion_activa === true || (Array.isArray(data) && data.length > 0)
-        );
-      })
-      .catch((err) => {
-        console.error("Error cargando sesión activa:", err);
+    const cargarSesion = async () => {
+      try {
+        // Paso 1: Verificar si hay sesión activa
+        const res1 = await fetch(`${apiUrl}api/sesion_activa/`, {
+          headers: { Authorization: `Token ${localStorage.getItem("token")}` },
+        });
+        const data1 = await res1.json();
+        
+
+        if (data1?.sesion_activa === true) {
+          setCajaAbierta(true);
+
+          // Paso 2: Obtener el ID de la sesión activa
+          const res2 = await fetch(`${apiUrl}api/sesion_caja/`, {
+            headers: { Authorization: `Token ${localStorage.getItem("token")}` },
+          });
+          const data2 = await res2.json();
+          
+          if (Array.isArray(data2)) {
+            const sesionActiva = data2.find((s) => s.is_active === true);
+            if (sesionActiva) {
+              localStorage.setItem("sesionCaja", sesionActiva.id);
+            } else {
+            
+            }
+          } else {
+            
+          }
+        } else {
+          setCajaAbierta(false);
+        }
+      } catch (err) {
         setCajaAbierta(false);
-      });
+      }
+    };
+
+    cargarSesion();
   }, [apiUrl]);
 
   // Reloj
@@ -44,49 +71,69 @@ export default function Ventas() {
     return () => clearInterval(t);
   }, []);
 
-  // Cerrar caja (mantengo tu lógica)
-  const cerrarCaja = async () => {
-    const montoCierre = prompt("Ingrese monto de cierre:");
-    if (!montoCierre) return alert("Debe ingresar un monto para cerrar la caja.");
-
+  // Cerrar caja con modal
+  const cerrarCaja = async (montoCierre) => {
+    setCerrando(true);
     try {
+      const sesionId = localStorage.getItem("sesionCaja");
+      if (!sesionId) {
+        alert("No hay sesión de caja activa");
+        setModalCerrarCaja(false);
+        setCerrando(false);
+        return;
+      }
+
+      const payload = {
+        fecha_cierre: new Date().toISOString(),
+        monto_final: parseFloat(montoCierre),
+        is_active: false,
+      };
+
       const res = await fetch(
-        `${apiUrl}api/sesion_caja/${localStorage.getItem("sesionCaja")}/`,
+        `${apiUrl}api/sesion_caja/${sesionId}/`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Token ${localStorage.getItem("token")}`,
           },
-          body: JSON.stringify({
-            fecha_cierre: new Date().toISOString(),
-            monto_final: montoCierre,
-            is_active: false,
-          }),
+          body: JSON.stringify(payload),
         }
       );
 
+      const data = await res.json().catch(() => ({}));
+      
       if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        console.error("Error cerrando caja:", errData);
-        alert("Error cerrando caja");
+
+        alert(`Error cerrando caja: ${JSON.stringify(data)}`);
       } else {
+ 
         alert("Caja cerrada exitosamente");
         setCajaAbierta(false);
         sessionStorage.clear();
         localStorage.removeItem("token");
         localStorage.removeItem("sesionCaja");
+        setModalCerrarCaja(false);
         handleLogout();
       }
     } catch (err) {
-      console.error("Error en la petición de cerrar caja:", err);
-      alert("Error cerrando caja");
+      alert(`Error cerrando caja: ${err.message}`);
+    } finally {
+      setCerrando(false);
     }
   };
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     window.location.href = "/Login";
+  };
+
+  const handleClickCaja = () => {
+    if (cajaAbierta) {
+      setModalCerrarCaja(true);
+    } else {
+      handleLogout();
+    }
   };
 
   return (
@@ -131,6 +178,14 @@ export default function Ventas() {
         </div>
       </header>
 
+      {/* MODAL CERRAR CAJA */}
+      <CerrarCajaModal
+        open={modalCerrarCaja}
+        loading={cerrando}
+        onConfirm={cerrarCaja}
+        onCancel={() => setModalCerrarCaja(false)}
+      />
+
       {/* CONTENIDO */}
       <main className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
         {/* Grid de acciones centrada */}
@@ -150,25 +205,9 @@ export default function Ventas() {
             </p>
           </Link>
 
-          {/* Pedido delivery (deshabilitado)
-          <Link
-            to="/PedidosDelivery"
-            className="group w-full sm:w-[320px] md:w-[360px] min-h-[220px] rounded-2xl bg-white/90 backdrop-blur border border-gray-200 shadow hover:shadow-lg transition-shadow p-8 sm:p-10 flex flex-col items-center justify-center focus:outline-none focus:ring-2 focus:ring-red-300"
-            aria-label="Pedido delivery"
-          >
-            <div className="rounded-full p-4 sm:p-5 bg-gray-100 group-hover:bg-gray-200 transition">
-              <List className="w-14 h-14 text-gray-700" />
-            </div>
-            <h3 className="mt-5 text-xl font-semibold text-gray-900">Pedido delivery</h3>
-            <p className="mt-2 text-sm sm:text-base text-gray-600 text-center">
-              Administra pedidos para despacho.
-            </p>
-          </Link>
-          */}
-
           {/* Abrir/Cerrar caja */}
           <button
-            onClick={cajaAbierta ? cerrarCaja : handleLogout}
+            onClick={handleClickCaja}
             className="group w-full sm:w-[320px] md:w-[360px] min-h-[220px] rounded-2xl bg-white/90 backdrop-blur border border-gray-200 shadow hover:shadow-lg transition-shadow p-8 sm:p-10 flex flex-col items-center justify-center focus:outline-none focus:ring-2 focus:ring-red-300"
             aria-label={cajaAbierta ? "Cerrar caja" : "Abrir caja"}
           >

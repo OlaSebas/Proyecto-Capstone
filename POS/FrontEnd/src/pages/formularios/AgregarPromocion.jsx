@@ -212,13 +212,20 @@ export default function GestionPromociones() {
   };
 
   // -------- ADMINISTRAR --------
-  const [modalEliminar, setModalEliminar] = useState({ abierto: false, id: null });
+  const [modalEliminar, setModalEliminar] = useState({ abierto: false, id: null, descripcion: "" });
+  const [eliminando, setEliminando] = useState(false);
   const [modalEditar, setModalEditar] = useState({ abierto: false, promo: null });
 
-  const abrirModalEliminar = (id) => setModalEliminar({ abierto: true, id });
-  const cancelarEliminar = () => setModalEliminar({ abierto: false, id: null });
+  const abrirModalEliminar = (promo) => {
+    setModalEliminar({ abierto: true, id: promo.id, descripcion: promo.descripcion });
+  };
+
+  const cancelarEliminar = () => {
+    setModalEliminar({ abierto: false, id: null, descripcion: "" });
+  };
 
   const confirmarEliminar = async () => {
+    setEliminando(true);
     try {
       const res = await fetch(`${apiUrl}promociones/delete/${modalEliminar.id}/`, {
         method: "DELETE",
@@ -230,6 +237,8 @@ export default function GestionPromociones() {
       setMsg({ type: "success", text: "Promoción eliminada." });
     } catch {
       setMsg({ type: "error", text: "Error al eliminar la promoción." });
+    } finally {
+      setEliminando(false);
     }
   };
 
@@ -242,6 +251,7 @@ export default function GestionPromociones() {
     setFechaFin(promo.fecha_fin || "");
     setImagen(null);
   };
+
   const cancelarEditar = () => {
     setModalEditar({ abierto: false, promo: null });
     limpiarFormulario();
@@ -311,10 +321,8 @@ export default function GestionPromociones() {
   if (cargando) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-200 via-white to-gray-300">
-        {/* HEADER */}
         <header className="bg-white/90 backdrop-blur sticky top-0 z-20 shadow">
           <div className="mx-auto max-w-7xl px-3 sm:px-6">
-            {/* móvil */}
             <div className="block md:hidden py-3">
               <button
                 onClick={() => setSidebarOpen((v) => !v)}
@@ -330,7 +338,6 @@ export default function GestionPromociones() {
                 <p className="mt-1 text-gray-600 font-medium">{hora}</p>
               </div>
             </div>
-            {/* desktop */}
             <div className="hidden md:flex items-center justify-between py-4">
               <button
                 onClick={() => setSidebarOpen((v) => !v)}
@@ -349,7 +356,6 @@ export default function GestionPromociones() {
           </div>
         </header>
 
-        {/* Loading Spinner */}
         <main className="flex-1 p-6 flex items-center justify-center min-h-screen">
           <div className="flex flex-col items-center gap-3 bg-white/80 backdrop-blur rounded-xl border border-gray-200 shadow-lg px-6 py-8">
             <div className="relative h-14 w-14">
@@ -368,10 +374,8 @@ export default function GestionPromociones() {
   // -------- UI --------
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-200 via-white to-gray-300">
-      {/* HEADER */}
       <header className="bg-white/90 backdrop-blur sticky top-0 z-20 shadow">
         <div className="mx-auto max-w-7xl px-3 sm:px-6">
-          {/* móvil */}
           <div className="block md:hidden py-3">
             <button
               onClick={() => setSidebarOpen((v) => !v)}
@@ -387,7 +391,6 @@ export default function GestionPromociones() {
               <p className="mt-1 text-gray-600 font-medium">{hora}</p>
             </div>
           </div>
-          {/* desktop */}
           <div className="hidden md:flex items-center justify-between py-4">
             <button
               onClick={() => setSidebarOpen((v) => !v)}
@@ -693,7 +696,7 @@ export default function GestionPromociones() {
                                   <Pencil className="w-4 h-4" /> Editar
                                 </button>
                                 <button
-                                  onClick={() => abrirModalEliminar(p.id)}
+                                  onClick={() => abrirModalEliminar(p)}
                                   className="px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 text-sm inline-flex items-center gap-1"
                                 >
                                   <Trash2 className="w-4 h-4" /> Eliminar
@@ -736,7 +739,7 @@ export default function GestionPromociones() {
                                 <Pencil className="w-4 h-4" /> Editar
                               </button>
                               <button
-                                onClick={() => abrirModalEliminar(p.id)}
+                                onClick={() => abrirModalEliminar(p)}
                                 className="px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 inline-flex items-center justify-center gap-1"
                               >
                                 <Trash2 className="w-4 h-4" /> Eliminar
@@ -755,29 +758,71 @@ export default function GestionPromociones() {
           </AnimatePresence>
         </div>
 
-        {/* MODALES */}
+        {/* MODAL ELIMINAR (estilo DeleteConfirmModal) */}
         {modalEliminar.abierto && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
-            <div className="bg-white p-5 rounded-xl shadow-xl max-w-sm w-full">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900">Confirmar eliminación</h3>
-                <button onClick={cancelarEliminar} className="p-1 rounded hover:bg-gray-100" aria-label="Cerrar">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <p className="text-gray-700">¿Eliminar esta promoción?</p>
-              <div className="mt-4 flex justify-end gap-3">
-                <button onClick={cancelarEliminar} className="px-4 py-2 rounded-md bg-gray-200 text-gray-800 hover:bg-gray-300">
-                  Cancelar
-                </button>
-                <button onClick={confirmarEliminar} className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700">
-                  Eliminar
-                </button>
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center px-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-promo-modal-title"
+          >
+            <div
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+              onClick={cancelarEliminar}
+            />
+
+            <div className="relative w-full max-w-lg mx-auto">
+              <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
+                <div className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center">
+                      <Trash2 className="w-6 h-6 text-red-600" />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <h3 id="delete-promo-modal-title" className="text-lg font-semibold text-gray-900">
+                        Eliminar Promoción
+                      </h3>
+                      <p className="mt-2 text-sm text-gray-600">
+                        ¿Estás seguro de eliminar <span className="font-semibold">"{modalEliminar.descripcion}"</span>? Esta acción no se puede deshacer.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 flex justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={cancelarEliminar}
+                      className="inline-flex items-center justify-center px-4 py-2 rounded-md bg-white border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 shadow-sm"
+                      disabled={eliminando}
+                    >
+                      Cancelar
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={confirmarEliminar}
+                      disabled={eliminando}
+                      className={`inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold text-white shadow-sm ${
+                        eliminando ? "opacity-60 cursor-wait bg-red-400" : "bg-red-600 hover:bg-red-700"
+                      }`}
+                    >
+                      {eliminando && (
+                        <svg className="w-4 h-4 mr-2 animate-spin" viewBox="0 0 24 24" aria-hidden="true">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25" fill="none" />
+                          <path d="M22 12a10 10 0 00-10-10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75" fill="none" />
+                        </svg>
+                      )}
+                      Eliminar
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         )}
 
+        {/* MODAL EDITAR */}
         {modalEditar.abierto && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center px-4"
@@ -785,13 +830,11 @@ export default function GestionPromociones() {
             aria-modal="true"
             aria-labelledby="editar-promo-title"
           >
-            {/* backdrop */}
             <div
               className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
               onClick={cancelarEditar}
             />
 
-            {/* panel */}
             <div className="relative w-full max-w-full sm:max-w-2xl mx-auto">
               <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
                 <div className="p-4 sm:p-6">
@@ -820,7 +863,6 @@ export default function GestionPromociones() {
                   </div>
 
                   <form onSubmit={(e) => { e.preventDefault(); confirmarEditar(); }} className="mt-4 sm:mt-6">
-                    {/** loader */}
                     {cargando ? (
                       <div className="flex items-center justify-center py-12">
                         <div className="h-12 w-12 rounded-full border-4 border-gray-200 border-t-amber-500 animate-spin" />

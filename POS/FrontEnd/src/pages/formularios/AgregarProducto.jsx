@@ -15,7 +15,8 @@ export default function GestionProductos() {
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
   const [cargando, setCargando] = useState(true);
 
-  const [modalEliminar, setModalEliminar] = useState({ abierto: false, productoId: null });
+  const [modalEliminar, setModalEliminar] = useState({ abierto: false, productoId: null, productoNombre: "" });
+  const [eliminando, setEliminando] = useState(false);
   const [modalEditar, setModalEditar] = useState({ abierto: false, producto: null });
 
   const [msg, setMsg] = useState({ type: "", text: "" }); // mensajes inline
@@ -197,10 +198,19 @@ export default function GestionProductos() {
   };
 
   // Eliminar producto
-  const abrirModalEliminar = (id) => setModalEliminar({ abierto: true, productoId: id });
-  const cancelarEliminar = () => setModalEliminar({ abierto: false, productoId: null });
+  const abrirModalEliminar = (producto) => {
+    setModalEliminar({ 
+      abierto: true, 
+      productoId: producto.id,
+      productoNombre: producto.descripcion 
+    });
+  };
+  const cancelarEliminar = () => {
+    setModalEliminar({ abierto: false, productoId: null, productoNombre: "" });
+  };
   const confirmarEliminar = async () => {
     const id = modalEliminar.productoId;
+    setEliminando(true);
     try {
       const res = await fetch(`${apiUrl}productos/delete/${id}/`, {
         method: "DELETE",
@@ -208,11 +218,13 @@ export default function GestionProductos() {
       });
       if (!res.ok) throw new Error("Error al eliminar producto");
       setProductos((prev) => prev.filter((p) => p.id !== id));
-      setModalEliminar({ abierto: false, productoId: null });
+      setModalEliminar({ abierto: false, productoId: null, productoNombre: "" });
       setMsg({ type: "success", text: "Producto eliminado." });
     } catch (err) {
       console.error(err);
       setMsg({ type: "error", text: "No se pudo eliminar el producto." });
+    } finally {
+      setEliminando(false);
     }
   };
 
@@ -527,7 +539,7 @@ export default function GestionProductos() {
                                       Editar
                                     </button>
                                     <button
-                                      onClick={() => abrirModalEliminar(p.id)}
+                                      onClick={() => abrirModalEliminar(p)}
                                       className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700"
                                     >
                                       <Trash2 size={16} />
@@ -569,7 +581,7 @@ export default function GestionProductos() {
                                   Editar
                                 </button>
                                 <button
-                                  onClick={() => abrirModalEliminar(p.id)}
+                                  onClick={() => abrirModalEliminar(p)}
                                   className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
                                 >
                                   Eliminar
@@ -591,25 +603,65 @@ export default function GestionProductos() {
             )}
           </div>
 
-          {/* Modal: Eliminar */}
+          {/* Modal: Eliminar (estilo DeleteConfirmModal) */}
           {modalEliminar.abierto && (
-            <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 px-4">
-              <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-md">
-                <h3 className="text-xl font-bold mb-2 text-gray-900">Confirmar Eliminación</h3>
-                <p className="text-gray-600">¿Estás seguro de eliminar este producto?</p>
-                <div className="mt-4 flex justify-end gap-3">
-                  <button
-                    onClick={cancelarEliminar}
-                    className="px-4 py-2 rounded-md bg-gray-200 text-gray-800 hover:bg-gray-300"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={confirmarEliminar}
-                    className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700"
-                  >
-                    Eliminar
-                  </button>
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center px-4"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="delete-product-modal-title"
+            >
+              <div
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+                onClick={cancelarEliminar}
+              />
+
+              <div className="relative w-full max-w-lg mx-auto">
+                <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
+                  <div className="p-6">
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center">
+                        <Trash2 className="w-6 h-6 text-red-600" />
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <h3 id="delete-product-modal-title" className="text-lg font-semibold text-gray-900">
+                          Eliminar Producto
+                        </h3>
+                        <p className="mt-2 text-sm text-gray-600">
+                          ¿Estás seguro de eliminar <span className="font-semibold">"{modalEliminar.productoNombre}"</span>? Esta acción no se puede deshacer.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 flex justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={cancelarEliminar}
+                        className="inline-flex items-center justify-center px-4 py-2 rounded-md bg-white border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 shadow-sm"
+                        disabled={eliminando}
+                      >
+                        Cancelar
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={confirmarEliminar}
+                        disabled={eliminando}
+                        className={`inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold text-white shadow-sm ${
+                          eliminando ? "opacity-60 cursor-wait bg-red-400" : "bg-red-600 hover:bg-red-700"
+                        }`}
+                      >
+                        {eliminando && (
+                          <svg className="w-4 h-4 mr-2 animate-spin" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25" fill="none" />
+                            <path d="M22 12a10 10 0 00-10-10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75" fill="none" />
+                          </svg>
+                        )}
+                        Eliminar
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -623,13 +675,11 @@ export default function GestionProductos() {
               aria-modal="true"
               aria-labelledby="edit-product-modal-title"
             >
-              {/* backdrop */}
               <div
                 className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
                 onClick={cancelarEditar}
               />
 
-              {/* panel */}
               <div className="relative w-full max-w-full sm:max-w-lg mx-auto">
                 <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
                   <div className="p-4 sm:p-6">

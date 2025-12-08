@@ -55,6 +55,11 @@ export default function Login() {
       // Guardar token
       localStorage.setItem("token", data.token);
 
+      // ✅ AGREGAR: Guardar permisos del usuario
+      localStorage.setItem("is_superuser", String(data.User.is_superuser || false));
+      localStorage.setItem("is_staff", String(data.User.is_staff || false));
+      localStorage.setItem("username", data.User.username || "");
+
       // Guardar sesión de caja si existe
       if (data.User.caja) {
         const cajaId = data.User.caja.id;
@@ -88,6 +93,10 @@ export default function Login() {
       }
 
       console.log("✅ Usuario logeado:", data.User);
+      console.log("🔑 Permisos guardados:", {
+        is_superuser: data.User.is_superuser,
+        is_staff: data.User.is_staff,
+      });
 
       // Cache temporal de productos y promociones (no bloqueante)
       try {

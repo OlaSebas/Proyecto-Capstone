@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 import UserDeleteConfirmModal from "../../components/UserDeleteConfirmModal";
 import UserEditModal from "../../components/UserEditModal";
+import { Pencil, Trash2 } from "lucide-react";
 
 export default function UserManagement() {
   const { sidebarOpen, setSidebarOpen } = useOutletContext();
@@ -9,8 +10,12 @@ export default function UserManagement() {
 
   const [tab, setTab] = useState("crear");
   const [hora, setHora] = useState("");
-  const [alerta, setAlerta] = useState(null); // { type: 'success' | 'error', text: string }
+  const [alerta, setAlerta] = useState(null);
   const [cargando, setCargando] = useState(true);
+
+  // Verificar permisos del usuario actual
+  const isSuperuser = localStorage.getItem("is_superuser") === "true";
+  const isStaff = localStorage.getItem("is_staff") === "true";
 
   // Datos del formulario
   const [formData, setFormData] = useState({
@@ -18,7 +23,7 @@ export default function UserManagement() {
     email: "",
     first_name: "",
     last_name: "",
-    password: "", // contraseña principal
+    password: "",
     is_staff: false,
   });
   const [vpassword, setVPassword] = useState(""); // repetir contraseña
@@ -34,6 +39,20 @@ export default function UserManagement() {
   // Modal editar usuario (nuevo)
   const [editModal, setEditModal] = useState({ open: false, user: null });
   const [editing, setEditing] = useState(false);
+
+  // Verificar si puede editar/eliminar un usuario
+  const puedeModificar = (usuario) => {
+    if (isSuperuser) {
+      // Superuser puede editar/eliminar a admins y usuarios normales
+      // NO puede editar/eliminar a otros superusers
+      return !usuario.is_superuser;
+    }
+    if (isStaff) {
+      // Admin solo puede editar/eliminar usuarios normales
+      return !usuario.is_staff && !usuario.is_superuser;
+    }
+    return false;
+  };
 
   // Reloj
   useEffect(() => {
@@ -148,9 +167,8 @@ export default function UserManagement() {
     setEditModal({ open: true, user });
   };
 
-  // handler que llama al endpoint nuevo update_credentials/ y exige current_password
+  // Confirmar edición
   const handleConfirmEdit = async (payload) => {
-    // payload: { id, first_name, last_name, new_password, current_password }
     setEditing(true);
     try {
       const token = localStorage.getItem("token");
@@ -159,7 +177,8 @@ export default function UserManagement() {
         throw new Error("No token");
       }
 
-      const res = await fetch(`${apiUrl}api/users/update_credentials/`, {
+      // CAMBIO: usar el endpoint /api/users/ con método PUT
+      const res = await fetch(`${apiUrl}api/users/`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -376,7 +395,7 @@ export default function UserManagement() {
                   type="text"
                   name="username"
                   placeholder="Usuario"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
+                  className="w-full p-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
                   value={formData.username}
                   onChange={handleChange}
                   required
@@ -385,7 +404,7 @@ export default function UserManagement() {
                   type="email"
                   name="email"
                   placeholder="Correo"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
+                  className="w-full p-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
                   value={formData.email}
                   onChange={handleChange}
                   required
@@ -394,7 +413,7 @@ export default function UserManagement() {
                   type="text"
                   name="first_name"
                   placeholder="Primer Nombre"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
+                  className="w-full p-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
                   value={formData.first_name}
                   onChange={handleChange}
                 />
@@ -402,7 +421,7 @@ export default function UserManagement() {
                   type="text"
                   name="last_name"
                   placeholder="Apellido"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
+                  className="w-full p-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
                   value={formData.last_name}
                   onChange={handleChange}
                 />
@@ -412,7 +431,7 @@ export default function UserManagement() {
                   type="password"
                   name="password"
                   placeholder="Contraseña"
-                  className="w-full p-3 border border-gray-300 rounded-lg md:col-span-2 focus:outline-none focus:ring-2 focus:ring-red-400"
+                  className="w-full p-3 text-base border border-gray-300 rounded-lg md:col-span-2 focus:outline-none focus:ring-2 focus:ring-red-400"
                   value={formData.password}
                   onChange={handleChange}
                   required
@@ -421,7 +440,7 @@ export default function UserManagement() {
                 <input
                   type="password"
                   placeholder="Repetir Contraseña"
-                  className="w-full p-3 border border-gray-300 rounded-lg md:col-span-2 focus:outline-none focus:ring-2 focus:ring-red-400"
+                  className="w-full p-3 text-base border border-gray-300 rounded-lg md:col-span-2 focus:outline-none focus:ring-2 focus:ring-red-400"
                   value={vpassword}
                   onChange={(e) => setVPassword(e.target.value)}
                   required
@@ -441,7 +460,7 @@ export default function UserManagement() {
 
               <button
                 type="submit"
-                className="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition"
+                className="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition font-semibold"
               >
                 Crear Usuario
               </button>
@@ -475,6 +494,7 @@ export default function UserManagement() {
                           <th className="p-3">Correo</th>
                           <th className="p-3">Nombre</th>
                           <th className="p-3">Apellido</th>
+                          <th className="p-3 text-center">Tipo</th>
                           <th className="p-3">Acciones</th>
                         </tr>
                       </thead>
@@ -491,27 +511,46 @@ export default function UserManagement() {
                               </td>
                               <td className="p-3 align-top">{u.first_name}</td>
                               <td className="p-3 align-top">{u.last_name}</td>
+                              <td className="p-3 align-top text-center">
+                                <span
+                                  className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                                    u.is_superuser
+                                      ? "bg-red-100 text-red-800"
+                                      : u.is_staff
+                                      ? "bg-purple-100 text-purple-800"
+                                      : "bg-blue-100 text-blue-800"
+                                  }`}
+                                >
+                                  {u.is_superuser ? "Superuser" : u.is_staff ? "Admin" : "Usuario"}
+                                </span>
+                              </td>
                               <td className="p-3 align-top">
-                                <div className="flex flex-wrap gap-2">
-                                  <button
-                                    onClick={() => handleEdit(u)}
-                                    className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
-                                  >
-                                    Editar
-                                  </button>
-                                  <button
-                                    onClick={() => handleDelete(u.id)}
-                                    className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
-                                  >
-                                    Eliminar
-                                  </button>
-                                </div>
+                                {puedeModificar(u) ? (
+                                  <div className="flex flex-wrap gap-2">
+                                    <button
+                                      onClick={() => handleEdit(u)}
+                                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium"
+                                    >
+                                      <Pencil size={16} />
+                                      Editar
+                                    </button>
+                                    <button
+                                      onClick={() => handleDelete(u.id)}
+                                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm font-medium"
+                                    >
+                                      <Trash2 size={16} />
+                                      Eliminar
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-400 text-sm text-center block">Sin permisos</span>
+                                )}
                               </td>
                             </tr>
                           ))
                         ) : (
                           <tr>
-                            <td colSpan="5" className="p-6 text-center text-gray-500">
+                            <td colSpan="6" className="p-6 text-center text-gray-500">
                               No hay usuarios disponibles
                             </td>
                           </tr>
@@ -525,30 +564,49 @@ export default function UserManagement() {
                 <ul className="sm:hidden space-y-3 mt-3">
                   {usuarios.length > 0 ? (
                     usuarios.map((u) => (
-                      <li key={u.id} className="border rounded-lg p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-semibold text-gray-800">{u.username}</h4>
-                          <span className="text-xs text-gray-500">ID: {u.id}</span>
+                      <li key={u.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <h4 className="font-semibold text-gray-900">{u.username}</h4>
+                            <span className="text-xs text-gray-500">ID: {u.id}</span>
+                          </div>
+                          <span
+                            className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                              u.is_superuser
+                                ? "bg-red-100 text-red-800"
+                                : u.is_staff
+                                ? "bg-purple-100 text-purple-800"
+                                : "bg-blue-100 text-blue-800"
+                            }`}
+                          >
+                            {u.is_superuser ? "Superuser" : u.is_staff ? "Admin" : "Usuario"}
+                          </span>
                         </div>
-                        <div className="text-sm text-gray-700 space-y-1">
+                        <div className="text-sm text-gray-700 space-y-1 mb-3">
                           <p><span className="font-medium">Correo:</span> {u.email}</p>
                           <p><span className="font-medium">Nombre:</span> {u.first_name}</p>
                           <p><span className="font-medium">Apellido:</span> {u.last_name}</p>
                         </div>
-                        <div className="mt-3 flex flex-col gap-2">
-                          <button
-                            onClick={() => handleEdit(u)}
-                            className="px-3 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
-                          >
-                            Editar
-                          </button>
-                          <button
-                            onClick={() => handleDelete(u.id)}
-                            className="px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-                          >
-                            Eliminar
-                          </button>
-                        </div>
+                        {puedeModificar(u) ? (
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              onClick={() => handleEdit(u)}
+                              className="inline-flex items-center justify-center gap-1 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium"
+                            >
+                              <Pencil size={16} />
+                              Editar
+                            </button>
+                            <button
+                              onClick={() => handleDelete(u.id)}
+                              className="inline-flex items-center justify-center gap-1 px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm font-medium"
+                            >
+                              <Trash2 size={16} />
+                              Eliminar
+                            </button>
+                          </div>
+                        ) : (
+                          <p className="text-gray-400 text-sm text-center">Sin permisos</p>
+                        )}
                       </li>
                     ))
                   ) : (

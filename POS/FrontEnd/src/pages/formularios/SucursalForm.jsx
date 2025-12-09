@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useOutletContext, useNavigate } from "react-router-dom";
+import SuccessModal from "../../components/SuccessModal";
 
 export default function SucursalForm() {
   const { sidebarOpen, setSidebarOpen } = useOutletContext();
@@ -14,6 +15,7 @@ export default function SucursalForm() {
   });
 
   const [hora, setHora] = useState("");
+  const [modalExito, setModalExito] = useState(false);
 
   // Obtener comunas al cargar
   useEffect(() => {
@@ -78,16 +80,22 @@ export default function SucursalForm() {
       });
 
       if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
-      const data = await res.json();
-      alert(data.message || "Sucursal creada con éxito");
-
-      // Limpiar formulario
-      setFormData({ descripcion: "", direccion: "" });
-      setSelectedComuna("");
+      
+      // Mostrar modal de éxito
+      setModalExito(true);
     } catch (err) {
       console.error("Error al crear sucursal:", err);
       alert("Ocurrió un error al crear la sucursal");
     }
+  };
+
+  const handleConfirmarExito = () => {
+    setModalExito(false);
+    // Limpiar formulario
+    setFormData({ descripcion: "", direccion: "" });
+    setSelectedComuna("");
+    // Redirigir a ver sucursales
+    navigate("/sucursal");
   };
 
   return (
@@ -132,6 +140,15 @@ export default function SucursalForm() {
           </div>
         </div>
       </header>
+
+      {/* Modal de éxito */}
+      <SuccessModal
+        open={modalExito}
+        title="¡Sucursal creada con éxito!"
+        description="La sucursal se ha registrado correctamente en el sistema."
+        confirmLabel="Aceptar"
+        onConfirm={handleConfirmarExito}
+      />
 
       {/* Formulario */}
       <main className="flex-1 flex items-center justify-center p-6">

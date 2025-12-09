@@ -10,8 +10,15 @@ export default function InventarioStock() {
   const [busqueda, setBusqueda] = useState("");
   const [cargando, setCargando] = useState(true);
 
+  // referencias (mismo concepto que en Sucursal.jsx)
+  const [items, setItems] = useState([]);
+  const [insumos, setInsumos] = useState([]);
+  const [cargandoReferencias, setCargandoReferencias] = useState(true);
+
   const { sidebarOpen, setSidebarOpen } = useOutletContext();
   const apiUrl = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/";
+  const apiInventarioUrl =
+    import.meta.env.VITE_API_URL_INVENTARIO || apiUrl; // por si usas el mismo que en Sucursal.jsx
 
   // Usuario logueado
   useEffect(() => {
@@ -29,6 +36,53 @@ export default function InventarioStock() {
     };
     fetchUser();
   }, [apiUrl]);
+
+  // Cargar items e insumos desde sessionStorage (igual que en Sucursal.jsx)
+  useEffect(() => {
+    const storedItems = sessionStorage.getItem("items");
+    const storedInsumos = sessionStorage.getItem("insumos");
+
+    if (storedItems && storedInsumos) {
+      setItems(JSON.parse(storedItems));
+      setInsumos(JSON.parse(storedInsumos));
+      setCargandoReferencias(false);
+      return;
+    }
+
+    const cargarReferencias = async () => {
+      setCargandoReferencias(true);
+      try {
+        const [resItems, resInsumos] = await Promise.all([
+          fetch(`${apiInventarioUrl}items/`, {
+            headers: { Authorization: `Token ${localStorage.getItem("token")}` },
+          }),
+          fetch(`${apiInventarioUrl}insumos/`, {
+            headers: { Authorization: `Token ${localStorage.getItem("token")}` },
+          }),
+        ]);
+
+        const dataItems = await resItems.json();
+        const dataInsumos = await resInsumos.json();
+
+        const itemsArray = Array.isArray(dataItems) ? dataItems : [];
+        const insumosArray = Array.isArray(dataInsumos) ? dataInsumos : [];
+
+        setItems(itemsArray);
+        setInsumos(insumosArray);
+
+        sessionStorage.setItem("items", JSON.stringify(itemsArray));
+        sessionStorage.setItem("insumos", JSON.stringify(insumosArray));
+      } catch (err) {
+        console.error("Error cargando items/insumos", err);
+        setItems([]);
+        setInsumos([]);
+      } finally {
+        setCargandoReferencias(false);
+      }
+    };
+
+    cargarReferencias();
+  }, [apiInventarioUrl]);
 
   // Reloj + Inventario con auto-refresh
   useEffect(() => {
@@ -71,42 +125,68 @@ export default function InventarioStock() {
     };
   }, [apiUrl]);
 
-
   const volver = () => window.history.back();
 
   const sucursalUsuarioId = customUser?.caja?.sucursal ?? null;
 
-  // Filtrado por sucursal + pestaña + búsqueda
+  // Enriquecer stock con nombre y unidad usando las referencias de sessionStorage
+  const stockEnriquecido = useMemo(
+    () =>
+      stock.map((reg) => {
+        let nombre = "";
+        let unidad = "";
+
+        if (reg.item) {
+          // reg.item es un ID -> buscar en items
+          const ref = items.find((i) => i.id === reg.item);
+          nombre = ref?.descripcion || reg.item_descripcion || "";
+          unidad = ref?.unidad_medida || "-";
+        } else if (reg.insumo) {
+          const ref = insumos.find((i) => i.id === reg.insumo);
+          nombre = ref?.descripcion || reg.insumo_descripcion || "";
+          unidad = ref?.unidad_medida || "-";
+        }
+
+        return {
+          ...reg,
+          nombre,
+          unidad,
+        };
+      }),
+    [stock, items, insumos]
+  );
+
+  // Filtrado por sucursal + pestaña + búsqueda usando el nombre enriquecido
   const productos = useMemo(
     () =>
-      stock.filter(
+      stockEnriquecido.filter(
         (i) =>
           i.item &&
           i.sucursal === sucursalUsuarioId &&
-          (i.item.descripcion || "")
+          (i.nombre || "")
             .toLowerCase()
             .includes(busqueda.toLowerCase())
       ),
-    [stock, sucursalUsuarioId, busqueda]
+    [stockEnriquecido, sucursalUsuarioId, busqueda]
   );
 
-  const insumos = useMemo(
+  const insumosFiltrados = useMemo(
     () =>
-      stock.filter(
+      stockEnriquecido.filter(
         (i) =>
           i.insumo &&
           i.sucursal === sucursalUsuarioId &&
-          (i.insumo.descripcion || "")
+          (i.nombre || "")
             .toLowerCase()
             .includes(busqueda.toLowerCase())
       ),
-    [stock, sucursalUsuarioId, busqueda]
+    [stockEnriquecido, sucursalUsuarioId, busqueda]
   );
 
   const encabezado = tab === "productos" ? "Productos" : "Insumos";
-  const listado = tab === "productos" ? productos : insumos;
+  const listado = tab === "productos" ? productos : insumosFiltrados;
 
-  // helper UI: clase para stock bajo (ajusta el umbral si quieres)
+  // helper UI: clase para stock bajo
   const lowStockClass = (cantidad) =>
     Number(cantidad) <= 5 ? "text-red-600 font-semibold" : "text-gray-900";
 
@@ -158,6 +238,17 @@ export default function InventarioStock() {
               Insumos
             </button>
           </div>
+
+          {/* buscador */}
+          <div className="flex justify-center lg:justify-end">
+            <input
+              type="text"
+              placeholder="Buscar por nombre..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              className="w-full max-w-sm border border-gray-300 rounded-full px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-red-400"
+            />
+          </div>
         </div>
 
         {/* Contenido */}
@@ -192,9 +283,12 @@ export default function InventarioStock() {
                       </tr>
                     </thead>
                     <tbody>
-                      {cargando ? (
+                      {cargando || cargandoReferencias ? (
                         [...Array(5)].map((_, i) => (
-                          <tr key={i} className={i % 2 ? "bg-white" : "bg-gray-50"}>
+                          <tr
+                            key={i}
+                            className={i % 2 ? "bg-white" : "bg-gray-50"}
+                          >
                             <td className="px-6 py-3">
                               <div className="h-4 w-48 bg-gray-200 animate-pulse rounded" />
                             </td>
@@ -207,31 +301,32 @@ export default function InventarioStock() {
                           </tr>
                         ))
                       ) : listado.length > 0 ? (
-                        listado.map((item, i) => {
-                          const nombre =
-                            tab === "productos"
-                              ? item.item?.descripcion
-                              : item.insumo?.descripcion;
-                          const unidad =
-                            tab === "productos"
-                              ? item.item?.unidad_medida
-                              : item.insumo?.unidad_medida;
-                          return (
-                            <tr
-                              key={item.id}
-                              className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                        listado.map((item, i) => (
+                          <tr
+                            key={item.id}
+                            className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                          >
+                            <td className="px-6 py-3 text-gray-900">
+                              {item.nombre}
+                            </td>
+                            <td
+                              className={`px-6 py-3 ${lowStockClass(
+                                item.stock_actual
+                              )}`}
                             >
-                              <td className="px-6 py-3 text-gray-900">{nombre}</td>
-                              <td className={`px-6 py-3 ${lowStockClass(item.stock_actual)}`}>
-                                {item.stock_actual}
-                              </td>
-                              <td className="px-6 py-3 text-gray-700">{unidad}</td>
-                            </tr>
-                          );
-                        })
+                              {item.stock_actual}
+                            </td>
+                            <td className="px-6 py-3 text-gray-700">
+                              {item.unidad}
+                            </td>
+                          </tr>
+                        ))
                       ) : (
                         <tr>
-                          <td colSpan={3} className="px-6 py-6 text-center text-gray-500">
+                          <td
+                            colSpan={3}
+                            className="px-6 py-6 text-center text-gray-500"
+                          >
                             No hay {encabezado.toLowerCase()} disponibles
                           </td>
                         </tr>
@@ -243,7 +338,7 @@ export default function InventarioStock() {
 
               {/* Cards (móvil) */}
               <div className="md:hidden p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {cargando
+                {cargando || cargandoReferencias
                   ? [...Array(6)].map((_, i) => (
                       <div
                         key={i}
@@ -255,28 +350,26 @@ export default function InventarioStock() {
                       </div>
                     ))
                   : listado.length > 0
-                  ? listado.map((item) => {
-                      const nombre =
-                        tab === "productos"
-                          ? item.item?.descripcion
-                          : item.insumo?.descripcion;
-                      const unidad =
-                        tab === "productos"
-                          ? item.item?.unidad_medida
-                          : item.insumo?.unidad_medida;
-                      return (
-                        <div
-                          key={item.id}
-                          className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+                  ? listado.map((item) => (
+                      <div
+                        key={item.id}
+                        className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+                      >
+                        <p className="font-semibold text-gray-900">
+                          {item.nombre}
+                        </p>
+                        <p
+                          className={`mt-1 ${lowStockClass(
+                            item.stock_actual
+                          )}`}
                         >
-                          <p className="font-semibold text-gray-900">{nombre}</p>
-                          <p className={`mt-1 ${lowStockClass(item.stock_actual)}`}>
-                            Cantidad: {item.stock_actual}
-                          </p>
-                          <p className="text-gray-600 text-sm">Unidad: {unidad}</p>
-                        </div>
-                      );
-                    })
+                          Cantidad: {item.stock_actual}
+                        </p>
+                        <p className="text-gray-600 text-sm">
+                          Unidad: {item.unidad}
+                        </p>
+                      </div>
+                    ))
                   : (
                     <p className="col-span-full text-center text-gray-500">
                       No hay {encabezado.toLowerCase()} disponibles
